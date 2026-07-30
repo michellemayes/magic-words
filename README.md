@@ -78,6 +78,16 @@ npm run typecheck
 npm run build      # static output in dist/
 ```
 
+### Deployment
+
+Deployed on Vercel as a static build. `vercel.json` pins the framework, build command and output
+directory, adds a catch-all rewrite to `index.html`, sets long-lived immutable caching on the
+content-hashed assets, and applies a CSP plus the usual hardening headers. Routing is hash-based
+(`#/search?q=…`, `#/c/pre-mortem`), so deep links work without any server-side routing.
+
+CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every branch, independently of
+the deploy.
+
 ### Adding a concept
 
 Drop it into the right file under `src/data/concepts/` and it is indexed automatically. `npm test`

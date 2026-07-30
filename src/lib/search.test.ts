@@ -97,6 +97,29 @@ describe('search behaviour', () => {
     expect(ids('5 whys')[0]).toBe('five-whys')
   })
 
+  it('matches concept names as whole tokens, not substrings', () => {
+    // "EV" (an alias of Expected Value Framing) occurs inside everyone / never /
+    // level / review / development. A substring test pinned it to rank 1 for any
+    // query containing one of them, outranking far better scoring results.
+    for (const q of [
+      'everyone on the team has admin because it was easier',
+      'we never review the development plan at any level',
+    ]) {
+      const [first] = search({ text: q, limit: 5 })
+      expect(first.concept.id, `"${q}" wrongly pinned ${first.concept.id}`).not.toBe('expected-value')
+      expect(first.exactNameMatch).toBe(false)
+    }
+    // The alias still works when it is genuinely a word in the query.
+    expect(ids('what is the EV of this bet')[0]).toBe('expected-value')
+  })
+
+  it('returns the highest scoring result first when nothing is pinned', () => {
+    const results = search({ text: 'everyone on the team has admin because it was easier', domains: ['security'], limit: 5 })
+    expect(results[0].concept.id).toBe('least-privilege')
+    const scores = results.map((r) => r.score)
+    expect(Math.max(...scores)).toBe(scores[0])
+  })
+
   it('marks exact name matches so the UI can say so', () => {
     const [first] = search({ text: 'red teaming', limit: 3 })
     expect(first.concept.id).toBe('red-teaming')
