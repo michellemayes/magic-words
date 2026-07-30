@@ -1,4 +1,5 @@
 import type { Concept } from '../types'
+import { architecture } from './architecture'
 import { framing } from './framing'
 import { decisions } from './decisions'
 import { prioritization } from './prioritization'
@@ -14,6 +15,7 @@ import { steering } from './steering'
 
 export const CONCEPTS: Concept[] = [
   ...framing,
+  ...architecture,
   ...decisions,
   ...prioritization,
   ...critique,

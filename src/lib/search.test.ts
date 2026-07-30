@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { search } from './search'
-import { stem, tokenize } from './text'
+import { expand, stem, tokenize } from './text'
 
 const ids = (text: string, opts: Parameters<typeof search>[0] extends never ? never : object = {}) =>
   search({ text, limit: 8, ...opts }).map((r) => r.concept.id)
@@ -40,6 +40,23 @@ const CASES: { query: string; expect: string; within?: number }[] = [
   { query: 'where do I even start building this, integration always breaks late', expect: 'walking-skeleton' },
   { query: 'the agent keeps editing the wrong files and ignoring our conventions', expect: 'context-priming' },
   { query: 'I need a rough market size and I have no data at all', expect: 'fermi-estimation' },
+
+  // Architecture
+  { query: 'I cannot test my business logic without spinning up a database', expect: 'hexagonal-architecture' },
+  { query: 'the screen gets into states that should not be possible and I cannot reproduce it', expect: 'mvi-architecture' },
+  { query: 'our view controllers are thousands of lines and nothing about the screen is testable', expect: 'mvvm-architecture' },
+  { query: 'the rewrite has taken two years and shipped nothing and we cannot pause feature work', expect: 'strangler-fig' },
+  { query: 'the vendor data model is spreading through our own code and making it ugly', expect: 'anti-corruption-layer' },
+  { query: 'the word customer means three different things across our system', expect: 'bounded-context' },
+  { query: 'the refactor branch has been open for months and cannot be merged', expect: 'branch-by-abstraction' },
+  { query: 'reads are slow because the schema is optimised for writing', expect: 'cqrs' },
+  { query: 'someone overwrote a value and we cannot tell what it used to be', expect: 'event-sourcing' },
+  { query: 'the payment went through but the order was never created', expect: 'saga-pattern' },
+  { query: 'our mobile app makes eleven calls just to render one screen', expect: 'backend-for-frontend' },
+  { query: 'it works on my machine and deploying takes a page of manual steps', expect: 'twelve-factor-app' },
+  { query: 'my business logic imports the database driver and I cannot mock it', expect: 'dependency-inversion' },
+  { query: 'SQL is scattered all through my service classes', expect: 'repository-pattern' },
+  { query: 'changing the database forced changes in our business rules', expect: 'clean-architecture' },
 ]
 
 describe('retrieval quality', () => {
@@ -145,5 +162,25 @@ describe('text normalisation', () => {
 
   it('finds the same concept whichever spelling is used', () => {
     expect(ids('how do I prioritise the backlog')[0]).toBe(ids('how do I prioritize the backlog')[0])
+  })
+
+  /**
+   * Expansion keys are matched *after* stemming, so a key that is not itself a
+   * stem is silently dead — it costs nothing and does nothing, which is exactly
+   * why it survives review. Each word below must reach its key.
+   */
+  it('routes colloquial words to a live expansion key', () => {
+    const words = [
+      // architecture vocabulary
+      'legacy', 'monolith', 'microservices', 'coupling', 'refactoring', 'testable',
+      'rewrite', 'database', 'modules', 'interfaces', 'deploying', 'scaling',
+      'boilerplate', 'configuration', 'apis', 'endpoints', 'frameworks', 'schema',
+      // previously dead keys, kept as regression cover
+      'late', 'scope', 'hiring', 'boring', 'tradeoffs', 'conversion', 'choose',
+      // everyday problem words
+      'stuck', 'vague', 'outage', 'deadline', 'churn', 'jargon', 'overwhelmed',
+    ]
+    const dead = words.filter((w) => expand(tokenize(w)).length === 0)
+    expect(dead, 'these words expand to nothing').toEqual([])
   })
 })

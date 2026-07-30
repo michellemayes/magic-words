@@ -25,8 +25,10 @@ machine.
 
 ## The index
 
-91 concepts across ten domains — product, engineering, design, writing, research, strategy, data,
-learning, people & career, and working with AI itself.
+106 concepts across ten domains — product, engineering, design, writing, research, strategy, data,
+learning, people & career, and working with AI itself. That includes a full software-architecture
+family: hexagonal architecture, MVI, MVVM, the dependency rule, CQRS, event sourcing, strangler
+fig, anti-corruption layers, bounded contexts, branch by abstraction, sagas, BFF and twelve-factor.
 
 Each entry carries:
 
@@ -55,8 +57,11 @@ documents. The retrieval quality comes from three places:
   is never hard-excluded by the wrong domain. A light MMR pass keeps the top results from being five
   members of the same family.
 
-Retrieval is covered by 30 end-to-end cases asserting that a plain-language problem description
-surfaces the right concept — those tests are the specification for whether search works.
+Retrieval is covered by 45 end-to-end cases asserting that a plain-language problem description
+surfaces the right concept — those tests are the specification for whether search works. A separate
+test guards a subtle failure: expansion keys are matched *after* stemming, so a key that is not
+itself a stem (`late` when queries produce `lat`) is silently dead — it costs nothing and does
+nothing, which is why it survives review.
 
 ## Development
 
