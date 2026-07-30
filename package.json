@@ -1,0 +1,26 @@
+{
+  "name": "magic-words",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}
