@@ -57,6 +57,21 @@ const CASES: { query: string; expect: string; within?: number }[] = [
   { query: 'my business logic imports the database driver and I cannot mock it', expect: 'dependency-inversion' },
   { query: 'SQL is scattered all through my service classes', expect: 'repository-pattern' },
   { query: 'changing the database forced changes in our business rules', expect: 'clean-architecture' },
+
+  // Security & privacy
+  { query: 'everyone on the team has admin because it was easier that way', expect: 'least-privilege' },
+  { query: 'we have a firewall so surely we are fine', expect: 'defense-in-depth' },
+  { query: 'we need a security review before launch and I do not know where to start', expect: 'threat-modeling-stride' },
+  { query: 'anything inside our network can talk to anything else', expect: 'zero-trust' },
+  { query: 'if this credential leaked how bad would it actually be', expect: 'blast-radius' },
+  { query: 'if the auth service goes down does everything become public', expect: 'fail-closed' },
+  { query: 'debug endpoints are probably still enabled in production', expect: 'attack-surface-reduction' },
+  { query: 'one person can push straight to production with nobody looking', expect: 'separation-of-duties' },
+  { query: 'there is an API key committed in our repository and it was never rotated', expect: 'secrets-management' },
+  { query: 'we log everything just in case and keep it forever', expect: 'data-minimization' },
+  { query: 'we keep permanent admin because on call needs it during incidents', expect: 'break-glass-access' },
+  { query: 'where exactly should I be validating this user input', expect: 'trust-boundary' },
+  { query: 'how would we even know if one of our packages was compromised', expect: 'supply-chain-provenance' },
 ]
 
 describe('retrieval quality', () => {
@@ -177,6 +192,10 @@ describe('text normalisation', () => {
       'boilerplate', 'configuration', 'apis', 'endpoints', 'frameworks', 'schema',
       // previously dead keys, kept as regression cover
       'late', 'scope', 'hiring', 'boring', 'tradeoffs', 'conversion', 'choose',
+      // security vocabulary
+      'security', 'permissions', 'credentials', 'vulnerability', 'malicious', 'injection',
+      'encryption', 'compliance', 'privacy', 'dependencies', 'privilege', 'leaked', 'breach',
+      'compromised', 'firewall', 'sanitize', 'packages',
       // everyday problem words
       'stuck', 'vague', 'outage', 'deadline', 'churn', 'jargon', 'overwhelmed',
     ]

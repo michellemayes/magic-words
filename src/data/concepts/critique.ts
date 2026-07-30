@@ -6,7 +6,7 @@ export const critique: Concept[] = [
     name: 'Red Teaming',
     aka: ['adversarial review', 'attack this', 'devils advocate team'],
     origin: 'Military wargaming; adopted in security and policy',
-    domains: ['engineering', 'strategy', 'product'],
+    domains: ['security', 'engineering', 'strategy', 'product'],
     intents: ['critique'],
     oneLiner:
       'Assign someone the explicit job of attacking the plan as an intelligent adversary, rather than hoping objections surface politely.',
@@ -35,7 +35,7 @@ export const critique: Concept[] = [
       'The explicit "no encouragement" clause matters more than it looks — models default to a compliment sandwich that dilutes the critique into advice you can comfortably ignore.',
     watchOut:
       'Red teams generate volume. Insist on the ordering and plausibility rating or you will treat a far-fetched attack as equal to a likely one.',
-    related: ['pre-mortem', 'steelmanning', 'inversion', 'assumption-mapping', 'fmea'],
+    related: ['threat-modeling-stride', 'pre-mortem', 'steelmanning', 'inversion', 'assumption-mapping'],
     tags: ['critique', 'review', 'security', 'stress test', 'adversarial'],
   },
 
