@@ -6,6 +6,31 @@
     <title>Magic Words — the phrase that steers Claude</title>
     <meta name="description" content="Describe your problem in plain language. Magic Words finds the expert concept behind it and gives you the exact phrase to hand Claude." />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+    <link rel="canonical" href="__SITE_URL__/" />
+    <meta name="theme-color" content="#0a0a0f" />
+
+    <!--
+      Link previews. Every crawler that matters — Slack, iMessage, Discord, X,
+      LinkedIn — refuses a relative image path, so __SITE_URL__ is substituted
+      at build time from the deploy's own domain. See the siteUrl plugin in
+      vite.config.ts.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Magic Words" />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:title" content="Magic Words — the phrase that steers Claude" />
+    <meta property="og:description" content="Describe your problem in plain language. Magic Words finds the expert concept behind it and gives you the exact phrase to hand Claude." />
+    <meta property="og:image" content="__SITE_URL__/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Magic Words — describe the mess, get the words that fix it." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Magic Words — the phrase that steers Claude" />
+    <meta name="twitter:description" content="Describe your problem in plain language. Magic Words finds the expert concept behind it and gives you the exact phrase to hand Claude." />
+    <meta name="twitter:image" content="__SITE_URL__/og.png" />
+    <meta name="twitter:image:alt" content="Magic Words — describe the mess, get the words that fix it." />
   </head>
   <body>
     <div id="root"></div>
