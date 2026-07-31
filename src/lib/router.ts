@@ -7,6 +7,7 @@ export type Route =
   | { name: 'search'; text: string; domains: Domain[]; intents: Intent[] }
   | { name: 'concept'; id: string }
   | { name: 'browse' }
+  | { name: 'plugin' }
 
 /** Keeps searches and concepts linkable and back-button friendly. */
 export function parseHash(hash: string): Route {
@@ -18,6 +19,7 @@ export function parseHash(hash: string): Route {
     return { name: 'concept', id: decodeURIComponent(path.slice(3)) }
   }
   if (path === '/browse') return { name: 'browse' }
+  if (path === '/plugin') return { name: 'plugin' }
   if (path === '/search') {
     return {
       name: 'search',
@@ -35,6 +37,8 @@ export function toHash(route: Route): string {
       return '#/'
     case 'browse':
       return '#/browse'
+    case 'plugin':
+      return '#/plugin'
     case 'concept':
       return `#/c/${encodeURIComponent(route.id)}`
     case 'search': {

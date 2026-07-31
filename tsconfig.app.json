@@ -15,5 +15,8 @@
     "verbatimModuleSyntax": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  // The CLI runs under node, not in the browser; it is checked by
+  // tsconfig.skill.json with node globals instead of DOM ones.
+  "exclude": ["src/skill"]
 }

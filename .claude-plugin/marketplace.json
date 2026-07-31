@@ -1,0 +1,32 @@
+{
+  "name": "michellemayes",
+  "owner": {
+    "name": "Michelle Mayes",
+    "url": "https://github.com/michellemayes"
+  },
+  "description": "Plugins for getting a model to do the specific thing rather than the general one.",
+  "plugins": [
+    {
+      "name": "magic-words",
+      "displayName": "Magic Words",
+      "source": "./plugins/magic-words",
+      "description": "Finds the named technique your problem needs and folds its phrasing into the request before the work starts. Hundreds of named techniques, ranked locally, no network.",
+      "category": "productivity",
+      "keywords": [
+        "prompting",
+        "steering",
+        "frameworks",
+        "techniques",
+        "lexicon",
+        "prompt engineering"
+      ],
+      "author": {
+        "name": "Michelle Mayes",
+        "url": "https://github.com/michellemayes"
+      },
+      "homepage": "https://github.com/michellemayes/magic-words#the-claude-code-plugin",
+      "repository": "https://github.com/michellemayes/magic-words",
+      "license": "MIT"
+    }
+  ]
+}

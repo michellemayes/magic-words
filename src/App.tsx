@@ -1,10 +1,15 @@
 import { useEffect, useMemo } from 'react'
 import { getConcept } from './data/concepts'
-import { search, warmSemanticSpace } from './lib/search'
+import { warmSemanticSpace } from './lib/search'
+import { triage } from './lib/triage'
 import { useRoute } from './lib/router'
 import { ConceptCard } from './components/ConceptCard'
 import { SearchForm, type FormValue } from './components/SearchForm'
 import { Browse } from './components/Browse'
+import { Spell } from './components/Spell'
+import { Untangled } from './components/Untangled'
+import { PluginPage } from './components/PluginPage'
+import { Install } from './components/Install'
 import { CONCEPTS } from './data/concepts'
 
 const EMPTY: FormValue = { text: '', domains: [], intents: [] }
@@ -29,14 +34,9 @@ export default function App() {
     return () => window.clearTimeout(timer)
   }, [])
 
-  const results = useMemo(() => {
-    if (route.name !== 'search') return []
-    return search({
-      text: route.text,
-      domains: route.domains,
-      intents: route.intents,
-      limit: 7,
-    })
+  const found = useMemo(() => {
+    if (route.name !== 'search') return null
+    return triage(route.text, { domains: route.domains, intents: route.intents, limit: 3 })
   }, [route])
 
   const openConcept = (id: string) => navigate({ name: 'concept', id })
@@ -67,6 +67,13 @@ export default function App() {
           >
             Browse all
           </button>
+          <button
+            className="navlink"
+            aria-current={route.name === 'plugin'}
+            onClick={() => navigate({ name: 'plugin' })}
+          >
+            Plugin
+          </button>
         </nav>
       </header>
 
@@ -75,33 +82,69 @@ export default function App() {
           <>
             <section className="hero">
               <h1>
-                Describe the problem.
+                Describe the mess.
                 <br />
-                Get the <em>phrase that fixes it.</em>
+                Get the <em>words that fix it.</em>
               </h1>
               <p className="lede">
-                There is usually a named technique for what you are stuck on — and naming it is
-                what gets Claude to actually do it. Tell us the problem in your own words and we
-                will find the concept, the exact prompt, and the alternatives worth trying.
+                There is usually a named technique for what you are stuck on — and naming it is what
+                gets Claude to actually do it. Tell us what is going on, in your own words, however
+                many problems that turns out to be. You get the concept, the exact phrasing, and
+                your own request with the phrasing folded into it.
               </p>
             </section>
             <SearchForm initial={EMPTY} onSubmit={runSearch} />
+
+            {/*
+              The landing page's second offer. Someone who has read this far has
+              understood the idea, and the better version of the idea is the one
+              where they never have to come back here — so the install goes on
+              the front page rather than behind a nav item.
+            */}
+            <section className="pitch">
+              <h2>
+                <span className="callout-glyph" aria-hidden="true">
+                  ✦
+                </span>{' '}
+                Or never come back here again
+              </h2>
+              <p>
+                The same {CONCEPTS.length} concepts as a Claude Code plugin. It reads the request
+                you were going to send anyway, works out which named techniques it needs, and puts
+                the phrasing in before the work starts — then tells you which words it used.
+              </p>
+              <Install />
+              <p className="pitch-foot">
+                Two commands, no dependencies, nothing leaves your machine.{' '}
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => navigate({ name: 'plugin' })}
+                >
+                  What it does, and when it stays out of the way →
+                </button>
+              </p>
+            </section>
           </>
         )}
 
-        {route.name === 'search' && (
+        {route.name === 'search' && found && (
           <SearchResults
             query={route.text}
-            results={results}
+            found={found}
             onOpenConcept={openConcept}
             initial={{ text: route.text, domains: route.domains, intents: route.intents }}
             onSubmit={runSearch}
           />
         )}
 
-        {route.name === 'concept' && <ConceptPage id={route.id} onOpenConcept={openConcept} onBack={() => window.history.back()} />}
+        {route.name === 'concept' && (
+          <ConceptPage id={route.id} onOpenConcept={openConcept} onBack={() => window.history.back()} />
+        )}
 
         {route.name === 'browse' && <Browse onOpenConcept={openConcept} />}
+
+        {route.name === 'plugin' && <PluginPage />}
       </main>
 
       <footer className="foot">
@@ -120,20 +163,29 @@ export default function App() {
 
 function SearchResults({
   query,
-  results,
+  found,
   onOpenConcept,
   initial,
   onSubmit,
 }: {
   query: string
-  results: ReturnType<typeof search>
+  found: ReturnType<typeof triage>
   onOpenConcept: (id: string) => void
   initial: FormValue
   onSubmit: (v: FormValue) => void
 }) {
-  const [best, ...rest] = results
+  const { threads, picks, others } = found
 
-  if (!best) {
+  /**
+   * With facets and no words there is nothing to attribute a pick to, so
+   * `triage` declines to make any and the ranked list leads instead. The page
+   * still needs a headline card, which is the top of that list.
+   */
+  const headline = picks[0]?.concept ?? others[0]?.concept
+  const shownIds = new Set([...picks.map((p) => p.concept.id), headline?.id])
+  const rest = others.filter((r) => !shownIds.has(r.concept.id))
+
+  if (!headline) {
     return (
       <>
         <div className="empty">
@@ -147,6 +199,8 @@ function SearchResults({
       </>
     )
   }
+
+  const lead = picks[0]
 
   return (
     <>
@@ -162,23 +216,58 @@ function SearchResults({
         </p>
       </div>
 
+      <Untangled threads={threads} picks={picks} onOpenConcept={onOpenConcept} />
+
       <ConceptCard
         // Keyed on the concept so a new search remounts the card and the name
         // is conjured again; re-running the same search leaves it alone.
-        key={best.concept.id}
-        concept={best.concept}
-        matchedTerms={best.exactNameMatch ? undefined : best.matchedTerms}
-        looseMatch={best.looseMatch}
-        eyebrow={best.exactNameMatch ? 'You asked for this one' : 'Closest match'}
+        key={headline.id}
+        concept={headline}
+        matchedTerms={lead && lead.confidence === 'strong' ? lead.matchedTerms : undefined}
+        looseMatch={lead?.confidence === 'tentative'}
+        eyebrow={threads.length > 1 ? 'The strongest of them' : 'Closest match'}
         conjure
         onOpenConcept={onOpenConcept}
       />
 
+      <Spell key={`spell:${picks.map((p) => p.concept.id).join(',')}`} text={query} picks={picks} />
+
+      {/*
+        Only where there is no untangled list above. With one, these rows would
+        be the third appearance of the same two concepts on one screen — named
+        in the strands, quoted in the spell, and then listed again.
+      */}
+      {picks.length > 1 && threads.length < 2 && (
+        <>
+          <h2 className="section-label">The other words for this</h2>
+          <div className="rows">
+            {picks.slice(1).map((p) => (
+              <button
+                type="button"
+                className="row"
+                key={p.concept.id}
+                onClick={() => onOpenConcept(p.concept.id)}
+              >
+                <p className="row-name">{p.concept.name}</p>
+                <p className="row-line">{p.concept.oneLiner}</p>
+                <div className="row-tags">
+                  {p.concept.tags.slice(0, 3).map((t) => (
+                    <span className="tag" key={t}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {rest.length > 0 && (
         <>
-          <h2 className="section-label">Other magic words for this</h2>
+          <h2 className="section-label">If none of those is it</h2>
           <div className="rows">
-            {rest.map((r) => (
+            {rest.slice(0, 5).map((r) => (
               <button
                 type="button"
                 className="row"
@@ -187,13 +276,6 @@ function SearchResults({
               >
                 <p className="row-name">{r.concept.name}</p>
                 <p className="row-line">{r.concept.oneLiner}</p>
-                <div className="row-tags">
-                  {r.concept.tags.slice(0, 3).map((t) => (
-                    <span className="tag" key={t}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
               </button>
             ))}
           </div>

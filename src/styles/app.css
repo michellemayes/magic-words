@@ -474,10 +474,347 @@ footer.foot {
 }
 footer.foot a { color: var(--text-dim); }
 
+/* The install pitch on the landing page. */
+.pitch {
+  margin: 44px 0 0;
+  padding: 22px 22px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow);
+}
+.pitch h2 {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.pitch p {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 64ch;
+}
+.pitch .code { margin-bottom: 12px; }
+.pitch-foot { margin-bottom: 0 !important; font-size: 14px !important; }
+
+.callout-glyph { color: var(--accent); }
+
+/*
+ * Slash commands, one per line, each opening on the accent. These wrap rather
+ * than scroll: they are meant to be read and retyped as much as copied, and a
+ * command whose second half is off the side of a phone reads as truncated.
+ */
+.cmd {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cmd::first-letter { color: var(--accent); }
+
 @media (max-width: 560px) {
   .card-top, .card-body { padding-left: 18px; padding-right: 18px; }
   .magic { padding-left: 18px; padding-right: 18px; }
   .masthead { padding-top: 20px; }
+  /* Three nav items and a wordmark do not fit at this width otherwise. */
+  .masthead { gap: 8px; }
+  .masthead nav { gap: 0; }
+  .navlink { padding: 6px 9px; font-size: 13.5px; }
+  .wordmark { font-size: 19px; }
+  .spell-head, .spell-body, .spell-toggles { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ---------- The ramble box ---------- */
+
+.field > .big-label {
+  display: block;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.form textarea.problem { min-height: 156px; }
+
+/* The facets, folded away. They multiply the ranking; the text does the work. */
+details.narrow {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  margin: -8px 0 26px;
+}
+
+details.narrow > summary {
+  cursor: pointer;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+details.narrow > summary::-webkit-details-marker { display: none; }
+details.narrow > summary::after {
+  content: '+';
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 16px;
+}
+details.narrow[open] > summary::after { content: '−'; }
+details.narrow > summary:hover { color: var(--text); }
+details.narrow > summary .hint { display: inline; font-size: 13.5px; margin: 0; }
+.narrow-count { color: var(--accent); font-size: 13px; }
+.narrow-body { padding: 4px 16px 6px; }
+.narrow-body .field:last-child { margin-bottom: 18px; }
+
+/* ---------- The ramble, untangled ---------- */
+
+.untangled { margin-bottom: 30px; }
+
+.threads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* A hairline running down the strands, so they read as one thing taken apart. */
+.thread {
+  position: relative;
+  padding-left: 18px;
+  border-left: 1px solid var(--border);
+}
+.thread::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.thread-said {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  font-style: italic;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.thread-word {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.thread-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.thread-line {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+.thread-arrow {
+  float: left;
+  margin: 3px 8px 0 0;
+  color: var(--accent);
+  font-size: 13px;
+}
+.thread-word:hover .thread-name { color: var(--accent); }
+
+.thread-none { margin: 0; font-size: 14px; color: var(--text-faint); }
+
+.thread-whole { margin: 16px 0 0; font-size: 14px; color: var(--text-dim); }
+
+.linkish {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- The spell ---------- */
+
+/*
+ * The composed prompt: the user's own words with the phrases folded in. It is
+ * the thing you actually send, so it is the only block on the page with a lit
+ * edge — everything else here is a page about a concept, and this is the
+ * artefact.
+ */
+.spell {
+  position: relative;
+  margin-top: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.spell::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--gold), transparent);
+  opacity: 0.7;
+}
+
+.spell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 0;
+}
+.spell-head .label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--gold);
+}
+.spell-glyph { color: var(--accent); }
+
+.spell-body {
+  margin: 14px 0 0;
+  padding: 16px 20px 18px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.spell-original {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.spell-lead {
+  margin: 16px 0 12px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* The injected part, marked as an addition rather than as your own sentence. */
+.spell-injection {
+  margin: 0 0 12px;
+  padding-left: 13px;
+  border-left: 2px solid var(--accent);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.spell-injection:last-child { margin-bottom: 0; }
+.spell-injection strong { color: var(--accent); font-weight: 600; }
+
+.spell-empty { margin: 14px 0 0; font-size: 14px; color: var(--text-faint); font-style: italic; }
+
+.spell-toggles {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px 16px;
+}
+.spell-toggles .hint {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.spell-toggles .chips { flex: 1; }
+.chip-note { color: var(--text-faint); font-size: 12px; }
+
+/* ---------- Skill page ---------- */
+
+.prose .hero { padding-top: 20px; }
+.prose .section-label { margin-top: 44px; }
+.prose .note { max-width: 68ch; font-size: 15px; }
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.code {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-raised);
+}
+.code-head .label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.code pre {
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
+.demo {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.demo p { margin: 0; font-size: 15px; line-height: 1.6; }
+.demo-you { color: var(--text-dim); font-style: italic; }
+.demo-claude { margin-top: 16px !important; color: var(--text); }
+.demo-claude strong { color: var(--accent); font-weight: 600; }
+.demo-who {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  font-style: normal;
+  margin-bottom: 5px;
 }
 
 /* ---------- The conjuring ---------- */
@@ -607,6 +944,29 @@ footer.foot a { color: var(--text-dim); }
   100% { transform: rotate(360deg) scale(1); }
 }
 
+/*
+ * The strands arrive in the order they were said, which is the order they were
+ * cut out of the sentence — the animation is the split happening.
+ */
+.threads .thread { animation: row-settle 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.threads .thread:nth-child(1) { animation-delay: 30ms; }
+.threads .thread:nth-child(2) { animation-delay: 110ms; }
+.threads .thread:nth-child(3) { animation-delay: 190ms; }
+.threads .thread:nth-child(n + 4) { animation-delay: 270ms; }
+
+/* The spell is the last thing to arrive, because it is made of the rest. */
+.spell { animation: card-arrive 520ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both; }
+
+/* Selection picks up the accent — small, but it is a site about a highlight. */
+::selection { background: var(--accent-dim); color: var(--text); }
+
+/* One visible focus style everywhere, since almost every control is a button. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Shown when the ranking is resting on the latent space with little to back it. */
 .matched .m-loose {
   font-style: italic;
@@ -625,8 +985,11 @@ footer.foot a { color: var(--text-dim); }
    * prints the name outright rather than scrambling it.
    */
   .card.conjured,
-  .rows .row {
+  .rows .row,
+  .threads .thread,
+  .spell {
     animation: reduced-arrive 200ms ease-out both;
+    animation-delay: 0ms;
   }
   .card-shimmer,
   .card.conjured .eyebrow-glyph,

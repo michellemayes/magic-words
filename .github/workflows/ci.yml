@@ -18,3 +18,27 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+      # The plugin ships a bundle of src/, checked in because installing a
+      # plugin copies a directory and runs nothing. Rebuilding it here is what
+      # stops that copy drifting from the code it was built from.
+      - run: npm run build:skill
+      - name: Plugin bundle is up to date
+        run: |
+          git diff --exit-code -- plugins/magic-words || {
+            echo '::error::the bundle is stale — run `npm run build:skill` and commit the result'
+            exit 1
+          }
+
+      # A bundle can be current and still not run: the entry picks up a browser
+      # global, node rejects the output format, a flag regresses. And the shim
+      # is what the skill actually calls, so it is what gets exercised — it is
+      # the piece nothing else would catch until somebody installed the plugin.
+      - name: Plugin runs
+        run: |
+          PATH="$PWD/plugins/magic-words/bin:$PATH"
+          magic-words \
+            "the plan looks solid and nobody is objecting before we commit real money" \
+            < /dev/null | grep -q 'Pre-mortem'
+          magic-words --show least-privilege < /dev/null | grep -q 'Least Privilege'
+          magic-words --list < /dev/null | grep -qE '[0-9]+ concepts'

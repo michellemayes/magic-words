@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:skill": "node scripts/build-skill.mjs",
+    "skill": "node .claude/skills/magic-words/magic-words.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -13,6 +15,7 @@
     "bench": "vitest run --config vitest.bench.config.ts"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.5",

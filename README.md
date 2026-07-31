@@ -1,28 +1,108 @@
 # ✦ Magic Words
 
 **Describe your problem in plain language. Get the phrase that steers Claude straight at it.**
+**Or install [the plugin](#the-claude-code-plugin) and stop having to.**
 
 There is usually a named technique for whatever you are stuck on — *abstraction laddering*,
 *Chesterton's fence*, *cost of delay*, *reference class forecasting* — and naming it is what gets a
 model to actually do it instead of producing something generic. The catch is that you cannot search
 for a term you have never heard of.
 
-Magic Words closes that gap. You describe the symptom the way you would to a colleague; it finds
-the concept, hands you the exact prompt, tells you why that phrasing works, and offers the
-alternatives worth trying instead.
+Magic Words closes that gap. You describe the symptom the way you would to a colleague — as many
+symptoms as you have, in whatever order they come out — and it untangles them, finds the concept
+for each, hands you the exact prompt, tells you why that phrasing works, and gives you back your
+own request with the phrasing folded into it.
+
+As a [Claude Code plugin](#the-claude-code-plugin) the same thing happens without you asking: it
+reads the request you were going to send anyway and puts the right steering words in before the
+work starts.
 
 ## How it works
 
-1. **Answer three questions** — what you are working on, what you need to happen, and the problem
-   in your own words. All three are optional; the free-text box does most of the work.
-2. **Watch the word arrive** — the name resolves out of a scatter of glyphs, and you get the
-   concept, its provenance, a copy-ready prompt, why that specific wording steers a model, and where
-   it misfires. If the match is a loose one the card tells you so.
-3. **Follow the alternatives** — every entry links to its neighbours, so a near-miss is one click
+1. **Say what is going on** — however it comes out. One problem or five, in whatever order they
+   occurred to you. The facets (what you are working on, what you need to happen) are optional and
+   multiply the ranking rather than filtering it.
+2. **Watch it get untangled** — the input is cut into the problems it actually contains and each
+   one is answered separately, with the strand that summoned each word quoted back at you.
+3. **Take the composed prompt** — your own words, verbatim, with the steering phrases folded in and
+   ready to paste. Each phrase is a toggle; the loose matches start switched off.
+4. **Follow the alternatives** — every entry links to its neighbours, so a near-miss is one click
    from the right answer.
 
 Everything runs in the browser. There is no backend, no API key, and nothing you type leaves your
 machine.
+
+## The Claude Code plugin
+
+The same index and the same ranking, running where you were already typing. This repository is a
+plugin marketplace, so installing it is two commands:
+
+```
+/plugin marketplace add michellemayes/magic-words
+/plugin install magic-words@michellemayes
+```
+
+`/reload-plugins` picks it up in a session you already have open, and
+`/plugin marketplace update michellemayes` takes new concepts as they are added. Nothing is pinned
+to a version number — deliberately. What changes here is nearly always the corpus, a concept added
+or a prompt sharpened, and pinning a version would mean installed users stayed behind it until
+someone remembered to bump one. Omitting it makes the commit the version, so an install tracks the
+lexicon.
+
+It fires on the requests that arrive as a stream of consciousness or an under-specified ask — the
+rambling context with no clear question, the "this isn't working", the symptom described instead of
+the method. It reads what you said, finds the techniques that answer it, folds the phrasing into
+the working brief, tells you in one line which words it applied, and gets on with the work. Naming
+them is the half you keep: next time you can ask for it directly, which is the entire point of a
+lexicon.
+
+It is told, in as many words, when *not* to steer: not when your request is already specific, not
+where a technique would contradict something you asked for, and not at all when the index has no
+good match. A skill that finds a technique for everything, because it is a skill about techniques,
+would make every request slightly worse.
+
+The plugin is three files — `SKILL.md`, one dependency-free bundle of `src/` carrying the whole
+corpus and the ranking, and a shim that puts `magic-words` on the Bash tool's path. No
+dependencies, no install step, no network. That last file is why the skill never has to guess where
+it was installed; it just runs the command, which also means you have it:
+
+```bash
+magic-words "the plan looks fine and nobody is objecting"
+magic-words --show pre-mortem
+magic-words --list security
+```
+
+`--json` gives the same fields the site renders. The bundle is generated (`npm run build:skill`)
+and checked in, which is normally a smell — installing a plugin copies a directory and runs
+nothing, so the alternative is a second implementation of the ranking that would drift from the
+measured one. CI rebuilds it, fails on any difference, and runs it through the shim.
+
+The skill directory also stands on its own, for anyone who would rather not use the plugin system:
+
+```bash
+git clone https://github.com/michellemayes/magic-words
+cp -r magic-words/plugins/magic-words/skills/magic-words ~/.claude/skills/
+```
+
+You lose the update path and the `magic-words` command; the skill falls back to invoking the script
+by its own path.
+
+### The marketplace
+
+```
+.claude-plugin/marketplace.json     the catalogue — name, owner, one plugin
+plugins/magic-words/
+  .claude-plugin/plugin.json        the plugin's own manifest
+  bin/magic-words                   shim, on PATH while the plugin is enabled
+  skills/magic-words/SKILL.md       when to fire, what to inject, when not to
+  skills/magic-words/magic-words.mjs   generated bundle of src/
+```
+
+`.claude/skills/magic-words` is a symlink into the plugin, so this repository uses the same skill it
+publishes and there is no second copy of a megabyte-plus bundle to keep in step. `npm test` checks
+that the symlink resolves, that the manifests agree about the plugin's name, that the source path
+exists, and that both scripts are executable — none of which any other test here would notice, and
+all of which are invisible until somebody runs `/plugin install` and nothing happens.
 
 ## The index
 
@@ -82,6 +162,54 @@ Hybrid retrieval, entirely in the browser. No API calls, no model download, noth
 - **Facet boosting and diversity.** Form answers multiply rather than filter, so a strong text match
   is never hard-excluded by the wrong domain. A light MMR pass keeps the top results from being five
   members of the same family.
+
+### One query is rarely one question
+
+`search()` answers a single question well. What people type is a paragraph that starts with an
+outage, mentions in passing that the write-up turned into a blame session, and ends needing an
+exec summary. Handed to the ranker whole, that returns the concept that best matches the *average*
+of three problems, which is usually none of them.
+
+So `triage()` cuts the input into threads first, searches each on its own, and merges. Splitting is
+on strong boundaries only — punctuation, line breaks, spaced dashes, and the spoken connectives
+people change subject with ("and then", "oh and", "also", "plus"). Bare "and" and "but" join
+clauses inside one problem far more often than they separate problems, so they are a fallback used
+only on a strand too long to be a single thought. Fragments too thin to search are folded into
+their neighbour, and stranded connectives are stripped rather than glued onto the end of the
+previous thread.
+
+| 10 rambles, 20 problems in them | covered |
+| --- | --- |
+| one query, top 1 | 40.0% |
+| one query, top 3 | 75.0% |
+| triaged, top 3 | **85.0%** |
+
+Both of those fell when the corpus went from 119 concepts to 619 — the ramble set was written
+against the smaller index and every query now competes with five times as many documents, exactly
+as the held-out numbers above did. The gap between them widened, which is the part this section is
+about: splitting is worth more, not less, as the index grows.
+
+Two constants in there earned their comments by losing. The whole-input reading competes with the
+per-thread readings **at par**: a correction for thread length looks obviously necessary — a short
+query scores higher against a perfect lexical match than a long one does — and upweighting the
+whole-input reading loses coverage at every value from 1.35 up. Discounting it to 0.8 currently
+covers one problem more than parity does, which is one case in twenty and not enough to move a
+constant on; at 119 concepts 0.8, 1 and 1.15 were tied. What matters, and does not move, is that
+the whole-input reading is in the pool at all: dropping it costs 10 points, because a paragraph
+often states its real problem across a boundary rather than inside one clause.
+
+And confidence is `looseMatch` and nothing else. `npm run bench` sweeps the obvious alternative, a
+threshold on the merged score, over all 131 single-problem cases. `looseMatch` sits at the coverage
+end of that trade: 94.7% of picks called confident, 70.2% of those right against a 66.4% baseline,
+and the 5.3% it holds back right **none** of the time. A cutoff of 2.0 sits at the other end: 84.8%
+right, silent about 30% of picks.
+
+At 119 concepts those two were nearly the same signal, and a cutoff high enough to matter had
+already excluded every loose pick. At 619 they have separated, and the cutoff now buys real
+precision for real coverage. It is still not the trade to take: a pick is always shown by name next
+to the user's own words and is trivially ignored, while a pick withheld is the product not
+happening — and `looseMatch` still identifies a bucket that is wrong every single time, which is
+the thing worth being sure about.
 
 ### Why not a real embedding model
 
@@ -155,11 +283,14 @@ its own.
 
 ```bash
 npm install
-npm run dev        # local dev server
-npm test           # corpus integrity + retrieval quality
-npm run bench      # relevancy report and tuning grid (prints, never fails)
+npm run dev          # local dev server
+npm test             # corpus integrity + retrieval quality + triage
+npm run bench        # relevancy and triage reports, and the tuning grids every
+                     # constant came from (prints, never fails)
 npm run typecheck
-npm run build      # static output in dist/
+npm run build        # static output in dist/
+npm run build:skill  # regenerate the plugin's bundle of src/
+npm run skill -- "the plan looks fine and nobody is objecting"
 ```
 
 ### Deployment
@@ -170,7 +301,8 @@ content-hashed assets, and applies a CSP plus the usual hardening headers. Routi
 (`#/search?q=…`, `#/c/pre-mortem`), so deep links work without any server-side routing.
 
 CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every branch, independently of
-the deploy.
+the deploy. It also rebuilds the plugin's bundle and fails if the committed copy differs, then
+runs it through the shim — a bundle can be current and still not start.
 
 ### Adding a concept
 
