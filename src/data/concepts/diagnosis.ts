@@ -60,6 +60,7 @@ export const diagnosis: Concept[] = [
       'Halve the search space with each test — in commits, in inputs, or in the pipeline — instead of scanning linearly.',
     useWhen: [
       'it used to work and now it does not',
+      'it worked fine last week and something since then broke it',
       'somewhere in this huge pipeline something breaks',
       'which commit broke it',
       'the input file is enormous and one row is bad',

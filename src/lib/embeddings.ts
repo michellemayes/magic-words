@@ -19,7 +19,7 @@
  * Why not a real embedding model: the site has no backend and no API key, and
  * the CSP is `connect-src 'self'`, so there is nowhere to send a query to be
  * embedded and nothing to download a model from. A transformer would also be
- * tens of megabytes for a corpus of 119 documents. LSA fits in a few hundred
+ * tens of megabytes for a corpus of 619 documents. LSA fits in a few hundred
  * lines, runs in milliseconds, stays entirely in the browser, and — unlike a
  * pretrained model — its notion of similarity is derived from this vocabulary
  * rather than from the open web.
@@ -28,7 +28,10 @@
  * columns L2-normalised. `A = U S V'`. Documents are far fewer than terms, so
  * rather than decomposing `A` we decompose the small document gram matrix
  * `G = A'A = V S^2 V'`, which is symmetric positive semi-definite and only
- * 119x119. Jacobi rotations give `V` and `S` exactly, and `U = A V S^-1`
+ * as wide as the corpus. Below a few hundred documents Jacobi rotations give
+ * `V` and `S` exactly; above that the whole spectrum costs seconds to compute
+ * and all but the leading dimensions are discarded anyway, so subspace
+ * iteration takes the leading ones directly. `U = A V S^-1`
  * recovers the term vectors. Both documents and queries are then projected
  * onto `U` — `A'U = V S` for documents, `q'U` for a query — so the two live in
  * the same basis and cosine between them means something.
@@ -42,6 +45,23 @@ const SPECTRUM_FLOOR = 1e-6
 
 /** Cyclic Jacobi converges well inside this for a matrix of our size. */
 const MAX_SWEEPS = 60
+
+/**
+ * Document count above which the exact decomposition stops being affordable.
+ *
+ * Jacobi computes the whole spectrum, which costs a cubic pass per sweep. At
+ * 119 documents that is a few milliseconds; at 619 it is nine seconds of
+ * blocked main thread, and we throw away all but the leading `maxDims`
+ * directions anyway. Below this bound the exact path is kept, so a small
+ * corpus decomposes bit-identically to how it always has.
+ */
+const EXACT_MAX_DOCS = 200
+
+/** Extra block columns beyond the dimensions kept, for subspace accuracy. */
+const OVERSAMPLE = 10
+
+/** Power iterations applied before extraction. Two is the usual sufficiency. */
+const POWER_ITERATIONS = 2
 
 export interface SemanticSpace {
   /** Number of latent dimensions actually retained. */
@@ -75,7 +95,7 @@ function idf(df: number, n: number): number {
  *
  * Chosen over the usual randomised range-finder because it is deterministic:
  * identical input gives bit-identical output, so rankings do not drift between
- * loads and the tests can assert on them. At n = 119 it costs a few
+ * loads and the tests can assert on them. At a few hundred documents it costs a few
  * milliseconds, which buys nothing back by being approximate.
  *
  * `a` is mutated. Returns eigenvalues alongside eigenvectors held as columns
@@ -134,6 +154,112 @@ function jacobiEigen(a: Float64Array, n: number): { values: Float64Array; vector
   const values = new Float64Array(n)
   for (let i = 0; i < n; i++) values[i] = a[i * n + i]
   return { values, vectors: v }
+}
+
+/**
+ * Deterministic block of starting vectors.
+ *
+ * A randomised range finder needs a random block, and a random block would
+ * make rankings drift between page loads. A fixed linear congruential sequence
+ * gives the same statistical spread with none of the drift, so identical input
+ * still yields bit-identical output.
+ */
+function deterministicBlock(rows: number, cols: number): Float64Array {
+  const block = new Float64Array(rows * cols)
+  let state = 0x2f6e2b1
+  for (let i = 0; i < block.length; i++) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+    block[i] = state / 0x100000000 - 0.5
+  }
+  return block
+}
+
+/** Orthonormalise the columns of a rows x cols matrix in place, by modified Gram-Schmidt. */
+function orthonormalise(m: Float64Array, rows: number, cols: number): void {
+  for (let j = 0; j < cols; j++) {
+    for (let k = 0; k < j; k++) {
+      let dot = 0
+      for (let i = 0; i < rows; i++) dot += m[i * cols + j] * m[i * cols + k]
+      for (let i = 0; i < rows; i++) m[i * cols + j] -= dot * m[i * cols + k]
+    }
+    let norm = 0
+    for (let i = 0; i < rows; i++) norm += m[i * cols + j] * m[i * cols + j]
+    norm = Math.sqrt(norm)
+    if (norm > 1e-12) {
+      for (let i = 0; i < rows; i++) m[i * cols + j] /= norm
+    } else {
+      // Column collapsed into the span of its predecessors; it carries no
+      // direction of its own, so leave it at zero rather than amplifying dust.
+      for (let i = 0; i < rows; i++) m[i * cols + j] = 0
+    }
+  }
+}
+
+/** Dense symmetric `g` (n x n) times `block` (n x cols), into a fresh n x cols matrix. */
+function gramTimesBlock(g: Float64Array, n: number, block: Float64Array, cols: number): Float64Array {
+  const out = new Float64Array(n * cols)
+  for (let i = 0; i < n; i++) {
+    const rowOffset = i * n
+    const outOffset = i * cols
+    for (let k = 0; k < n; k++) {
+      const weight = g[rowOffset + k]
+      if (weight === 0) continue
+      const blockOffset = k * cols
+      for (let j = 0; j < cols; j++) out[outOffset + j] += weight * block[blockOffset + j]
+    }
+  }
+  return out
+}
+
+/**
+ * The leading `k` eigenpairs of a symmetric positive semi-definite matrix,
+ * by subspace iteration against a deterministic starting block.
+ *
+ * Returns the same shape `jacobiEigen` does — eigenvectors as columns of a
+ * row-major n x n matrix — with the columns past `k` left at zero and their
+ * eigenvalues at zero, so the spectrum filter downstream discards them without
+ * needing to know which path produced the result.
+ */
+function leadingEigenpairs(
+  a: Float64Array,
+  n: number,
+  k: number,
+): { values: Float64Array; vectors: Float64Array } {
+  const block = Math.min(n, k + OVERSAMPLE)
+
+  let q = deterministicBlock(n, block)
+  orthonormalise(q, n, block)
+  for (let iteration = 0; iteration <= POWER_ITERATIONS; iteration++) {
+    q = gramTimesBlock(a, n, q, block)
+    orthonormalise(q, n, block)
+  }
+
+  // Project onto the subspace: T = Q' A Q, small enough to decompose exactly.
+  const aq = gramTimesBlock(a, n, q, block)
+  const t = new Float64Array(block * block)
+  for (let p = 0; p < block; p++) {
+    for (let r = p; r < block; r++) {
+      let sum = 0
+      for (let i = 0; i < n; i++) sum += q[i * block + p] * aq[i * block + r]
+      t[p * block + r] = sum
+      t[r * block + p] = sum
+    }
+  }
+
+  const small = jacobiEigen(t, block)
+
+  // Lift the subspace eigenvectors back: V = Q * eigenvectors(T).
+  const values = new Float64Array(n)
+  const vectors = new Float64Array(n * n)
+  for (let j = 0; j < block; j++) {
+    values[j] = small.values[j]
+    for (let i = 0; i < n; i++) {
+      let sum = 0
+      for (let p = 0; p < block; p++) sum += q[i * block + p] * small.vectors[p * block + j]
+      vectors[i * n + j] = sum
+    }
+  }
+  return { values, vectors }
 }
 
 function l2Normalise(vec: Float64Array): Float64Array {
@@ -200,7 +326,9 @@ export function buildSemanticSpace(
     }
   }
 
-  const { values, vectors } = jacobiEigen(gram, n)
+  const wanted = Math.min(maxDims, n)
+  const { values, vectors } =
+    n <= EXACT_MAX_DOCS ? jacobiEigen(gram, n) : leadingEigenpairs(gram, n, wanted)
 
   // Keep the leading dimensions, largest eigenvalue first.
   const order = [...values.keys()].sort((a, b) => values[b] - values[a])

@@ -87,10 +87,10 @@ Hybrid retrieval, entirely in the browser. No API calls, no model download, noth
 
 There is nowhere to put one. The site has no backend and no API key, and the CSP is
 `connect-src 'self'`, so there is nothing to send a query to and nothing to fetch a model from. A
-transformer would also be tens of megabytes to serve a corpus of 119 documents. LSA is a few hundred
-lines, builds in about 40ms, and derives its notion of similarity from this vocabulary rather than
+transformer would also be tens of megabytes to serve a corpus of 619 documents. LSA is a few hundred
+lines, builds in about 600ms, and derives its notion of similarity from this vocabulary rather than
 from the open web. It is measurably better than lexical search here — see below — and it is honestly
-weaker than a hosted model would be on queries needing world knowledge. The 15 held-out cases it
+weaker than a hosted model would be on queries needing world knowledge. The 24 held-out cases it
 still misses are listed by `npm run bench`.
 
 ### Measuring it
@@ -101,12 +101,18 @@ regressed. **Held-out cases** are 73 written afterwards from the concept list al
 idea in plain language while deliberately avoiding that concept's own vocabulary — no constant was
 chosen with them in view.
 
-| Held-out, 73 cases | BM25 only | latent only | hybrid |
-| --- | --- | --- | --- |
-| recall@1 | 42.5% | 58.9% | **58.9%** |
-| recall@3 | 68.5% | 76.7% | **75.3%** |
-| recall@5 | 76.7% | 79.5% | **79.5%** |
-| MRR | 56.8% | 67.9% | **68.3%** |
+| Held-out, 73 cases | BM25 only | latent only | hybrid | + related |
+| --- | --- | --- | --- | --- |
+| recall@1 | 38.4% | 46.6% | **47.9%** | 45.2% |
+| recall@3 | 56.2% | 58.9% | 60.3% | **63.0%** |
+| recall@5 | 65.8% | 65.8% | **67.1%** | **67.1%** |
+| MRR | 49.5% | 55.0% | **55.9%** | 55.5% |
+
+These are lower than they were when the corpus held 119 concepts, where hybrid reached 58.9% recall@1
+and 68.3% MRR. That is the honest cost of a fivefold larger index: the held-out queries were written
+against the original concepts and now compete against 500 more documents, many of which discuss the
+same everyday words. The ordering of the columns is unchanged — hybrid still beats either half — and
+the tuning set, which covers the whole corpus, sits at 93.1% recall@1 and 96.0% MRR.
 
 Against the ranking as it stood before any of this, held-out recall@1 was 32.9% and MRR 51.1%, and
 tuning-set recall@1 was 82.8%. Most of that gap was not the missing embeddings. It was two silent
@@ -131,6 +137,13 @@ results flagged that way are correct 17% of the time against a 76% baseline, and
 past 50%. The signal was real, it just meant doubt rather than insight, so the card now says the
 match is a loose one and points at the alternatives. `npm run bench` prints the tuning grid every
 constant came from.
+
+Scaling note: the decomposition used to take the whole spectrum by cyclic Jacobi, which is exact and
+cubic per sweep. That was a few milliseconds at 119 documents and nine seconds at 619 — for a result
+where all but the leading 96 dimensions are thrown away. Above a couple of hundred documents it now
+takes only the leading dimensions, by subspace iteration against a fixed pseudo-random block, which
+brings the build back to roughly 600ms and stays bit-identical between loads because the block is
+seeded rather than random. Smaller corpora keep the exact path.
 
 One counterintuitive result worth keeping in mind if you touch this: the latent space must **not** be
 built from the same weighted bag BM25 uses. BM25 wants `name` at weight 7; the SVD reads that as a
