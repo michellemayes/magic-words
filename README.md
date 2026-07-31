@@ -25,15 +25,29 @@ machine.
 
 ## The index
 
-119 concepts across eleven domains — product, engineering, security & privacy, design, writing,
+619 concepts across eleven domains — product, engineering, security & privacy, design, writing,
 research, strategy, data, learning, people & career, and working with AI itself.
 
-Two of those are full engineering families. **Architecture:** hexagonal, MVI, MVVM, the dependency
-rule, dependency inversion, repository, bounded context, anti-corruption layer, strangler fig,
-branch by abstraction, CQRS, event sourcing, saga, BFF, twelve-factor. **Security & privacy:**
-least privilege, defence in depth, STRIDE threat modelling, zero trust, blast radius, fail closed,
-attack surface reduction, separation of duties, break-glass access, trust boundaries, secrets
-management, data minimisation, supply chain provenance.
+Engineering is by far the deepest, at roughly 500 entries organised into sixteen families:
+
+| Family | What is in it |
+| --- | --- |
+| Architecture | Hexagonal, MVI, MVVM, the dependency rule, repository, bounded context, anti-corruption layer, strangler fig, CQRS, event sourcing, saga, BFF, twelve-factor |
+| Patterns & principles | The Gang of Four patterns worth naming, SOLID read properly, connascence, value objects, aggregates, parse-don't-validate, functional core, YAGNI, rule of three |
+| Testing | Test pyramid and trophy, property-based, metamorphic and mutation testing, contract tests, test doubles, flake quarantine, characterisation tests, coverage criteria, fuzzing |
+| Distributed systems | CAP and PACELC, eventual consistency, idempotency keys, outbox, sagas, circuit breakers, bulkheads, backpressure, quorums, split brain, fencing tokens, CRDTs, cells |
+| Reliability & observability | SLOs, error budgets, burn-rate alerting, golden signals, RED and USE, wide events, tracing, cardinality, alert fatigue, incident command, chaos engineering, game days |
+| Performance | Profiling and flame graphs, percentiles and tail latency, Amdahl and the USL, queueing theory, caching patterns, N+1, allocation and GC, batching, streaming |
+| Data & storage | Schema evolution, expand-and-contract, backfills, indexes and query plans, isolation levels, partitioning, CDC, stream windowing, data contracts, retention and erasure |
+| APIs | Contract-first, resource modelling, status semantics, versioning and deprecation, pagination, bulk and async operations, webhooks, GraphQL cost control, quotas, SDKs |
+| Concurrency | Races versus data races, memory visibility, lock contention, false sharing, actors and channels, structured concurrency, cancellation, async pitfalls, lightweight threads |
+| Delivery | Trunk-based development, CI signal hygiene, build caching, reproducible builds, artefact promotion, canary and blue-green, feature flags, rollback plans, DORA metrics |
+| Code craft | Naming as design, code smells, refactoring catalogue, guard clauses, assertions, error handling, review focus and size, commit hygiene, ADRs, static analysis adoption |
+| Frontend | Core Web Vitals, rendering strategy and hydration, bundle splitting, loading states, optimistic UI, offline sync, accessibility, i18n and time zones, CSP and XSS |
+| Team practice | Pairing and mobbing, bus factor, WIP limits, estimation with ranges, story slicing, Conway's law, team topologies, RFCs, build versus buy, migration planning |
+| Platform & cloud | Platform as product, golden paths, guardrails, containers and scheduling, autoscaling, cost attribution, quotas, IAM design, certificates, DNS, patching |
+| Security & privacy | Least privilege, defence in depth, STRIDE, zero trust, blast radius, fail closed, trust boundaries, secrets, data minimisation, supply chain provenance |
+| ML systems | Training-serving skew, leakage, feature stores, drift, feedback loops, fairness auditing, model rollout, LLM evaluation harnesses, retrieval grounding, guardrails |
 
 Each entry carries:
 
@@ -50,7 +64,7 @@ Each entry carries:
 
 ## Search
 
-No embeddings, no API calls — a BM25 index over weighted fields, built at load time against ~90
+No embeddings, no API calls — a BM25 index over weighted fields, built at load time against ~620
 documents. The retrieval quality comes from three places:
 
 - **Symptom-first corpus.** `useWhen` is weighted heavily and written in pre-expert vocabulary. A
@@ -62,7 +76,7 @@ documents. The retrieval quality comes from three places:
   is never hard-excluded by the wrong domain. A light MMR pass keeps the top results from being five
   members of the same family.
 
-Retrieval is covered by 58 end-to-end cases asserting that a plain-language problem description
+Retrieval is covered by 90 end-to-end cases asserting that a plain-language problem description
 surfaces the right concept — those tests are the specification for whether search works. A separate
 test guards a subtle failure: expansion keys are matched *after* stemming, so a key that is not
 itself a stem (`late` when queries produce `lat`) is silently dead — it costs nothing and does

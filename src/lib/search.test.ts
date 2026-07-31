@@ -72,6 +72,58 @@ const CASES: { query: string; expect: string; within?: number }[] = [
   { query: 'we keep permanent admin because on call needs it during incidents', expect: 'break-glass-access' },
   { query: 'where exactly should I be validating this user input', expect: 'trust-boundary' },
   { query: 'how would we even know if one of our packages was compromised', expect: 'supply-chain-provenance' },
+
+  // Testing
+  { query: 'our automated checks take forty minutes and everyone skips them', expect: 'test-pyramid' },
+  { query: 'the build fails randomly and everyone just hits retry', expect: 'flaky-test-quarantine' },
+  { query: 'we have ninety percent coverage and bugs still ship', expect: 'mutation-testing' },
+  { query: 'I have to change code nobody understands and there are no tests', expect: 'characterization-tests' },
+
+  // Distributed systems
+  { query: 'the customer got charged twice because they clicked twice', expect: 'idempotency-keys' },
+  { query: 'one slow dependency took down our whole service', expect: 'circuit-breaker' },
+  { query: 'the queue grows without limit until the process runs out of memory', expect: 'backpressure' },
+  { query: 'we saved the order but the event never got published', expect: 'transactional-outbox' },
+
+  // Reliability and performance
+  { query: 'we get forty pages a night and most are nothing', expect: 'alert-fatigue' },
+  { query: 'the average response time is fine and users complain constantly', expect: 'percentile-latency' },
+  { query: 'the page makes four hundred database queries to render a list', expect: 'n-plus-one-queries' },
+
+  // Data
+  { query: 'renaming this column would require downtime', expect: 'expand-and-contract-migration' },
+  { query: 'the database is not using the index we added and the scan is slow', expect: 'query-plan-reading' },
+  { query: 'we build queries by concatenating strings with user input', expect: 'sql-injection-prevention' },
+
+  // APIs
+  { query: 'page fifty thousand takes twenty seconds to load', expect: 'api-pagination' },
+  { query: 'clients parse our error messages with string matching', expect: 'error-response-design' },
+  { query: 'a customer saw another customer data on a cached page', expect: 'cache-key-design' },
+
+  // Concurrency
+  { query: 'it works ninety-nine times and fails on the hundredth', expect: 'race-condition-diagnosis' },
+
+  // Delivery and code craft
+  { query: 'the feature branch has been open for six weeks and merging terrifies everyone', expect: 'trunk-based-development' },
+  { query: 'we have two hundred flags and nobody knows which are still needed', expect: 'feature-flag-hygiene' },
+  { query: 'this file is eight thousand lines and every pull request touches it', expect: 'god-object' },
+  { query: 'the pull request has ninety files and got approved in four minutes', expect: 'review-size-limits' },
+  { query: 'the invoice total is off by a penny and nobody can explain it', expect: 'floating-point-money' },
+  { query: 'names with accents display as garbled symbols', expect: 'character-encoding-issues' },
+
+  // Frontend
+  { query: 'the text is invisible for a second while the font loads', expect: 'font-loading-strategy' },
+  { query: 'the layout jumps around while loading and people click the wrong thing', expect: 'core-web-vitals' },
+
+  // Team practice and platform
+  { query: 'one person is the only one who understands the billing system', expect: 'bus-factor' },
+  { query: 'everyone is busy and nothing has shipped for weeks', expect: 'wip-limits' },
+  { query: 'the cloud bill went up and nobody knows which team caused it', expect: 'cloud-cost-attribution' },
+  { query: 'the container keeps getting killed and we do not know why', expect: 'container-resource-limits' },
+
+  // Machine learning systems
+  { query: 'the model scored well offline and performs badly for real users', expect: 'training-serving-skew' },
+  { query: 'the assistant confidently states things that are not in our documentation', expect: 'retrieval-grounding' },
 ]
 
 describe('retrieval quality', () => {
