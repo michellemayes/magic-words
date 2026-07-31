@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { search } from './search'
-import { expand, stem, tokenize } from './text'
+import { EXPANSION_KEYS, expand, stem, tokenize } from './text'
 
 const ids = (text: string, opts: Parameters<typeof search>[0] extends never ? never : object = {}) =>
   search({ text, limit: 8, ...opts }).map((r) => r.concept.id)
@@ -165,6 +165,59 @@ describe('search behaviour', () => {
     expect(ids('what is the EV of this bet')[0]).toBe('expected-value')
   })
 
+  it('does not treat a conversational alias as naming the concept', () => {
+    /**
+     * Stopword stripping reduces some aliases to a single ordinary word:
+     * "what are we not doing" -> [not], "what happened when" -> [happen],
+     * "what else could it be" -> [els], "what if analysis" -> [analysis].
+     * Each of these used to pin its concept to rank one on any query
+     * containing that word, which cost more retrieval accuracy than anything
+     * else in the ranking. A name only counts as named when it accounts for a
+     * real share of what was typed.
+     */
+    const cases: { query: string; mustNotPin: string }[] = [
+      { query: 'we know where we want to be in three years but not what to do on Monday', mustNotPin: 'opportunity-cost' },
+      { query: 'I want to know what happens two or three steps after this lands', mustNotPin: 'timeline-reconstruction' },
+      { query: 'saying yes to this means saying no to something else and nobody counts that', mustNotPin: 'differential-diagnosis' },
+      { query: 'what is conspicuously missing from my own analysis', mustNotPin: 'sensitivity-analysis' },
+      { query: 'the number went up but I do not think anything actually got better', mustNotPin: 'opportunity-cost' },
+    ]
+    for (const c of cases) {
+      const [first] = search({ text: c.query, limit: 5 })
+      expect(first.concept.id, `"${c.query}" wrongly pinned ${first.concept.id}`).not.toBe(c.mustNotPin)
+      expect(first.exactNameMatch, `"${c.query}" claimed an exact name match`).toBe(false)
+    }
+  })
+
+  it('still honours a short query that is mostly an alias', () => {
+    // The same aliases must keep working when someone actually types one.
+    expect(ids('what are we not doing')[0]).toBe('opportunity-cost')
+    expect(ids('what happened when')[0]).toBe('timeline-reconstruction')
+  })
+
+  it('flags a result the words barely support, and does not flag a strong one', () => {
+    const [named] = search({ text: 'chestertons fence', limit: 3 })
+    expect(named.looseMatch).toBe(false)
+    expect(named.lexical).toBeGreaterThan(0)
+
+    const [solid] = search({ text: 'everyone on the team has admin because it was easier', limit: 3 })
+    expect(solid.looseMatch).toBe(false)
+
+    // Facets alone are not a claim about word overlap either way.
+    const [faceted] = search({ text: '', domains: ['design'], limit: 3 })
+    expect(faceted.looseMatch).toBe(false)
+  })
+
+  it('lets the latent space rank when the query shares no words with the corpus', () => {
+    const withSemantics = search({ text: 'the team argued for an hour and nothing got settled', limit: 5 })
+    const lexicalOnly = search({
+      text: 'the team argued for an hour and nothing got settled',
+      limit: 5,
+      tuning: { semanticWeight: 0, relatedDiffusion: 0 },
+    })
+    expect(withSemantics.map((r) => r.concept.id)).not.toEqual(lexicalOnly.map((r) => r.concept.id))
+  })
+
   it('returns the highest scoring result first when nothing is pinned', () => {
     const results = search({ text: 'everyone on the team has admin because it was easier', domains: ['security'], limit: 5 })
     expect(results[0].concept.id).toBe('least-privilege')
@@ -255,9 +308,11 @@ describe('text normalisation', () => {
   })
 
   /**
-   * Expansion keys are matched *after* stemming, so a key that is not itself a
-   * stem is silently dead — it costs nothing and does nothing, which is exactly
-   * why it survives review. Each word below must reach its key.
+   * Expansion keys are ordinary words now, stemmed by the same function as the
+   * query, so a key can no longer be silently unreachable — that used to
+   * account for fourteen dead entries. What this still catches is the other
+   * half of the problem: a word people type that the table has no entry for at
+   * all.
    */
   it('routes colloquial words to a live expansion key', () => {
     const words = [
@@ -273,8 +328,20 @@ describe('text normalisation', () => {
       'compromised', 'firewall', 'sanitize', 'packages',
       // everyday problem words
       'stuck', 'vague', 'outage', 'deadline', 'churn', 'jargon', 'overwhelmed',
+      // the fourteen that were dead while the table looked maintained
+      'estimate', 'estimating', 'hallucinating', 'hallucination', 'procrastinating',
+      'rambling', 'rambles', 'generic', 'obvious', 'anxious', 'nervous', 'interviewing',
+      'decision', 'stakeholders', 'studying', 'retention', 'disagreement',
     ]
     const dead = words.filter((w) => expand(tokenize(w)).length === 0)
     expect(dead, 'these words expand to nothing').toEqual([])
+  })
+
+  it('keys the expansion table by real words, not hand-written stems', () => {
+    // A key that is not a word people type cannot be reached, and the table
+    // gives no sign of it. Requiring each key to survive its own tokenizer is
+    // what makes that impossible rather than merely tested for.
+    const unreachable = EXPANSION_KEYS.filter((key) => expand(tokenize(key)).length === 0)
+    expect(unreachable, 'these expansion keys can never fire').toEqual([])
   })
 })
