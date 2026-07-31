@@ -25,8 +25,15 @@ machine.
 
 ## The index
 
-91 concepts across ten domains — product, engineering, design, writing, research, strategy, data,
-learning, people & career, and working with AI itself.
+119 concepts across eleven domains — product, engineering, security & privacy, design, writing,
+research, strategy, data, learning, people & career, and working with AI itself.
+
+Two of those are full engineering families. **Architecture:** hexagonal, MVI, MVVM, the dependency
+rule, dependency inversion, repository, bounded context, anti-corruption layer, strangler fig,
+branch by abstraction, CQRS, event sourcing, saga, BFF, twelve-factor. **Security & privacy:**
+least privilege, defence in depth, STRIDE threat modelling, zero trust, blast radius, fail closed,
+attack surface reduction, separation of duties, break-glass access, trust boundaries, secrets
+management, data minimisation, supply chain provenance.
 
 Each entry carries:
 
@@ -55,8 +62,11 @@ documents. The retrieval quality comes from three places:
   is never hard-excluded by the wrong domain. A light MMR pass keeps the top results from being five
   members of the same family.
 
-Retrieval is covered by 30 end-to-end cases asserting that a plain-language problem description
-surfaces the right concept — those tests are the specification for whether search works.
+Retrieval is covered by 58 end-to-end cases asserting that a plain-language problem description
+surfaces the right concept — those tests are the specification for whether search works. A separate
+test guards a subtle failure: expansion keys are matched *after* stemming, so a key that is not
+itself a stem (`late` when queries produce `lat`) is silently dead — it costs nothing and does
+nothing, which is why it survives review.
 
 ## Development
 
@@ -67,6 +77,16 @@ npm test           # corpus integrity + retrieval quality
 npm run typecheck
 npm run build      # static output in dist/
 ```
+
+### Deployment
+
+Deployed on Vercel as a static build. `vercel.json` pins the framework, build command and output
+directory, adds a catch-all rewrite to `index.html`, sets long-lived immutable caching on the
+content-hashed assets, and applies a CSP plus the usual hardening headers. Routing is hash-based
+(`#/search?q=…`, `#/c/pre-mortem`), so deep links work without any server-side routing.
+
+CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every branch, independently of
+the deploy.
 
 ### Adding a concept
 

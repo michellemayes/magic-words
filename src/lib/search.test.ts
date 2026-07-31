@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { search } from './search'
-import { stem, tokenize } from './text'
+import { expand, stem, tokenize } from './text'
 
 const ids = (text: string, opts: Parameters<typeof search>[0] extends never ? never : object = {}) =>
   search({ text, limit: 8, ...opts }).map((r) => r.concept.id)
@@ -40,6 +40,38 @@ const CASES: { query: string; expect: string; within?: number }[] = [
   { query: 'where do I even start building this, integration always breaks late', expect: 'walking-skeleton' },
   { query: 'the agent keeps editing the wrong files and ignoring our conventions', expect: 'context-priming' },
   { query: 'I need a rough market size and I have no data at all', expect: 'fermi-estimation' },
+
+  // Architecture
+  { query: 'I cannot test my business logic without spinning up a database', expect: 'hexagonal-architecture' },
+  { query: 'the screen gets into states that should not be possible and I cannot reproduce it', expect: 'mvi-architecture' },
+  { query: 'our view controllers are thousands of lines and nothing about the screen is testable', expect: 'mvvm-architecture' },
+  { query: 'the rewrite has taken two years and shipped nothing and we cannot pause feature work', expect: 'strangler-fig' },
+  { query: 'the vendor data model is spreading through our own code and making it ugly', expect: 'anti-corruption-layer' },
+  { query: 'the word customer means three different things across our system', expect: 'bounded-context' },
+  { query: 'the refactor branch has been open for months and cannot be merged', expect: 'branch-by-abstraction' },
+  { query: 'reads are slow because the schema is optimised for writing', expect: 'cqrs' },
+  { query: 'someone overwrote a value and we cannot tell what it used to be', expect: 'event-sourcing' },
+  { query: 'the payment went through but the order was never created', expect: 'saga-pattern' },
+  { query: 'our mobile app makes eleven calls just to render one screen', expect: 'backend-for-frontend' },
+  { query: 'it works on my machine and deploying takes a page of manual steps', expect: 'twelve-factor-app' },
+  { query: 'my business logic imports the database driver and I cannot mock it', expect: 'dependency-inversion' },
+  { query: 'SQL is scattered all through my service classes', expect: 'repository-pattern' },
+  { query: 'changing the database forced changes in our business rules', expect: 'clean-architecture' },
+
+  // Security & privacy
+  { query: 'everyone on the team has admin because it was easier that way', expect: 'least-privilege' },
+  { query: 'we have a firewall so surely we are fine', expect: 'defense-in-depth' },
+  { query: 'we need a security review before launch and I do not know where to start', expect: 'threat-modeling-stride' },
+  { query: 'anything inside our network can talk to anything else', expect: 'zero-trust' },
+  { query: 'if this credential leaked how bad would it actually be', expect: 'blast-radius' },
+  { query: 'if the auth service goes down does everything become public', expect: 'fail-closed' },
+  { query: 'debug endpoints are probably still enabled in production', expect: 'attack-surface-reduction' },
+  { query: 'one person can push straight to production with nobody looking', expect: 'separation-of-duties' },
+  { query: 'there is an API key committed in our repository and it was never rotated', expect: 'secrets-management' },
+  { query: 'we log everything just in case and keep it forever', expect: 'data-minimization' },
+  { query: 'we keep permanent admin because on call needs it during incidents', expect: 'break-glass-access' },
+  { query: 'where exactly should I be validating this user input', expect: 'trust-boundary' },
+  { query: 'how would we even know if one of our packages was compromised', expect: 'supply-chain-provenance' },
 ]
 
 describe('retrieval quality', () => {
@@ -63,6 +95,29 @@ describe('search behaviour', () => {
     expect(ids('rubber ducking')[0]).toBe('rubber-duck-debugging')
     expect(ids('bottom line up front')[0]).toBe('bluf')
     expect(ids('5 whys')[0]).toBe('five-whys')
+  })
+
+  it('matches concept names as whole tokens, not substrings', () => {
+    // "EV" (an alias of Expected Value Framing) occurs inside everyone / never /
+    // level / review / development. A substring test pinned it to rank 1 for any
+    // query containing one of them, outranking far better scoring results.
+    for (const q of [
+      'everyone on the team has admin because it was easier',
+      'we never review the development plan at any level',
+    ]) {
+      const [first] = search({ text: q, limit: 5 })
+      expect(first.concept.id, `"${q}" wrongly pinned ${first.concept.id}`).not.toBe('expected-value')
+      expect(first.exactNameMatch).toBe(false)
+    }
+    // The alias still works when it is genuinely a word in the query.
+    expect(ids('what is the EV of this bet')[0]).toBe('expected-value')
+  })
+
+  it('returns the highest scoring result first when nothing is pinned', () => {
+    const results = search({ text: 'everyone on the team has admin because it was easier', domains: ['security'], limit: 5 })
+    expect(results[0].concept.id).toBe('least-privilege')
+    const scores = results.map((r) => r.score)
+    expect(Math.max(...scores)).toBe(scores[0])
   })
 
   it('marks exact name matches so the UI can say so', () => {
@@ -145,5 +200,29 @@ describe('text normalisation', () => {
 
   it('finds the same concept whichever spelling is used', () => {
     expect(ids('how do I prioritise the backlog')[0]).toBe(ids('how do I prioritize the backlog')[0])
+  })
+
+  /**
+   * Expansion keys are matched *after* stemming, so a key that is not itself a
+   * stem is silently dead — it costs nothing and does nothing, which is exactly
+   * why it survives review. Each word below must reach its key.
+   */
+  it('routes colloquial words to a live expansion key', () => {
+    const words = [
+      // architecture vocabulary
+      'legacy', 'monolith', 'microservices', 'coupling', 'refactoring', 'testable',
+      'rewrite', 'database', 'modules', 'interfaces', 'deploying', 'scaling',
+      'boilerplate', 'configuration', 'apis', 'endpoints', 'frameworks', 'schema',
+      // previously dead keys, kept as regression cover
+      'late', 'scope', 'hiring', 'boring', 'tradeoffs', 'conversion', 'choose',
+      // security vocabulary
+      'security', 'permissions', 'credentials', 'vulnerability', 'malicious', 'injection',
+      'encryption', 'compliance', 'privacy', 'dependencies', 'privilege', 'leaked', 'breach',
+      'compromised', 'firewall', 'sanitize', 'packages',
+      // everyday problem words
+      'stuck', 'vague', 'outage', 'deadline', 'churn', 'jargon', 'overwhelmed',
+    ]
+    const dead = words.filter((w) => expand(tokenize(w)).length === 0)
+    expect(dead, 'these words expand to nothing').toEqual([])
   })
 })

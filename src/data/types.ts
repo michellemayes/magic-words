@@ -6,6 +6,7 @@
 export type Domain =
   | 'product'
   | 'engineering'
+  | 'security'
   | 'design'
   | 'writing'
   | 'research'
@@ -69,6 +70,7 @@ export interface Concept {
 export const DOMAIN_LABELS: Record<Domain, string> = {
   product: 'Product',
   engineering: 'Engineering',
+  security: 'Security & privacy',
   design: 'Design & UX',
   writing: 'Writing',
   research: 'Research',

@@ -56,8 +56,13 @@ interface Doc {
   /** term -> weighted frequency */
   tf: Map<string, number>
   length: number
-  /** Lowercased name + aliases, for substring phrase matching. */
-  phrases: string[]
+  /**
+   * Name + aliases as token sequences. Matched as whole tokens rather than as
+   * substrings: the alias "EV" occurs inside "everyone", "never" and "level",
+   * and a raw substring test pinned Expected Value Framing to the top of any
+   * query containing one of them.
+   */
+  phrases: string[][]
   tagSet: Set<string>
 }
 
@@ -91,7 +96,9 @@ function buildDoc(concept: Concept): Doc {
     concept,
     tf,
     length,
-    phrases: [concept.name, ...(concept.aka ?? [])].map((p) => p.toLowerCase()),
+    phrases: [concept.name, ...(concept.aka ?? [])]
+      .map((p) => tokenize(p))
+      .filter((t) => t.length > 0),
     tagSet: new Set(concept.tags),
   }
 }
@@ -141,6 +148,18 @@ function facetMultiplier(concept: Concept, query: Query): number {
   return m
 }
 
+/** True when `needle` appears as a contiguous run of tokens inside `haystack`. */
+function containsSequence(haystack: string[], needle: string[]): boolean {
+  if (!needle.length || needle.length > haystack.length) return false
+  outer: for (let i = 0; i <= haystack.length - needle.length; i++) {
+    for (let j = 0; j < needle.length; j++) {
+      if (haystack[i + j] !== needle[j]) continue outer
+    }
+    return true
+  }
+  return false
+}
+
 function jaccard(a: Set<string>, b: Set<string>): number {
   if (!a.size || !b.size) return 0
   let shared = 0
@@ -176,7 +195,6 @@ function diversify(scored: { doc: Doc; score: number }[], limit: number) {
 
 export function search(query: Query): Result[] {
   const limit = query.limit ?? 8
-  const raw = query.text.trim().toLowerCase()
   const detailed = tokenizeDetailed(query.text)
   const literal = detailed.map((t) => t.term)
   const expanded = expand(literal)
@@ -201,13 +219,11 @@ export function search(query: Query): Result[] {
 
     // Someone who types the concept's name wants that concept, full stop.
     let exactNameMatch = false
-    if (raw.length > 2) {
-      for (let i = 0; i < doc.phrases.length; i++) {
-        if (raw.includes(doc.phrases[i])) {
-          score += i === 0 ? PHRASE_BONUS : ALIAS_PHRASE_BONUS
-          exactNameMatch = true
-          break
-        }
+    for (let i = 0; i < doc.phrases.length; i++) {
+      if (containsSequence(literal, doc.phrases[i])) {
+        score += i === 0 ? PHRASE_BONUS : ALIAS_PHRASE_BONUS
+        exactNameMatch = true
+        break
       }
     }
 
