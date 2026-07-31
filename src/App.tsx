@@ -10,6 +10,7 @@ import { Spell } from './components/Spell'
 import { Untangled } from './components/Untangled'
 import { PluginPage } from './components/PluginPage'
 import { Install } from './components/Install'
+import { GitHubStar } from './components/GitHubStar'
 import { CONCEPTS } from './data/concepts'
 
 const EMPTY: FormValue = { text: '', domains: [], intents: [] }
@@ -74,6 +75,7 @@ export default function App() {
           >
             Plugin
           </button>
+          <GitHubStar />
         </nav>
       </header>
 

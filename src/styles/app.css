@@ -99,7 +99,7 @@ a { color: var(--accent); }
 .wordmark .glyph { color: var(--accent); font-size: 18px; }
 .wordmark em { font-style: italic; color: var(--accent); }
 
-.masthead nav { display: flex; gap: 4px; }
+.masthead nav { display: flex; align-items: center; gap: 4px; }
 
 .navlink {
   background: none;
@@ -111,6 +111,45 @@ a { color: var(--accent); }
 }
 .navlink:hover { color: var(--text); background: var(--bg-raised); }
 .navlink[aria-current='true'] { color: var(--accent); background: var(--accent-dim); }
+
+/*
+ * The repo link, in GitHub's own two-part star-button shape: the mark and name
+ * on the left, the star action on the right, one hover for both because it is
+ * one link.
+ */
+.ghstar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 8px;
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.ghstar:hover { color: var(--text); border-color: var(--accent); background: var(--accent-dim); }
+.ghstar:hover .ghstar-star { color: var(--gold); }
+
+.ghstar-mark { display: block; flex: none; }
+
+.ghstar-star {
+  color: var(--text-faint);
+  font-size: 12px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  transition: color 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghstar, .ghstar-star { transition: none; }
+}
 
 /* ---------- Hero ---------- */
 
@@ -518,11 +557,20 @@ footer.foot a { color: var(--text-dim); }
   .card-top, .card-body { padding-left: 18px; padding-right: 18px; }
   .magic { padding-left: 18px; padding-right: 18px; }
   .masthead { padding-top: 20px; }
-  /* Three nav items and a wordmark do not fit at this width otherwise. */
-  .masthead { gap: 8px; }
-  .masthead nav { gap: 0; }
+  /*
+   * The wordmark and three nav items were already using the whole line here;
+   * the repo link is what pushes it over. Rather than shrink everything again,
+   * the nav drops to a row of its own — the alternative is the page picking up
+   * a horizontal scroll.
+   */
+  .masthead { gap: 8px; flex-wrap: wrap; }
+  .masthead nav { gap: 0; margin-left: -9px; }
   .navlink { padding: 6px 9px; font-size: 13.5px; }
   .wordmark { font-size: 19px; }
+  /* Only the mark and the star survive the squeeze; the aria-label still says it. */
+  .ghstar { margin-left: 4px; padding: 5px 9px; gap: 5px; }
+  .ghstar-label, .ghstar-action { display: none; }
+  .ghstar-star { padding-left: 0; border-left: 0; }
   .spell-head, .spell-body, .spell-toggles { padding-left: 16px; padding-right: 16px; }
 }
 

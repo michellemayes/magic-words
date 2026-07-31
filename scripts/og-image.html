@@ -1,0 +1,91 @@
+<!doctype html>
+<!--
+  Source for public/og.png, the link-preview card. Kept so the image can be
+  edited rather than redrawn. To regenerate, screenshot it at the card size:
+
+    chrome --headless --window-size=1200,630 \
+      --screenshot=public/og.png scripts/og-image.html
+
+  Fonts are whatever the rendering machine has, so check the result before
+  committing it.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1200px; height: 630px; }
+      body {
+        background: #0a0a0f;
+        color: #eceaf5;
+        font-family: ui-sans-serif, system-ui, 'DejaVu Sans', sans-serif;
+        position: relative;
+        overflow: hidden;
+      }
+      .wash {
+        position: absolute;
+        inset: -260px 0 auto 0;
+        height: 900px;
+        background: radial-gradient(ellipse 60% 50% at 50% 0%, #2a2140, transparent 70%);
+        opacity: 1;
+      }
+      .frame {
+        position: absolute;
+        inset: 0;
+        border: 1px solid #1c1c28;
+      }
+      .inner {
+        position: relative;
+        height: 100%;
+        padding: 78px 84px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .kicker {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 22px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #9b98ad;
+        margin-bottom: 34px;
+      }
+      .kicker .glyph { color: #a78bfa; font-size: 26px; }
+      h1 {
+        font-family: 'Palatino', 'DejaVu Serif', Georgia, serif;
+        font-size: 74px;
+        line-height: 1.04;
+        letter-spacing: -0.02em;
+        font-weight: 400;
+      }
+      h1 em { font-style: italic; color: #a78bfa; }
+      p {
+        margin-top: 30px;
+        font-size: 27px;
+        line-height: 1.45;
+        color: #9b98ad;
+        max-width: 44ch;
+      }
+      .rule {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 8px;
+        background: linear-gradient(90deg, #8b5cf6, #a78bfa 45%, #f0c674);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wash"></div>
+    <div class="frame"></div>
+    <div class="inner">
+      <div class="kicker"><span class="glyph">&#10022;</span> Magic Words</div>
+      <h1>Describe the mess.<br />Get the <em>words that fix it.</em></h1>
+      <p>The named technique behind your problem, and the exact phrasing to hand Claude.</p>
+    </div>
+    <div class="rule"></div>
+  </body>
+</html>
