@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "bench": "vitest run --config vitest.bench.config.ts"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

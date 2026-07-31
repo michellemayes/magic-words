@@ -1,16 +1,46 @@
 /**
  * Retrieval over the concept corpus.
  *
- * BM25 over a weighted-field index, plus facet boosting from the form answers
- * and a light diversity pass so the top results are not five members of the
- * same family. Everything runs in the browser against ~90 documents, so the
- * whole index is built once at module load and there is no server.
+ * Hybrid ranking: BM25 over a weighted-field index for precision, plus cosine
+ * similarity in a latent semantic space (see `embeddings.ts`) for the queries
+ * BM25 cannot see at all. Facet boosting from the form answers and a light
+ * diversity pass finish the job. Everything runs in the browser against ~120
+ * documents, so both indexes are built locally and there is no server.
+ *
+ * The two halves fail in opposite directions, which is why they are combined
+ * rather than chosen between. BM25 is exact and blind: it scores a query zero
+ * if the user's words do not appear, however obviously the concept is the
+ * right one. The semantic half always has an opinion and is never precise:
+ * on its own it will happily rank a vaguely thematic neighbour above a
+ * verbatim name match. Normalising both to a common scale and adding them
+ * keeps the lexical signal in charge whenever it has something to say.
  */
 
 import type { Concept, Domain, Intent } from '../data/types'
 import { CONCEPTS } from '../data/concepts'
 import { DOMAIN_LABELS, INTENT_LABELS } from '../data/types'
+import { buildSemanticSpace, type SemanticSpace } from './embeddings'
 import { expand, tokenize, tokenizeDetailed } from './text'
+
+/**
+ * The knobs that decide the ranking. Collected in one place and overridable per
+ * query so the benchmark can sweep them — every value below was chosen by
+ * running `npm run bench` over the held-out cases, not by taste.
+ */
+export interface Tuning {
+  /** Latent dimensions kept. Low numbers generalise; high numbers memorise. */
+  semanticDims: number
+  /** How much BM25 is allowed to say. Only the benchmark ever sets this to 0. */
+  lexicalWeight: number
+  /** How much the latent space is allowed to say, relative to the best BM25 hit. */
+  semanticWeight: number
+  /** Cosine below this is thematic drift rather than similarity. */
+  semanticFloor: number
+  /** How hard a result is discounted for resembling one already picked. */
+  diversityStrength: number
+  /** How much of a concept's score flows to the neighbours its author linked. */
+  relatedDiffusion: number
+}
 
 export interface Query {
   /** The user's own description of their problem. */
@@ -18,6 +48,8 @@ export interface Query {
   domains?: Domain[]
   intents?: Intent[]
   limit?: number
+  /** Evaluation only: override ranking constants. See `relevancy.bench.ts`. */
+  tuning?: Partial<Tuning>
 }
 
 export interface Result {
@@ -27,7 +59,50 @@ export interface Result {
   matchedTerms: string[]
   /** True when the query literally names the concept or one of its aliases. */
   exactNameMatch: boolean
+  /** BM25 share of the score, normalised against the best hit for this query. */
+  lexical: number
+  /** Latent-space cosine, or 0 if it fell below the floor. */
+  semantic: number
+  /**
+   * The query and this concept share almost no vocabulary, so the ranking is
+   * resting on the latent space alone.
+   *
+   * This began as the opposite feature — a flourish saying "you did not use any
+   * of these words, we knew what you meant", which is a lovely thing for a
+   * search engine to be able to say. Measuring it killed it: across all 131
+   * evaluation cases, results flagged that way are right 17% of the time
+   * against a 76% baseline. No threshold on the semantic score rescued it; the
+   * best on offer was 50%, still well below simply keeping quiet.
+   *
+   * So it says the true thing instead. Weak lexical evidence is a real signal —
+   * just of doubt rather than of insight — and a user who knows this one is a
+   * stretch will look at the alternatives, which is exactly what they should do.
+   */
+  looseMatch: boolean
 }
+
+/**
+ * Field weights for the latent space, which are deliberately not the BM25
+ * weights below.
+ *
+ * Reusing one weighted bag for both looked like the tidy choice and cost a
+ * third of the semantic ranking. BM25 wants `name` at weight 7, because
+ * someone typing "Chesterton's fence" means that concept and nothing else. The
+ * SVD reads the same table as a claim about what the corpus is *about*, so the
+ * loudest signal in every latent dimension becomes a set of proper nouns that
+ * no user describing a problem will ever type. Dropping names, aliases and
+ * prompt text from the semantic corpus — leaving the symptom phrases and the
+ * plain-language description — took held-out recall@1 from 46.6% to 60.3%.
+ *
+ * The name is not lost. It is what BM25 is for.
+ */
+const SEMANTIC_FIELD_WEIGHTS = {
+  useWhen: 4,
+  tags: 3,
+  oneLiner: 2.2,
+  why: 1,
+  watchOut: 0.5,
+} as const
 
 /** Field weights. `useWhen` carries the symptom language people actually type. */
 const FIELD_WEIGHTS = {
@@ -48,23 +123,69 @@ const K1 = 1.2
 const B = 0.6
 /** Expansion terms are inferred, not stated, so they score lower. */
 const EXPANSION_WEIGHT = 0.4
-const PHRASE_BONUS = 14
-const ALIAS_PHRASE_BONUS = 10
+
+/**
+ * Scores below are on a normalised scale where 1.0 is the best lexical match
+ * in this particular query, so the constants read as multiples of "as good as
+ * the top BM25 hit".
+ */
+const PHRASE_BONUS = 3.5
+const ALIAS_PHRASE_BONUS = 2.5
+
+export const DEFAULT_TUNING: Tuning = {
+  semanticDims: 96,
+  lexicalWeight: 1,
+  semanticWeight: 2.5,
+  semanticFloor: 0.1,
+  diversityStrength: 0.2,
+  relatedDiffusion: 0.25,
+}
 
 interface Doc {
   concept: Concept
-  /** term -> weighted frequency */
+  /** term -> weighted frequency, for BM25 */
   tf: Map<string, number>
+  /** term -> weighted frequency, for the latent space. See the note above. */
+  semanticTf: Map<string, number>
   length: number
   /**
    * Name + aliases as token sequences. Matched as whole tokens rather than as
    * substrings: the alias "EV" occurs inside "everyone", "never" and "level",
    * and a raw substring test pinned Expected Value Framing to the top of any
    * query containing one of them.
+   *
    */
-  phrases: string[][]
+  phrases: { tokens: string[]; isName: boolean }[]
   tagSet: Set<string>
 }
+
+/**
+ * What fraction of the query a name has to account for before matching it
+ * counts as "the user asked for this concept by name".
+ *
+ * Several aliases are written as conversational questions, and stopword
+ * stripping can reduce one to a single ordinary word: "what are we not doing"
+ * became `[not]`, "what happened when" became `[happen]`, "what else could it
+ * be" became `[els]`. Each was pinning its concept to rank one on any query
+ * containing that word, and Opportunity Cost Framing was the top result for a
+ * third of the held-out queries purely because they contained "not". Alone it
+ * cost more held-out accuracy than the entire semantic half contributes.
+ *
+ * Distinctiveness cannot separate these from real names: "Jobs To Be Done"
+ * reduces to `[job]` and "Five Whys" is reachable only as `[why]`, both of
+ * which are commoner in this corpus than `[els]`. What separates them is how
+ * much of the query is left over. Someone naming a concept types little else,
+ * so the name is most of what they typed; someone describing a problem in
+ * fifteen words who happens to say "not" is at one token in eight. So the
+ * bonus scales with coverage, and only a query that is mostly a name pins.
+ */
+const PHRASE_PIN_COVERAGE = 0.5
+
+/**
+ * Below this share of a perfect lexical match, a result is flagged as loose.
+ * See `Result.looseMatch` for where the number comes from.
+ */
+const LOOSE_MATCH_LEXICAL = 0.2
 
 function addField(tf: Map<string, number>, text: string, weight: number): number {
   let added = 0
@@ -92,13 +213,21 @@ function buildDoc(concept: Concept): Doc {
   length += addField(tf, concept.prompt, FIELD_WEIGHTS.prompt)
   if (concept.watchOut) length += addField(tf, concept.watchOut, FIELD_WEIGHTS.watchOut)
 
+  const semanticTf = new Map<string, number>()
+  for (const u of concept.useWhen) addField(semanticTf, u, SEMANTIC_FIELD_WEIGHTS.useWhen)
+  for (const t of concept.tags) addField(semanticTf, t, SEMANTIC_FIELD_WEIGHTS.tags)
+  addField(semanticTf, concept.oneLiner, SEMANTIC_FIELD_WEIGHTS.oneLiner)
+  addField(semanticTf, concept.why, SEMANTIC_FIELD_WEIGHTS.why)
+  if (concept.watchOut) addField(semanticTf, concept.watchOut, SEMANTIC_FIELD_WEIGHTS.watchOut)
+
   return {
     concept,
     tf,
+    semanticTf,
     length,
     phrases: [concept.name, ...(concept.aka ?? [])]
-      .map((p) => tokenize(p))
-      .filter((t) => t.length > 0),
+      .map((p, i) => ({ tokens: tokenize(p), isName: i === 0 }))
+      .filter((p) => p.tokens.length > 0),
     tagSet: new Set(concept.tags),
   }
 }
@@ -136,6 +265,58 @@ class Index {
 
 const INDEX = new Index(CONCEPTS)
 
+/**
+ * The latent space costs ~40ms to build — worth paying, but not while someone
+ * is waiting to see the home page. It is built on first use instead, and
+ * `warmSemanticSpace` lets the app do that in idle time after first paint, so
+ * by the time anyone has finished typing a problem description it is ready.
+ * A deep link straight into a search pays the 40ms once.
+ */
+const SPACES = new Map<number, SemanticSpace>()
+
+function semanticSpace(dims: number): SemanticSpace {
+  let space = SPACES.get(dims)
+  if (!space) {
+    space = buildSemanticSpace(
+      INDEX.docs.map((d) => d.semanticTf),
+      dims,
+    )
+    SPACES.set(dims, space)
+  }
+  return space
+}
+
+/** Build the latent space ahead of the first query. Safe to call repeatedly. */
+export function warmSemanticSpace(): void {
+  semanticSpace(DEFAULT_TUNING.semanticDims)
+}
+
+/**
+ * Undirected neighbour map from the `related` links each entry's author wrote.
+ *
+ * These are the best signal in the corpus and until now only fed the "if that
+ * is not quite it" chips. A query that lands squarely on Pre-mortem is very
+ * often a query that wanted Red Teaming, and the corpus already knows the two
+ * are neighbours — so a fraction of each concept's score flows to the ones it
+ * is linked to. It rescues the near-miss without ever displacing a direct hit,
+ * because the direct hit keeps its own score and gains from its neighbours too.
+ */
+const NEIGHBOURS: number[][] = (() => {
+  const indexOfId = new Map<string, number>()
+  CONCEPTS.forEach((c, i) => indexOfId.set(c.id, i))
+
+  const adjacency: Set<number>[] = CONCEPTS.map(() => new Set<number>())
+  CONCEPTS.forEach((c, i) => {
+    for (const id of c.related) {
+      const j = indexOfId.get(id)
+      if (j === undefined || j === i) continue
+      adjacency[i].add(j)
+      adjacency[j].add(i)
+    }
+  })
+  return adjacency.map((s) => [...s])
+})()
+
 /** Facet agreement multiplier. Absent facets neither help nor hurt. */
 function facetMultiplier(concept: Concept, query: Query): number {
   let m = 1
@@ -171,8 +352,12 @@ function jaccard(a: Set<string>, b: Set<string>): number {
  * Reorder by relevance discounted by similarity to already-picked results, so
  * the list spans approaches rather than repeating one family.
  */
-function diversify(scored: { doc: Doc; score: number }[], limit: number) {
-  const picked: { doc: Doc; score: number }[] = []
+function diversify<T extends { doc: Doc; score: number }>(
+  scored: T[],
+  limit: number,
+  strength: number,
+): T[] {
+  const picked: T[] = []
   const pool = [...scored]
   while (picked.length < limit && pool.length) {
     let bestIdx = 0
@@ -182,7 +367,7 @@ function diversify(scored: { doc: Doc; score: number }[], limit: number) {
         (max, p) => Math.max(max, jaccard(pool[i].doc.tagSet, p.doc.tagSet)),
         0,
       )
-      const value = pool[i].score * (1 - 0.35 * overlap)
+      const value = pool[i].score * (1 - strength * overlap)
       if (value > bestValue) {
         bestValue = value
         bestIdx = i
@@ -204,27 +389,82 @@ export function search(query: Query): Result[] {
   const spoken = new Map<string, string>()
   for (const t of detailed) if (!spoken.has(t.term)) spoken.set(t.term, t.original)
 
-  const scored = INDEX.docs.map((doc) => {
-    let score = 0
+  const tuning = { ...DEFAULT_TUNING, ...query.tuning }
+
+  // Only literal terms are folded into the latent space. Feeding the hand-built
+  // expansions in too would let one guess at the user's meaning vote twice.
+  const space = hasText && tuning.semanticWeight > 0 ? semanticSpace(tuning.semanticDims) : null
+  const queryVector = space ? space.fold(literal) : null
+
+  // Pass one: raw BM25, which has no fixed upper bound and so has to be put on
+  // a common scale before it can be added to a cosine.
+  const lexicalPass = INDEX.docs.map((doc) => {
+    let value = 0
     const contributions: { term: string; value: number }[] = []
 
     for (const term of literal) {
-      const value = INDEX.termScore(doc, term)
-      if (value > 0) contributions.push({ term, value })
-      score += value
+      const termValue = INDEX.termScore(doc, term)
+      if (termValue > 0) contributions.push({ term, value: termValue })
+      value += termValue
     }
     for (const term of expanded) {
-      score += INDEX.termScore(doc, term) * EXPANSION_WEIGHT
+      value += INDEX.termScore(doc, term) * EXPANSION_WEIGHT
     }
+
+    contributions.sort((a, b) => b.value - a.value)
+    return { value, contributions }
+  })
+
+  /**
+   * Normalise against what a perfect lexical match would have scored, not
+   * against the best match this query happened to find.
+   *
+   * Dividing by the observed maximum was the single worst thing in this
+   * ranking. It guarantees some document scores exactly 1.0 no matter how
+   * badly the query matched, so on a query with no real lexical signal the
+   * loudest piece of noise arrives with full confidence and buries the
+   * semantic half. Against the theoretical ceiling — every query term present
+   * and saturated — a query the corpus has no words for correctly scores
+   * everyone near zero, and the latent space gets to lead.
+   */
+  const idealLexical = literal.reduce((sum, term) => sum + INDEX.idf(term) * (K1 + 1), 0)
+
+  // Pass two: put both halves on one scale. Held separately first because the
+  // diffusion step below needs everyone's evidence before anyone's total.
+  const evidence = INDEX.docs.map((_doc, i) => {
+    const lexical = idealLexical > 0 ? lexicalPass[i].value / idealLexical : 0
+    let semantic = 0
+    if (queryVector && space) {
+      const cosine = space.similarity(queryVector, i)
+      if (cosine > tuning.semanticFloor) semantic = cosine
+    }
+    return {
+      lexical,
+      semantic,
+      base: tuning.lexicalWeight * lexical + tuning.semanticWeight * semantic,
+    }
+  })
+
+  const scored = INDEX.docs.map((doc, i) => {
+    const { contributions } = lexicalPass[i]
+    const { lexical, semantic, base } = evidence[i]
+
+    // A concept's neighbours vouch for it. Taking the strongest neighbour
+    // rather than the sum stops a densely linked hub from collecting a bonus
+    // from many weak signals that individually mean nothing.
+    let vouched = 0
+    for (const j of NEIGHBOURS[i]) vouched = Math.max(vouched, evidence[j].base)
+
+    let score = base + tuning.relatedDiffusion * vouched
 
     // Someone who types the concept's name wants that concept, full stop.
     let exactNameMatch = false
-    for (let i = 0; i < doc.phrases.length; i++) {
-      if (containsSequence(literal, doc.phrases[i])) {
-        score += i === 0 ? PHRASE_BONUS : ALIAS_PHRASE_BONUS
-        exactNameMatch = true
-        break
-      }
+    for (const phrase of doc.phrases) {
+      if (!containsSequence(literal, phrase.tokens)) continue
+      const coverage = Math.min(1, phrase.tokens.length / literal.length)
+      score += (phrase.isName ? PHRASE_BONUS : ALIAS_PHRASE_BONUS) * coverage
+      exactNameMatch = coverage >= PHRASE_PIN_COVERAGE
+      break
     }
 
     // With no text at all the facets are the entire query.
@@ -232,13 +472,15 @@ export function search(query: Query): Result[] {
 
     score *= facetMultiplier(doc.concept, query)
 
-    contributions.sort((a, b) => b.value - a.value)
     // Only the terms that actually carried the match; the long tail is noise.
     const cutoff = (contributions[0]?.value ?? 0) * 0.3
     return {
       doc,
       score,
       exactNameMatch,
+      lexical,
+      semantic,
+      looseMatch: hasText && lexical < LOOSE_MATCH_LEXICAL && !exactNameMatch,
       matchedTerms: contributions
         .filter((c) => c.value >= cutoff)
         .slice(0, 4)
@@ -253,17 +495,17 @@ export function search(query: Query): Result[] {
   // An exact name match is an answer, not a candidate — never let diversity move it.
   const pinned = ranked.filter((r) => r.exactNameMatch).slice(0, 1)
   const rest = ranked.filter((r) => !pinned.includes(r))
-  const diversified = diversify(rest, Math.max(0, limit - pinned.length))
+  const diversified = diversify(rest, Math.max(0, limit - pinned.length), tuning.diversityStrength)
 
-  return [...pinned, ...diversified].map((s) => {
-    const full = ranked.find((r) => r.doc === s.doc)!
-    return {
-      concept: s.doc.concept,
-      score: s.score,
-      matchedTerms: full.matchedTerms,
-      exactNameMatch: full.exactNameMatch,
-    }
-  })
+  return [...pinned, ...diversified].map((s) => ({
+    concept: s.doc.concept,
+    score: s.score,
+    matchedTerms: s.matchedTerms,
+    exactNameMatch: s.exactNameMatch,
+    lexical: s.lexical,
+    semantic: s.semantic,
+    looseMatch: s.looseMatch,
+  }))
 }
 
 /**
