@@ -17,20 +17,24 @@ any work happens.
 
 ## Run it
 
-The CLI is `magic-words.mjs`, in this directory. No install, no network, no
-dependencies — it is one file with the whole index in it.
+`magic-words` is on your PATH whenever this plugin is enabled. No install, no
+network, no dependencies — it is one file with the whole index in it.
 
 Pass the user's words through stdin, verbatim, including the mess:
 
 ```bash
-node .claude/skills/magic-words/magic-words.mjs <<'RAMBLE'
+magic-words <<'RAMBLE'
 <the user's message, exactly as they wrote it>
 RAMBLE
 ```
 
 A heredoc rather than an argument, because real requests contain quotes,
-apostrophes and newlines. If the skill is installed globally the path is
-`~/.claude/skills/magic-words/magic-words.mjs`.
+apostrophes and newlines.
+
+If `magic-words: command not found` — which happens when this skill was copied
+into `.claude/skills/` rather than installed as a plugin — the script sits
+beside this file, so `node <this directory>/magic-words.mjs` does the same
+thing.
 
 Useful flags: `--limit <n>` (default 3), `--json`, `--show <id>` for one
 concept in full, `--list [filter]` to see everything in the index.
@@ -72,6 +76,9 @@ end is the user's request with the confident phrases folded in.
 - **You would be inventing the phrasing.** Only the prompts the tool returns are
   measured; a technique you remember the name of but not the wording of is a
   worse steer than no technique at all. Use `--list` and `--show` to check.
+- **You are about to run it on your own output.** This reads the *user's*
+  words. Feeding it your draft finds the techniques your draft is about, which
+  is a loop with nothing at the end of it.
 
 ## Two shapes of request
 

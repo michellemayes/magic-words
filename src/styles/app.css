@@ -474,20 +474,45 @@ footer.foot {
 }
 footer.foot a { color: var(--text-dim); }
 
-.callout {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  margin: 34px 0 0;
-  padding: 14px 16px;
-  border: 1px solid var(--border-soft);
+/* The install pitch on the landing page. */
+.pitch {
+  margin: 44px 0 0;
+  padding: 22px 22px 18px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-raised);
-  font-size: 14.5px;
-  color: var(--text-dim);
-  line-height: 1.55;
+  box-shadow: var(--shadow);
 }
+.pitch h2 {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.pitch p {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 64ch;
+}
+.pitch .code { margin-bottom: 12px; }
+.pitch-foot { margin-bottom: 0 !important; font-size: 14px !important; }
+
 .callout-glyph { color: var(--accent); }
+
+/*
+ * Slash commands, one per line, each opening on the accent. These wrap rather
+ * than scroll: they are meant to be read and retyped as much as copied, and a
+ * command whose second half is off the side of a phone reads as truncated.
+ */
+.cmd {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cmd::first-letter { color: var(--accent); }
 
 @media (max-width: 560px) {
   .card-top, .card-body { padding-left: 18px; padding-right: 18px; }

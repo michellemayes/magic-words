@@ -1,7 +1,7 @@
 # ✦ Magic Words
 
 **Describe your problem in plain language. Get the phrase that steers Claude straight at it.**
-**Or install [the skill](#the-claude-code-skill) and stop having to.**
+**Or install [the plugin](#the-claude-code-plugin) and stop having to.**
 
 There is usually a named technique for whatever you are stuck on — *abstraction laddering*,
 *Chesterton's fence*, *cost of delay*, *reference class forecasting* — and naming it is what gets a
@@ -13,7 +13,7 @@ symptoms as you have, in whatever order they come out — and it untangles them,
 for each, hands you the exact prompt, tells you why that phrasing works, and gives you back your
 own request with the phrasing folded into it.
 
-As a [Claude Code skill](#the-claude-code-skill) the same thing happens without you asking: it
+As a [Claude Code plugin](#the-claude-code-plugin) the same thing happens without you asking: it
 reads the request you were going to send anyway and puts the right steering words in before the
 work starts.
 
@@ -32,14 +32,22 @@ work starts.
 Everything runs in the browser. There is no backend, no API key, and nothing you type leaves your
 machine.
 
-## The Claude Code skill
+## The Claude Code plugin
 
-The same index and the same ranking, as a skill that runs where you were already typing.
+The same index and the same ranking, running where you were already typing. This repository is a
+plugin marketplace, so installing it is two commands:
 
-```bash
-git clone https://github.com/michellemayes/magic-words
-cp -r magic-words/.claude/skills/magic-words ~/.claude/skills/
 ```
+/plugin marketplace add michellemayes/magic-words
+/plugin install magic-words@michellemayes
+```
+
+`/reload-plugins` picks it up in a session you already have open, and
+`/plugin marketplace update michellemayes` takes new concepts as they are added. Nothing is pinned
+to a version number — deliberately. What changes here is nearly always the corpus, a concept added
+or a prompt sharpened, and pinning a version would mean installed users stayed behind it until
+someone remembered to bump one. Omitting it makes the commit the version, so an install tracks the
+lexicon.
 
 It fires on the requests that arrive as a stream of consciousness or an under-specified ask — the
 rambling context with no clear question, the "this isn't working", the symptom described instead of
@@ -53,19 +61,48 @@ where a technique would contradict something you asked for, and not at all when 
 good match. A skill that finds a technique for everything, because it is a skill about techniques,
 would make every request slightly worse.
 
-The directory is two files — `SKILL.md` and one dependency-free bundle of `src/` carrying all 119
-concepts and the ranking. No install step, no network. It doubles as a command line:
+The plugin is three files — `SKILL.md`, one dependency-free bundle of `src/` carrying all 119
+concepts and the ranking, and a shim that puts `magic-words` on the Bash tool's path. No
+dependencies, no install step, no network. That last file is why the skill never has to guess where
+it was installed; it just runs the command, which also means you have it:
 
 ```bash
-node ~/.claude/skills/magic-words/magic-words.mjs "the plan looks fine and nobody is objecting"
-node ~/.claude/skills/magic-words/magic-words.mjs --show pre-mortem
-node ~/.claude/skills/magic-words/magic-words.mjs --list security
+magic-words "the plan looks fine and nobody is objecting"
+magic-words --show pre-mortem
+magic-words --list security
 ```
 
 `--json` gives the same fields the site renders. The bundle is generated (`npm run build:skill`)
-and checked in, which is normally a smell — the alternative is a second implementation of the
-ranking that would drift from the measured one. CI rebuilds it, fails on any difference, and runs
-it.
+and checked in, which is normally a smell — installing a plugin copies a directory and runs
+nothing, so the alternative is a second implementation of the ranking that would drift from the
+measured one. CI rebuilds it, fails on any difference, and runs it through the shim.
+
+The skill directory also stands on its own, for anyone who would rather not use the plugin system:
+
+```bash
+git clone https://github.com/michellemayes/magic-words
+cp -r magic-words/plugins/magic-words/skills/magic-words ~/.claude/skills/
+```
+
+You lose the update path and the `magic-words` command; the skill falls back to invoking the script
+by its own path.
+
+### The marketplace
+
+```
+.claude-plugin/marketplace.json     the catalogue — name, owner, one plugin
+plugins/magic-words/
+  .claude-plugin/plugin.json        the plugin's own manifest
+  bin/magic-words                   shim, on PATH while the plugin is enabled
+  skills/magic-words/SKILL.md       when to fire, what to inject, when not to
+  skills/magic-words/magic-words.mjs   generated bundle of src/
+```
+
+`.claude/skills/magic-words` is a symlink into the plugin, so this repository uses the same skill it
+publishes and there is no second copy of a 256 kB bundle to keep in step. `npm test` checks that
+the symlink resolves, that the manifests agree about the plugin's name, that the source path exists,
+and that both scripts are executable — none of which any other test here would notice, and all of
+which are invisible until somebody runs `/plugin install` and nothing happens.
 
 ## The index
 
@@ -215,7 +252,7 @@ npm run bench        # relevancy and triage reports, and the tuning grids every
                      # constant came from (prints, never fails)
 npm run typecheck
 npm run build        # static output in dist/
-npm run build:skill  # regenerate .claude/skills/magic-words/magic-words.mjs
+npm run build:skill  # regenerate the plugin's bundle of src/
 npm run skill -- "the plan looks fine and nobody is objecting"
 ```
 
@@ -227,8 +264,8 @@ content-hashed assets, and applies a CSP plus the usual hardening headers. Routi
 (`#/search?q=…`, `#/c/pre-mortem`), so deep links work without any server-side routing.
 
 CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every branch, independently of
-the deploy. It also rebuilds the skill bundle and fails if the committed copy differs, then runs
-that copy — a bundle can be current and still not start.
+the deploy. It also rebuilds the plugin's bundle and fails if the committed copy differs, then
+runs it through the shim — a bundle can be current and still not start.
 
 ### Adding a concept
 

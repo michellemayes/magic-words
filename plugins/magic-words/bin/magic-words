@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Everything in a plugin's bin/ is on the Bash tool's PATH while the plugin is
+# enabled, so this exists to spare the skill from having to know where it was
+# installed. `magic-words "…"` works; a path into the versioned plugin cache
+# would be a guess, and a wrong one the first time the cache moves.
+#
+# A two-line shim rather than a symlink to the bundle, because a symlink has to
+# survive being copied into that cache and this does not.
+exec node "$(dirname "$0")/../skills/magic-words/magic-words.mjs" "$@"

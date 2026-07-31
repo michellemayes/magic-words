@@ -1,20 +1,20 @@
 /**
- * Bundles the retrieval engine into the Claude Code skill.
+ * Bundles the retrieval engine into the Claude Code plugin.
  *
- * The skill has to be a directory you can copy into `~/.claude/skills/` and
- * have work — no install step, no `node_modules`, no build. So the TypeScript
- * that the site runs is bundled into one dependency-free ES module and checked
- * in beside `SKILL.md`. That is a generated artefact in version control, which
- * is normally a smell; the alternative is a second implementation of the
- * ranking that would drift from the measured one, which is worse. CI runs this
- * script and fails if the committed output differs, so it cannot go stale
- * quietly.
+ * Installing a plugin copies its directory into a cache — no npm install runs,
+ * nothing is fetched, and files outside the plugin directory do not come with
+ * it. So the TypeScript that the site runs is bundled into one dependency-free
+ * ES module and checked in beside `SKILL.md`. That is a generated artefact in
+ * version control, which is normally a smell; the alternative is a second
+ * implementation of the ranking that would drift from the measured one, which
+ * is worse. CI runs this script and fails if the committed output differs, so
+ * it cannot go stale quietly.
  */
 
 import { build } from 'vite'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
 
-const OUT_DIR = '.claude/skills/magic-words'
+const OUT_DIR = 'plugins/magic-words/skills/magic-words'
 const OUT_FILE = `${OUT_DIR}/magic-words.mjs`
 
 await build({
@@ -58,6 +58,9 @@ const notice = `#!/usr/bin/env node
 `
 
 writeFileSync(OUT_FILE, bundled.replace(/^#!\/usr\/bin\/env node\n/, notice))
+
+// bin/magic-words execs this directly; without the bit, only the shim works.
+chmodSync(OUT_FILE, 0o755)
 
 const kb = (Buffer.byteLength(readFileSync(OUT_FILE)) / 1024).toFixed(0)
 console.log(`skill bundled → ${OUT_FILE} (${kb} kB)`)

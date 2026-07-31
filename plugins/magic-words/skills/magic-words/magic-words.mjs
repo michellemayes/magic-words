@@ -6542,9 +6542,10 @@ function triage(input, options = {}) {
 /**
 * The command line behind the Claude Code skill.
 *
-* Bundled to `.claude/skills/magic-words/magic-words.mjs` by `npm run
-* build:skill` — one file, no dependencies, no network, so the skill is a
-* directory anyone can copy into `~/.claude/skills/` and forget about.
+* Bundled to `plugins/magic-words/skills/magic-words/magic-words.mjs` by
+* `npm run build:skill` — one file, no dependencies, no network, so the plugin
+* is a directory that works the moment it is copied into place, whether that
+* is by `/plugin install` or by hand into `~/.claude/skills/`.
 *
 * The output is written to be *read by a model* rather than by a person, which
 * mostly means being explicit where a human interface would be tasteful. Every

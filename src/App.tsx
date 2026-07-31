@@ -8,7 +8,8 @@ import { SearchForm, type FormValue } from './components/SearchForm'
 import { Browse } from './components/Browse'
 import { Spell } from './components/Spell'
 import { Untangled } from './components/Untangled'
-import { SkillPage } from './components/SkillPage'
+import { PluginPage } from './components/PluginPage'
+import { Install } from './components/Install'
 import { CONCEPTS } from './data/concepts'
 
 const EMPTY: FormValue = { text: '', domains: [], intents: [] }
@@ -68,10 +69,10 @@ export default function App() {
           </button>
           <button
             className="navlink"
-            aria-current={route.name === 'skill'}
-            onClick={() => navigate({ name: 'skill' })}
+            aria-current={route.name === 'plugin'}
+            onClick={() => navigate({ name: 'plugin' })}
           >
-            Skill
+            Plugin
           </button>
         </nav>
       </header>
@@ -93,17 +94,37 @@ export default function App() {
               </p>
             </section>
             <SearchForm initial={EMPTY} onSubmit={runSearch} />
-            <p className="callout">
-              <span className="callout-glyph" aria-hidden="true">
-                ✦
-              </span>
-              Or have it happen without asking, inside Claude Code — the same index as a skill that
-              reads what you were going to type anyway.{' '}
-              <button type="button" className="linkish" onClick={() => navigate({ name: 'skill' })}>
-                Install it
-              </button>
-              .
-            </p>
+
+            {/*
+              The landing page's second offer. Someone who has read this far has
+              understood the idea, and the better version of the idea is the one
+              where they never have to come back here — so the install goes on
+              the front page rather than behind a nav item.
+            */}
+            <section className="pitch">
+              <h2>
+                <span className="callout-glyph" aria-hidden="true">
+                  ✦
+                </span>{' '}
+                Or never come back here again
+              </h2>
+              <p>
+                The same {CONCEPTS.length} concepts as a Claude Code plugin. It reads the request
+                you were going to send anyway, works out which named techniques it needs, and puts
+                the phrasing in before the work starts — then tells you which words it used.
+              </p>
+              <Install />
+              <p className="pitch-foot">
+                Two commands, no dependencies, nothing leaves your machine.{' '}
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => navigate({ name: 'plugin' })}
+                >
+                  What it does, and when it stays out of the way →
+                </button>
+              </p>
+            </section>
           </>
         )}
 
@@ -123,7 +144,7 @@ export default function App() {
 
         {route.name === 'browse' && <Browse onOpenConcept={openConcept} />}
 
-        {route.name === 'skill' && <SkillPage />}
+        {route.name === 'plugin' && <PluginPage />}
       </main>
 
       <footer className="foot">

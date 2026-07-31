@@ -19,24 +19,26 @@ jobs:
       - run: npm test
       - run: npm run build
 
-      # The skill ships a bundle of src/, checked in so that the skill
-      # directory works with no install step. Rebuilding it here is what stops
-      # that copy drifting from the code it was built from.
+      # The plugin ships a bundle of src/, checked in because installing a
+      # plugin copies a directory and runs nothing. Rebuilding it here is what
+      # stops that copy drifting from the code it was built from.
       - run: npm run build:skill
-      - name: Skill bundle is up to date
+      - name: Plugin bundle is up to date
         run: |
-          git diff --exit-code -- .claude/skills || {
-            echo '::error::.claude/skills is stale — run `npm run build:skill` and commit the result'
+          git diff --exit-code -- plugins/magic-words || {
+            echo '::error::the bundle is stale — run `npm run build:skill` and commit the result'
             exit 1
           }
 
       # A bundle can be current and still not run: the entry picks up a browser
-      # global, node rejects the output format, a flag regresses. Cheap to
-      # check, and otherwise invisible until somebody installs the skill.
-      - name: Skill runs
+      # global, node rejects the output format, a flag regresses. And the shim
+      # is what the skill actually calls, so it is what gets exercised — it is
+      # the piece nothing else would catch until somebody installed the plugin.
+      - name: Plugin runs
         run: |
-          node .claude/skills/magic-words/magic-words.mjs \
+          PATH="$PWD/plugins/magic-words/bin:$PATH"
+          magic-words \
             "the plan looks solid and nobody is objecting before we commit real money" \
             < /dev/null | grep -q 'Pre-mortem'
-          node .claude/skills/magic-words/magic-words.mjs --show least-privilege < /dev/null | grep -q 'Least Privilege'
-          node .claude/skills/magic-words/magic-words.mjs --list < /dev/null | grep -qE '[0-9]+ concepts'
+          magic-words --show least-privilege < /dev/null | grep -q 'Least Privilege'
+          magic-words --list < /dev/null | grep -qE '[0-9]+ concepts'
