@@ -13,6 +13,20 @@ import { research } from './research'
 import { strategy } from './strategy'
 import { design } from './design'
 import { steering } from './steering'
+import { testing } from './testing'
+import { patterns } from './patterns'
+import { distributed } from './distributed'
+import { reliability } from './reliability'
+import { performance } from './performance'
+import { dataSystems } from './data'
+import { apis } from './apis'
+import { concurrency } from './concurrency'
+import { delivery } from './delivery'
+import { codecraft } from './codecraft'
+import { frontend } from './frontend'
+import { practice } from './practice'
+import { platform } from './platform'
+import { mlSystems } from './mlsystems'
 
 export const CONCEPTS: Concept[] = [
   ...framing,
@@ -29,6 +43,20 @@ export const CONCEPTS: Concept[] = [
   ...strategy,
   ...design,
   ...steering,
+  ...testing,
+  ...patterns,
+  ...distributed,
+  ...reliability,
+  ...performance,
+  ...dataSystems,
+  ...apis,
+  ...concurrency,
+  ...delivery,
+  ...codecraft,
+  ...frontend,
+  ...practice,
+  ...platform,
+  ...mlSystems,
 ]
 
 export const CONCEPTS_BY_ID: ReadonlyMap<string, Concept> = new Map(
