@@ -9,7 +9,7 @@ import type { Pick } from '../lib/triage'
  * lines it gets wrong are obvious rather than hidden inside an ordering.
  *
  * It shows strands with no answer too. A thread that found nothing is a real
- * outcome — the index has 119 concepts, not one for every sentence — and
+ * outcome — the index is large but it is not one concept per sentence — and
  * quietly dropping it would make the split look better than it is.
  */
 export function Untangled({

@@ -1,7 +1,7 @@
 {
   "name": "magic-words",
   "displayName": "Magic Words",
-  "description": "Finds the named technique your problem needs and folds its phrasing into the request before the work starts. 119 concepts, ranked locally, no network.",
+  "description": "Finds the named technique your problem needs and folds its phrasing into the request before the work starts. Hundreds of named techniques, ranked locally, no network.",
   "author": {
     "name": "Michelle Mayes",
     "url": "https://github.com/michellemayes"

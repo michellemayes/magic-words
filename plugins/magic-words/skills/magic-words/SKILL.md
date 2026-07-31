@@ -97,7 +97,7 @@ use, and one line on where it misfires. `--show <id>` prints all of that.
 The index and the ranking are the same ones behind
 [magic-words](https://github.com/michellemayes/magic-words) —
 BM25 plus a latent semantic space over the corpus, both built locally. The
-`[thin evidence]` flag is calibrated against 131 held-out cases: picks without
-it are right 79% of the time, picks with it 17%. `npm run bench` in that
-repository prints the numbers, and `--json` gives you the same fields the site
-shows.
+`[thin evidence]` flag is calibrated against 131 evaluation cases, where picks
+carrying it are right 0% of the time against a 66% baseline. `npm run bench` in
+that repository prints the numbers, and `--json` gives you the same fields the
+site shows.

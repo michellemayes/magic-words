@@ -2428,6 +2428,7 @@ var diagnosis = [
 		oneLiner: "Halve the search space with each test — in commits, in inputs, or in the pipeline — instead of scanning linearly.",
 		useWhen: [
 			"it used to work and now it does not",
+			"it worked fine last week and something since then broke it",
 			"somewhere in this huge pipeline something breaks",
 			"which commit broke it",
 			"the input file is enormous and one row is bad",
@@ -4517,6 +4518,16669 @@ var steering = [
 	}
 ];
 //#endregion
+//#region src/data/concepts/testing.ts
+var testing = [
+	{
+		id: "test-pyramid",
+		name: "Test Pyramid",
+		aka: ["testing pyramid", "test distribution"],
+		origin: "Mike Cohn, Succeeding with Agile, 2009",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Shape a suite so that most checks are fast and narrow, fewer are integrated, and only a handful drive the whole system end to end.",
+		useWhen: [
+			"our automated checks take forty minutes and everyone skips them",
+			"we have hundreds of browser scripts and they break constantly",
+			"a one-line change makes twenty unrelated checks go red",
+			"I do not know what level to write this check at",
+			"the suite is slow but I am scared to delete anything from it"
+		],
+		prompt: "Audit the shape of this test suite. Count what exists at each level, then report the two numbers that actually matter: wall-clock time per level, and failures per level that turned out to be genuine defects rather than environment noise. A level that is slow and mostly noisy is the one to shrink regardless of what the ideal shape says. Then, for each broad end-to-end case, tell me whether the behaviour it protects could be covered by a narrower test plus one integration check, and name the ones that genuinely cannot be pushed down because the risk lives in the wiring itself.",
+		why: "Asked about the pyramid, a model will restate the shape you already know. Making it compute cost and signal per level turns the diagram into a specific list of tests to move or delete.",
+		watchOut: "The shape is a consequence, not a target. A system whose risk really is in integration deserves a fatter middle, and forcing a pyramid on it just moves bugs to production.",
+		related: [
+			"testing-trophy",
+			"hermetic-tests",
+			"risk-based-testing",
+			"test-impact-analysis"
+		],
+		tags: [
+			"testing",
+			"test strategy",
+			"suite design",
+			"feedback speed"
+		]
+	},
+	{
+		id: "testing-trophy",
+		name: "Testing Trophy",
+		aka: ["integration-heavy testing", "write tests, not too many, mostly integration"],
+		origin: "Kent C. Dodds, 2018",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Weight the suite toward integration-level checks that exercise real collaborators, because that is where confidence per test is highest in code that is mostly glue.",
+		useWhen: [
+			"all our checks pass but the feature is broken when I click it",
+			"every refactor breaks tests even though behaviour did not change",
+			"we mock so much that the tests only prove the mocks work",
+			"I keep writing checks for code that is just wiring"
+		],
+		prompt: "Rebalance this suite toward tests that exercise real collaborators. Start by identifying which of our modules contain genuine logic and which are glue, because glue is exactly where isolated tests prove nothing. For each existing isolated test, tell me whether it would still fail if the module it tests were rewired incorrectly; if not, it is measuring implementation rather than behaviour. Then propose the integration-level tests that would replace groups of them, and be specific about which real dependencies stay real and which stay faked, with the reason for each.",
+		why: "The refactor-resistance argument is the useful half of this idea and models skip it. Asking whether a test would fail on a miswiring is a concrete test for whether it is coupled to implementation.",
+		watchOut: "Integration tests are slower and diagnose worse. If your codebase has a dense algorithmic core, isolated tests there are worth far more than this framing suggests.",
+		related: [
+			"test-pyramid",
+			"test-doubles-taxonomy",
+			"london-chicago-tdd",
+			"hermetic-tests"
+		],
+		tags: [
+			"testing",
+			"test strategy",
+			"integration",
+			"mocking"
+		]
+	},
+	{
+		id: "arrange-act-assert",
+		name: "Arrange-Act-Assert",
+		aka: ["AAA", "triple A test structure"],
+		origin: "Bill Wake, 2001",
+		domains: ["engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Give every test three visible phases — set up the world, perform exactly one action, then check the outcome — so a failure reads as a sentence instead of a puzzle.",
+		useWhen: [
+			"I cannot tell what a failing check was actually trying to prove",
+			"our tests are forty lines of setup and one buried assertion",
+			"each test does five things and I do not know which one broke",
+			"reading the suite tells me nothing about how the system behaves"
+		],
+		prompt: "Restructure these tests into three explicit phases with exactly one action per test. The rule that does the real work is that no assertion may appear before the action, and no new setup may appear after it — if a test violates that, it is testing two behaviours and should be split. Apply that check first and list the tests it splits. Then rewrite the names so each states the behaviour and the condition rather than the method being called, and show me the failure message each rewritten test would print, because that message is the actual deliverable.",
+		why: "The three-phase idea is trivially known; the ordering rule and the failure-message framing are what change the tests. Asking for the printed failure output forces names and assertions to carry diagnostic content.",
+		watchOut: "Some tests genuinely need interleaved steps, such as protocol handshakes. Forcing them into three blocks makes them less readable, not more.",
+		related: [
+			"given-when-then",
+			"assertion-roulette",
+			"test-smell-audit",
+			"test-data-builder"
+		],
+		tags: [
+			"testing",
+			"readability",
+			"test structure",
+			"naming"
+		]
+	},
+	{
+		id: "given-when-then",
+		name: "Given-When-Then",
+		aka: [
+			"Gherkin",
+			"BDD scenarios",
+			"behaviour specification"
+		],
+		origin: "Dan North, behaviour-driven development, 2006",
+		domains: ["engineering", "product"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Write behaviour as a precondition, a triggering event and an observable outcome, in domain language a non-engineer can check.",
+		useWhen: [
+			"the ticket says what to build but not how we know it works",
+			"product and engineering disagree about what done means",
+			"requirements arrive as a paragraph and I have to guess the edge cases",
+			"nobody can tell from the acceptance criteria whether we shipped it"
+		],
+		prompt: "Turn this requirement into scenarios stated as precondition, event and observable outcome. Use only vocabulary the business already uses — if a step mentions a button, an endpoint or a table, rewrite it, because implementation words are what make these rot. After the happy path, generate the scenarios nobody wrote down: the precondition that is absent, the event that arrives twice, the event that arrives out of order, and the outcome observed by a second actor. Mark each scenario as agreed, assumed or unknown, and put the unknowns at the top as questions for the requester.",
+		why: "The format is easy and the coverage is the hard part. Forcing the absent, duplicated and out-of-order variants generates exactly the acceptance criteria that get discovered in production instead.",
+		watchOut: "The syntax has a heavy tooling gravity. If no non-engineer will ever read these, plain test names are cheaper and just as clear.",
+		related: [
+			"specification-by-example",
+			"three-amigos",
+			"arrange-act-assert",
+			"decision-table-testing"
+		],
+		tags: [
+			"testing",
+			"requirements",
+			"acceptance criteria",
+			"bdd"
+		]
+	},
+	{
+		id: "red-green-refactor",
+		name: "Red-Green-Refactor",
+		aka: [
+			"TDD",
+			"test-first development",
+			"test-driven development"
+		],
+		origin: "Kent Beck, Test-Driven Development by Example, 2002",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Write a failing check first, make it pass with the least code that could work, then clean up while the check holds you safe.",
+		useWhen: [
+			"I start coding and end up somewhere I did not intend",
+			"I write the code then bolt on checks that only confirm what I already did",
+			"my functions end up doing far more than the ticket asked for",
+			"I am not sure what this function is even supposed to return yet"
+		],
+		prompt: "Drive this feature test-first. Before writing any implementation, show me the first failing test and — this is the part that matters — tell me what the failure message says, because if it fails for the wrong reason the cycle is already broken. Then write the most embarrassing implementation that makes it pass, even a hardcoded return, and only generalise when a second test forces you to. At each step state which of the three phases you are in and what would make you move on. Do not refactor while anything is red.",
+		why: "Models asked for TDD tend to produce the finished implementation with tests attached. Demanding the failure message and licensing a hardcoded first pass is what actually produces the increments.",
+		watchOut: "When you do not yet know the shape of the answer, a spike first and tests after is faster and honest. Test-first suits known problems with unclear design, not unknown problems.",
+		related: [
+			"london-chicago-tdd",
+			"arrange-act-assert",
+			"walking-skeleton",
+			"test-data-builder"
+		],
+		tags: [
+			"testing",
+			"workflow",
+			"design",
+			"incremental development"
+		]
+	},
+	{
+		id: "property-based-testing",
+		name: "Property-Based Testing",
+		aka: ["generative testing", "QuickCheck-style testing"],
+		origin: "Koen Claessen and John Hughes, QuickCheck, 2000",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "State an invariant that must hold for all inputs and let a generator hunt for the counterexample, then shrink it to the smallest case that still fails.",
+		useWhen: [
+			"my examples all pass but I keep finding weird inputs in production",
+			"I only ever test the three cases I happened to think of",
+			"the parser breaks on strings nobody imagined",
+			"I want to check the round trip really is lossless"
+		],
+		prompt: "Design properties for this function rather than examples. Give me the four classic families explicitly: round-trip (encode then decode is identity), invariant (something true of every output regardless of input), oracle (agrees with a slower obviously-correct version), and metamorphic (a known change to the input produces a known change to the output). For each property, describe the generator including the nasty inputs it must be able to produce — empty, huge, duplicated, unicode, boundary numerics — and say what a shrunk counterexample would look like so I can tell a real defect from a bad property.",
+		why: "Left open, a model writes one weak property and a default generator. Naming the four families and demanding the generator description is what surfaces properties you would not have thought of.",
+		watchOut: "Properties that restate the implementation catch nothing. If you cannot express the rule without calling the function under test, you probably need an oracle instead.",
+		related: [
+			"metamorphic-testing",
+			"fuzz-testing",
+			"equivalence-partitioning",
+			"boundary-value-analysis"
+		],
+		tags: [
+			"testing",
+			"invariants",
+			"generative",
+			"edge cases"
+		]
+	},
+	{
+		id: "metamorphic-testing",
+		name: "Metamorphic Testing",
+		aka: ["metamorphic relations", "relational testing"],
+		origin: "T. Y. Chen and colleagues, 1998",
+		domains: ["engineering", "data"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "When you cannot say what the right answer is, assert how the answer must change when you change the input in a known way.",
+		useWhen: [
+			"I have no way to know the correct output for this input",
+			"the results look plausible and I cannot verify any of them",
+			"checking this by hand would take longer than writing the code",
+			"the model output changes and I cannot tell if that is a regression"
+		],
+		prompt: "I cannot write an oracle for this, so derive relations instead: pairs of inputs where I know how the outputs must relate even though I do not know either output. Cover permutation (reordering inputs should not change an aggregate), scaling (doubling every weight should not change a ranking), inclusion (adding an irrelevant record should not change a filtered result), and negation. For each relation, say which real defect class it would catch and which it is blind to. Then flag any relation that is only approximately true because of floating point or tie-breaking, and give the tolerance it needs.",
+		why: "This is the technique for untestable outputs — search ranking, simulations, model inference — and it is rarely reached for because the relations feel hard to invent. Enumerating relation families does the inventing.",
+		watchOut: "A relation that holds by construction proves nothing. Check that a plausible bug could actually break it before you rely on it.",
+		related: [
+			"property-based-testing",
+			"approval-testing",
+			"test-oracle-problem",
+			"fuzz-testing"
+		],
+		tags: [
+			"testing",
+			"invariants",
+			"verification",
+			"machine learning"
+		]
+	},
+	{
+		id: "test-oracle-problem",
+		name: "Test Oracle Problem",
+		aka: ["oracle problem", "how do you know it is right"],
+		origin: "Elaine Weyuker, 1982",
+		domains: ["engineering"],
+		intents: ["diagnose", "reframe"],
+		oneLiner: "Name the mechanism that decides whether an output is correct, because a test without a defensible oracle only proves the code does what it does.",
+		useWhen: [
+			"the check just asserts the output equals what the code returned today",
+			"we froze the current behaviour and now call it correct",
+			"nobody can say what the right answer would be",
+			"the expected values in this file came from running the code"
+		],
+		prompt: "For each assertion here, name the oracle: where does the expected value come from? Classify each as specified (a document or standard says so), derived (computed independently by a different method), consistent (must agree with another part of the system), statistical (a distribution rather than a value), or circular (it came from running this code). Circular oracles are not worthless but they only detect change, not error, so list them separately and tell me for each whether change detection is genuinely all we need here or whether we are papering over not knowing the answer.",
+		why: "This is the question that makes a whole class of confident-looking suites collapse. Forcing the classification exposes which tests are regression alarms and which actually check correctness.",
+		watchOut: "Change detection is legitimately useful for legacy code. The failure is not having circular oracles, it is believing they verify behaviour.",
+		related: [
+			"approval-testing",
+			"metamorphic-testing",
+			"characterization-tests",
+			"snapshot-testing"
+		],
+		tags: [
+			"testing",
+			"correctness",
+			"verification",
+			"assertions"
+		]
+	},
+	{
+		id: "mutation-testing",
+		name: "Mutation Testing",
+		aka: [
+			"mutation score",
+			"mutants",
+			"fault injection into code"
+		],
+		origin: "Richard Lipton, 1971; DeMillo, Lipton and Sayward, 1978",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Deliberately break the code in small ways and see whether the suite notices — the tests that never go red are the ones not doing any work.",
+		useWhen: [
+			"we have ninety percent coverage and bugs still ship",
+			"I want to know whether these checks would actually catch anything",
+			"the coverage number went up but I do not trust it",
+			"I suspect half our assertions are decorative"
+		],
+		prompt: "Evaluate this suite by mutation rather than coverage. Propose the specific mutants worth trying on this code — flipped comparisons, off-by-one boundaries, removed guard clauses, swapped operands, replaced return values — and for each, predict whether any existing test would fail and name it. Surviving mutants are the finding, so for each survivor tell me whether it represents a real behaviour nobody checks, an equivalent mutant that cannot be detected, or dead code. Rank surviving mutants by the severity of the bug they stand for, not by count.",
+		why: "Coverage measures execution, not verification, and everyone knows it while still using coverage. Predicting which mutants survive turns that vague complaint into a specific list of missing assertions.",
+		watchOut: "Full mutation runs are expensive and equivalent mutants generate noise. Run it on the modules where a defect would hurt most, not the whole repository.",
+		related: [
+			"branch-coverage-criteria",
+			"coverage-ratchet",
+			"assertion-roulette",
+			"test-smell-audit"
+		],
+		tags: [
+			"testing",
+			"test quality",
+			"coverage",
+			"fault injection"
+		]
+	},
+	{
+		id: "approval-testing",
+		name: "Approval Testing",
+		aka: [
+			"golden master testing",
+			"locking tests",
+			"gold standard"
+		],
+		origin: "Llewellyn Falco, ApprovalTests; Michael Feathers on golden masters",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Capture the whole output of a complicated operation as a reviewed artefact and fail on any diff, so a rewrite has to prove it changed nothing.",
+		useWhen: [
+			"I need to refactor this report generator and it has no tests at all",
+			"the output is a huge blob and asserting field by field is hopeless",
+			"I want to swap the implementation without changing what customers see",
+			"writing individual assertions for this would take a week"
+		],
+		prompt: "Set up approval tests around this code before I refactor it. The design problem is nondeterminism, so start there: list every part of the output that varies between runs — timestamps, ids, ordering, floating point tails, locale — and give the scrubbing rule for each, because an unscrubbed field makes the whole approach useless. Then choose inputs that maximise coverage of the branches rather than realistic-looking data, show what the approved artefact looks like, and tell me the review discipline for the moment a diff appears and someone has to decide whether it is a bug or an intended change.",
+		why: "The technique fails almost entirely on nondeterminism and on people rubber-stamping diffs. Making the scrubbing list and the review rule explicit is what makes it survive contact with a real codebase.",
+		watchOut: "These lock in behaviour including current bugs, and they say nothing about whether the output is right. They are scaffolding for a change, not a permanent specification.",
+		related: [
+			"characterization-tests",
+			"snapshot-testing",
+			"test-oracle-problem",
+			"sprout-and-wrap"
+		],
+		tags: [
+			"testing",
+			"legacy code",
+			"refactoring",
+			"regression"
+		]
+	},
+	{
+		id: "characterization-tests",
+		name: "Characterisation Tests",
+		aka: ["pinning tests", "legacy code safety net"],
+		origin: "Michael Feathers, Working Effectively with Legacy Code, 2004",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Write tests that document what untested legacy code currently does — bugs included — so you can change its structure without changing its behaviour.",
+		useWhen: [
+			"I have to change code nobody understands and there are no tests",
+			"the original author left and the behaviour is the only specification",
+			"I am afraid to touch this because I cannot tell what depends on it",
+			"the requirements document does not match what the system does"
+		],
+		prompt: "Build a safety net around this legacy code before I change it. Work outside-in: find the largest seam where I can call in and observe out without refactoring first, since needing a refactor to test is the trap. Then propose inputs chosen to reveal behaviour rather than to look realistic, and for each, state what you expect to happen and flag where you are guessing. Where the current behaviour is obviously wrong, still pin it and mark it as a known defect to fix separately, because fixing it in the same change destroys my ability to tell a regression from an intended fix.",
+		why: "The instinct is to fix bugs while you are in there, and that instinct is what makes legacy refactors unverifiable. Separating pin-now from fix-later is the entire discipline.",
+		watchOut: "These tests are deliberately not a specification. Leaving them in place forever means future readers mistake accidental behaviour for intended behaviour.",
+		related: [
+			"approval-testing",
+			"test-seams",
+			"sprout-and-wrap",
+			"strangler-fig"
+		],
+		tags: [
+			"testing",
+			"legacy code",
+			"refactoring",
+			"safety net"
+		]
+	},
+	{
+		id: "contract-testing",
+		name: "Consumer-Driven Contract Testing",
+		aka: [
+			"Pact testing",
+			"CDC testing",
+			"API contract tests"
+		],
+		origin: "Ian Robinson, 2006; popularised by the Pact toolset",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Each consumer records exactly what it needs from a provider, and the provider verifies every recorded expectation in its own build.",
+		useWhen: [
+			"a backend change broke a client team and nobody noticed until release",
+			"we need every service running just to test one of them",
+			"our stubs drifted from what the real service returns",
+			"I do not know who depends on this field so I cannot remove it"
+		],
+		prompt: "Design contract tests between this consumer and provider. The value comes from being specific about what the consumer actually uses, so start by listing the fields it reads and the ones it merely receives — expectations that cover unused fields freeze the provider for no reason. Then write the interactions as request-response pairs including the error shapes, not just the happy path. Finally describe the verification step in the provider pipeline and what happens when it fails: who is blocked, how a provider ships a breaking change deliberately, and how a contract for a retired consumer gets deleted.",
+		why: "Most contract-testing attempts fail on process rather than tooling. Asking who gets blocked and how a contract is retired is what turns it into something a team can actually run.",
+		watchOut: "Contracts verify shape and semantics of an exchange, not that the two systems together do the right thing. You still need a few real end-to-end paths.",
+		related: [
+			"api-versioning-strategy",
+			"test-doubles-taxonomy",
+			"test-pyramid",
+			"schema-evolution"
+		],
+		tags: [
+			"testing",
+			"microservices",
+			"api",
+			"integration"
+		]
+	},
+	{
+		id: "test-doubles-taxonomy",
+		name: "Test Doubles Taxonomy",
+		aka: ["mocks stubs fakes spies", "test double types"],
+		origin: "Gerard Meszaros, xUnit Test Patterns, 2007",
+		domains: ["engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Distinguish dummies, stubs, spies, mocks and fakes, and pick the weakest one that still exercises the behaviour you care about.",
+		useWhen: [
+			"our tests break whenever we change a method signature",
+			"I mock everything and the tests never catch real problems",
+			"the setup asserts on calls rather than on results",
+			"I cannot tell what this test is actually verifying anymore"
+		],
+		prompt: "Review the doubles in these tests and classify each as dummy, stub, spy, mock or fake. Then apply the rule that does the work: a double should only be a mock when the interaction itself is the behaviour under test — sending the email is the point — and otherwise should be the weakest thing that lets the test run. List every place we assert on calls where we could assert on resulting state instead, since those assertions are what make the suite fragile under refactoring. Where a fake would be better than repeated stubbing, sketch it and say what invariants it must preserve to stay honest.",
+		why: "Overuse of interaction assertions is the single biggest cause of tests that break on refactors, and it never looks wrong locally. Forcing the classification exposes it at scale.",
+		watchOut: "Hand-written fakes drift from the real implementation. If you build one, it needs its own contract test against the thing it stands in for.",
+		related: [
+			"london-chicago-tdd",
+			"testing-trophy",
+			"contract-testing",
+			"hermetic-tests"
+		],
+		tags: [
+			"testing",
+			"mocking",
+			"isolation",
+			"coupling"
+		]
+	},
+	{
+		id: "london-chicago-tdd",
+		name: "London and Chicago Schools",
+		aka: ["mockist vs classicist", "outside-in vs inside-out TDD"],
+		origin: "Steve Freeman and Nat Pryce vs Kent Beck lineage; named by Jason Gorman",
+		domains: ["engineering"],
+		intents: ["decide", "explain"],
+		oneLiner: "Choose between driving design outside-in with mocked collaborators and building inside-out from real objects, knowing what each buys and costs.",
+		useWhen: [
+			"two people on the team write completely different styles of check",
+			"I cannot decide whether to start at the entry point or the core",
+			"the reviewer says I have too many mocks and I disagree",
+			"our tests are either brittle or slow and never neither"
+		],
+		prompt: "Given this component, compare the two approaches concretely rather than abstractly. Show me the first test each school would write and what design pressure it applies — the mockist version forces me to name collaborators before they exist, the classicist version forces me to have a working core first. Then judge which fits this specific case using one criterion: is the design risk in the collaboration protocol or in the algorithm? Recommend one, and say which parts of the codebase should use the other, because a single style across an entire system is usually the wrong answer.",
+		why: "This is usually argued as a tribal identity rather than a per-module judgement. Tying the choice to where the design risk sits makes it decidable.",
+		watchOut: "Neither school is a licence to skip integration coverage. Both can produce suites that are green while the assembled system is broken.",
+		related: [
+			"test-doubles-taxonomy",
+			"red-green-refactor",
+			"testing-trophy",
+			"hexagonal-architecture"
+		],
+		tags: [
+			"testing",
+			"design",
+			"mocking",
+			"methodology"
+		]
+	},
+	{
+		id: "flaky-test-quarantine",
+		name: "Flaky Test Quarantine",
+		aka: ["flake budget", "test quarantine policy"],
+		origin: "Google Testing Blog and large-scale CI practice",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Move intermittently failing checks out of the blocking path under an explicit owner and deadline, so the signal survives while they get fixed.",
+		useWhen: [
+			"the build fails randomly and everyone just hits retry",
+			"nobody believes a red pipeline anymore",
+			"we added an automatic retry and now real failures hide too",
+			"the same three checks fail once a week and nothing happens"
+		],
+		prompt: "Design a quarantine policy for our intermittent failures. Include the three parts that make it work rather than rot: an objective entry rule based on measured failure rate over a window instead of somebody being annoyed, a named owner and expiry date per quarantined test, and an exit rule requiring a run of consecutive passes before it blocks again. Then add the part everyone forgets — a cap on total quarantined tests, and what the team does when the cap is hit — because without it quarantine becomes a graveyard. Finally, list the usual root causes to check first: shared state, real clocks, network, ordering and unawaited work.",
+		why: "Retry-on-failure is the default response and it silently destroys the value of the suite. Making the cap and expiry explicit is the difference between a policy and a permanent hiding place.",
+		watchOut: "Quarantine is a holding pen, not a fix. A test that has been quarantined twice is telling you the code under it is nondeterministic, not the test.",
+		related: [
+			"deterministic-clock",
+			"hermetic-tests",
+			"test-isolation",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"testing",
+			"ci",
+			"flakiness",
+			"reliability"
+		]
+	},
+	{
+		id: "deterministic-clock",
+		name: "Injected Clock",
+		aka: [
+			"controllable time",
+			"fake clock",
+			"time as a dependency"
+		],
+		origin: "Common in xUnit patterns; Feathers-style dependency breaking",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Treat now as a dependency the code is handed rather than a global it reaches for, so time-dependent behaviour becomes testable and reproducible.",
+		useWhen: [
+			"this check fails only when it runs near midnight",
+			"the suite breaks twice a year when the clocks change",
+			"testing the expiry logic means literally waiting an hour",
+			"we sprinkle sleeps in the tests and hope"
+		],
+		prompt: "Make time explicit in this code. Find every direct read of the current time, every timer, and every sleep, and route them through a single injected source. Then use the seam to write the cases we cannot currently reach: exactly at the boundary, one unit either side, across a daylight saving transition in a zone that has one, across a leap day, and with a clock that jumps backwards because of an NTP correction. For each, tell me what the code does today. Say explicitly which durations should use a monotonic source instead of wall-clock, because that distinction is where the subtle bugs live.",
+		why: "The refactor is easy and the value is in the case list. Monotonic-versus-wall-clock in particular is the thing nobody tests and everybody eventually gets bitten by.",
+		watchOut: "Injecting a clock into every constructor is noisy. A module-level source you can swap in tests is often the better trade in small codebases.",
+		related: [
+			"hermetic-tests",
+			"flaky-test-quarantine",
+			"test-isolation",
+			"idempotency-keys"
+		],
+		tags: [
+			"testing",
+			"determinism",
+			"time",
+			"dependency injection"
+		]
+	},
+	{
+		id: "hermetic-tests",
+		name: "Hermetic Tests",
+		aka: ["sealed tests", "self-contained test environment"],
+		origin: "Google engineering practice",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "A test brings its own world — no shared database, no network, no ambient configuration — so its result depends only on the code under test.",
+		useWhen: [
+			"the checks pass locally and fail in the pipeline",
+			"two people running the suite at once break each other",
+			"someone changed a row in the shared test database and everything went red",
+			"the results depend on which order things ran in"
+		],
+		prompt: "Make these tests self-contained. Enumerate every piece of shared or ambient state they currently depend on: databases, message brokers, filesystem paths, environment variables, DNS, wall-clock, locale, random seeds, and any fixture created by a different test. For each, give the isolation move — in-process fake, per-test container, temporary directory, injected value, seeded generator — and its cost in runtime. Then name the ones that genuinely cannot be sealed and describe how to detect when they misbehave, so those failures are legible as environment problems rather than looking like product defects.",
+		why: "The failure mode is always something ambient nobody listed. An exhaustive dependency inventory, including locale and random seeds, is what makes the difference.",
+		watchOut: "Per-test containers are hermetic and slow. Sealing everything can trade a flaky ten-minute suite for a reliable fifty-minute one nobody runs.",
+		related: [
+			"test-isolation",
+			"deterministic-clock",
+			"flaky-test-quarantine",
+			"ephemeral-environments"
+		],
+		tags: [
+			"testing",
+			"isolation",
+			"ci",
+			"determinism"
+		]
+	},
+	{
+		id: "test-isolation",
+		name: "Test Isolation",
+		aka: [
+			"independent tests",
+			"order independence",
+			"no shared fixtures"
+		],
+		origin: "xUnit test patterns; standard CI practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Each check must pass alone, in any order, and in parallel with the others — anything else means the suite is testing execution order.",
+		useWhen: [
+			"it passes on its own but fails as part of the whole run",
+			"we cannot turn on parallel execution without red everywhere",
+			"a check depends on data another check created first",
+			"reordering the files changed which tests fail"
+		],
+		prompt: "Diagnose the order dependence in this suite. Rather than guessing, give me the bisection procedure: run the failing test alone to confirm it passes, then find the minimal prefix of other tests that reproduces the failure, and identify what state that prefix leaves behind. Then classify the leak — global variable, database row, cached singleton, module-level registry, temp file, environment variable, unawaited background work from a previous test — and give the fix per class. Say which fixes require a teardown and which are better solved by never sharing the resource, and be specific that teardown-based fixes break under parallel execution.",
+		why: "People try to fix order dependence by sorting or pinning the order, which hides it. The bisection-to-minimal-prefix procedure finds the actual leaking state.",
+		watchOut: "Perfect isolation can be genuinely expensive for tests that need a populated database. A shared read-only fixture that nothing writes to is a reasonable middle ground.",
+		related: [
+			"hermetic-tests",
+			"flaky-test-quarantine",
+			"deterministic-clock",
+			"ephemeral-test-fixtures"
+		],
+		tags: [
+			"testing",
+			"isolation",
+			"parallelism",
+			"flakiness"
+		]
+	},
+	{
+		id: "equivalence-partitioning",
+		name: "Equivalence Partitioning",
+		aka: ["equivalence classes", "input partitioning"],
+		origin: "Glenford Myers, The Art of Software Testing, 1979",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Split the input space into classes the code should treat identically, then test one representative from each instead of thrashing at random.",
+		useWhen: [
+			"I have written twenty checks that all exercise the same path",
+			"I do not know how many cases are enough here",
+			"we test lots of values but keep missing whole categories",
+			"the case list was written by whoever felt creative that day"
+		],
+		prompt: "Partition the input space for this function. Do it from the code as well as the specification, because a partition the implementation makes that the spec does not mention is exactly where defects hide — list any branch that splits a class the spec treats as uniform. Give me valid classes, invalid classes, and the classes that are only distinguishable by their effect on output rather than their form. Then pick one representative per class, state the expected result, and tell me which classes are unreachable given upstream validation so I can stop testing them here and test the validation instead.",
+		why: "The technique is old and dry, and the interesting move — comparing the spec partition to the implementation partition — is the one models omit unless asked.",
+		watchOut: "Assuming a class is uniform is exactly the assumption that fails. Pair this with boundary cases, which are where uniformity actually breaks.",
+		related: [
+			"boundary-value-analysis",
+			"pairwise-testing",
+			"decision-table-testing",
+			"property-based-testing"
+		],
+		tags: [
+			"testing",
+			"test design",
+			"coverage",
+			"inputs"
+		]
+	},
+	{
+		id: "boundary-value-analysis",
+		name: "Boundary Value Analysis",
+		aka: ["edge case analysis", "off-by-one testing"],
+		origin: "Glenford Myers, The Art of Software Testing, 1979",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Test at the edges of every range and one step either side, because that is where comparison operators and allocation sizes go wrong.",
+		useWhen: [
+			"we shipped an off-by-one that made it through review",
+			"it breaks on the first item or the last item",
+			"the empty list case crashed in production",
+			"the limit works at ten but not at exactly eleven"
+		],
+		prompt: "Enumerate the boundaries for this code and give me the three-point set at each: just below, exactly at, just above. Cover the non-obvious boundaries as well as the numeric ones — empty and single-element collections, the first and last element, maximum length strings, zero and negative durations, the integer type limits, the point where a value crosses from one storage representation to another, and the first request after a window resets. For each boundary, state which side the specification says is inclusive and whether the code agrees, because a spec that is silent about inclusivity is the defect.",
+		why: "Everyone knows to test edges and still tests only numeric ranges. The inclusivity check against the spec is what turns this from ritual into a defect-finding pass.",
+		watchOut: "Boundaries multiply. On a function with six parameters this generates more cases than anyone will maintain, so combine it with a combinatorial reduction.",
+		related: [
+			"equivalence-partitioning",
+			"pairwise-testing",
+			"property-based-testing",
+			"fuzz-testing"
+		],
+		tags: [
+			"testing",
+			"edge cases",
+			"off-by-one",
+			"test design"
+		]
+	},
+	{
+		id: "pairwise-testing",
+		name: "Pairwise Testing",
+		aka: [
+			"all-pairs testing",
+			"combinatorial test design",
+			"orthogonal arrays"
+		],
+		origin: "Mandl, 1985; Cohen and colleagues on combinatorial design, 1996",
+		domains: ["engineering"],
+		intents: ["prioritize", "plan"],
+		oneLiner: "Cover every pair of parameter values in a small set of cases, on the evidence that most defects are triggered by one or two factors interacting rather than five.",
+		useWhen: [
+			"the full matrix of options is thousands of combinations",
+			"we support four browsers three plans and two currencies and cannot test all of it",
+			"the config flags interact and we only ever test the defaults",
+			"the regression run takes all night and still misses things"
+		],
+		prompt: "Reduce this combination space using all-pairs coverage. First list the parameters and their genuinely distinct values, collapsing values the system cannot distinguish, because inflated value sets are what make the reduced set useless. Then generate a covering set and tell me its size against the full cross product. Crucially, list the constraints — combinations that are impossible or forbidden — and any interaction we already know is three-way, because those must be added as explicit cases; pairwise coverage is blind to them by construction. Finish with the specific defect classes this set would not catch.",
+		why: "The reduction is easy to generate and easy to over-trust. Demanding the known three-way interactions and the blind spots is what keeps it honest.",
+		watchOut: "The empirical claim behind this is about typical systems, not yours. A configuration engine whose whole purpose is interaction needs higher-strength coverage.",
+		related: [
+			"equivalence-partitioning",
+			"decision-table-testing",
+			"risk-based-testing",
+			"feature-flag-hygiene"
+		],
+		tags: [
+			"testing",
+			"combinatorics",
+			"configuration",
+			"test design"
+		]
+	},
+	{
+		id: "decision-table-testing",
+		name: "Decision Table Testing",
+		aka: ["cause-effect table", "condition-action matrix"],
+		origin: "Classic structured analysis; formalised in ISTQB practice",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Lay every condition and every resulting action into a grid, so contradictory, duplicated and missing rules become visible rather than argued about.",
+		useWhen: [
+			"the pricing rules are a nest of nested conditionals nobody can follow",
+			"two rules in the policy seem to contradict each other",
+			"I keep finding cases the requirements never mention",
+			"the eligibility logic has been patched so many times it is unreadable"
+		],
+		prompt: "Build a decision table for this logic. Extract the conditions and the actions, enumerate the combinations, and fill in the outcome for each. Then run the three checks that make this worth doing: find rows where no rule applies (a gap), rows where two rules disagree (a conflict), and rows that are unreachable given the other conditions (dead logic). Report each with the concrete inputs that reach it. Finally, collapse rows where a condition genuinely does not affect the outcome, and tell me whether the code agrees that it does not — a condition the table says is irrelevant but the code still branches on is a defect.",
+		why: "The gap-conflict-dead-row triple is the whole value and models produce the grid without it. Comparing the collapsed table against the code branches catches logic nobody knows is there.",
+		watchOut: "Condition counts explode exponentially. Beyond six or seven conditions you need to partition the table first or the exercise defeats itself.",
+		related: [
+			"equivalence-partitioning",
+			"state-transition-testing",
+			"given-when-then",
+			"pairwise-testing"
+		],
+		tags: [
+			"testing",
+			"business rules",
+			"logic",
+			"requirements"
+		]
+	},
+	{
+		id: "state-transition-testing",
+		name: "State Transition Testing",
+		aka: ["state machine testing", "transition coverage"],
+		origin: "Finite state machine testing; Chow, 1978",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Model the object as states and events, then test not only the legal transitions but every event arriving in every state it should be refused in.",
+		useWhen: [
+			"the order got cancelled after it shipped and nothing stopped it",
+			"a status field can apparently hold combinations that make no sense",
+			"the webhook arrived twice and the record went backwards",
+			"users hit the back button and the workflow got confused"
+		],
+		prompt: "Model this workflow as states and events and derive tests from it. Give me the transition table with every state on one axis and every event on the other, then fill in all cells — including the illegal ones, because the whole value is in specifying what happens when an event arrives in a state that should refuse it. For each illegal cell say whether the code today ignores it, errors, or silently corrupts state. Then cover the sequences: shortest path to each state, every transition at least once, and the loops. Flag any state reachable by two paths that leaves different data behind.",
+		why: "Teams test the happy transitions and leave the illegal cells undefined, which is where duplicate webhooks and back-button bugs come from. Filling in the whole matrix is the point.",
+		watchOut: "If the real state lives across several fields and services, the tidy machine is a fiction. Model what the system actually stores, not what the diagram claims.",
+		related: [
+			"decision-table-testing",
+			"idempotency-keys",
+			"mvi-architecture",
+			"saga-pattern"
+		],
+		tags: [
+			"testing",
+			"state machines",
+			"workflow",
+			"invalid states"
+		]
+	},
+	{
+		id: "exploratory-testing-charter",
+		name: "Exploratory Testing Charter",
+		aka: ["session-based test management", "charter and timebox"],
+		origin: "James and Jonathan Bach, session-based test management, 2000",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Give unscripted testing a written mission, a timebox and a debrief, so poking at the product produces evidence instead of vibes.",
+		useWhen: [
+			"the scripted checks all pass but the feature feels wrong to use",
+			"we only ever find the bugs we thought to write down",
+			"manual testing here means clicking around for a while",
+			"nobody can say what was actually tested before release"
+		],
+		prompt: "Write exploratory charters for this feature. Each charter should name a target area, a resource or tool to use, and the information it seeks — the classic explore-with-to-discover shape — and be scoped to about ninety minutes. Generate charters along the axes people forget: interruption and resumption, concurrent use by two accounts, data that arrived from an older version of the product, permissions boundaries, and the recovery path after an error. For each charter, say what evidence would count as a finding and what note-taking the session needs so the debrief produces a reproducible report rather than an anecdote.",
+		why: "Unscripted testing is dismissed as unrigorous because it usually is. The mission plus evidence-standard structure is what makes the output defensible next to automated results.",
+		watchOut: "Charters are not a substitute for automation of things you already know. Use them where the risk is unknown-unknowns, not to re-verify settled behaviour.",
+		related: [
+			"risk-based-testing",
+			"minimal-reproducible-example",
+			"testing-in-production",
+			"defect-triage-matrix"
+		],
+		tags: [
+			"testing",
+			"exploratory",
+			"manual testing",
+			"session management"
+		]
+	},
+	{
+		id: "risk-based-testing",
+		name: "Risk-Based Test Prioritisation",
+		aka: ["risk-based testing", "test effort allocation"],
+		origin: "Standard practice in risk management-driven QA; Bach, 1999",
+		domains: ["engineering"],
+		intents: ["prioritize", "plan"],
+		oneLiner: "Allocate testing effort by likelihood of failure multiplied by cost of that failure, so the deepest coverage sits where a defect would actually hurt.",
+		useWhen: [
+			"we do not have time to test everything before the release",
+			"we test the easy parts thoroughly and the scary parts barely",
+			"someone wants a number for how much testing is enough",
+			"coverage is even across the codebase but the risk is not"
+		],
+		prompt: "Rank these areas by testing risk. Score likelihood using observable proxies rather than intuition — recent change rate, defect history, number of authors, cyclomatic complexity, age of the last test — and score impact by what a failure costs in money, data loss, safety or reputation. Multiply, then allocate effort. The instruction that matters: for each high-risk area name the specific failure you are worried about, because an area rated high with no concrete failure in mind gets tested shallowly and widely, which is the least useful shape. Finish with what you consciously decided not to test and the risk accepted.",
+		why: "Risk ratings drift into vague colour-coding. Requiring a named failure per high-risk item and an explicit not-testing list keeps it decision-shaped.",
+		watchOut: "History-based likelihood is blind to brand new code with no defect record. Weight novelty explicitly or you will systematically under-test the newest work.",
+		related: [
+			"test-impact-analysis",
+			"exploratory-testing-charter",
+			"defect-triage-matrix",
+			"fmea"
+		],
+		tags: [
+			"testing",
+			"prioritisation",
+			"risk",
+			"release readiness"
+		]
+	},
+	{
+		id: "branch-coverage-criteria",
+		name: "Branch and Condition Coverage",
+		aka: [
+			"MC/DC",
+			"decision coverage",
+			"coverage criteria"
+		],
+		origin: "Structural testing literature; MC/DC from DO-178B avionics standard",
+		domains: ["engineering"],
+		intents: ["explain", "critique"],
+		oneLiner: "Distinguish which lines ran from which decisions were exercised both ways, and from whether each sub-condition was shown to independently change the outcome.",
+		useWhen: [
+			"our coverage number is high and I do not know what it means",
+			"every line is covered but a whole branch has never run",
+			"the compound if statement is covered by one test",
+			"someone is asking for a coverage target and I need to give a real answer"
+		],
+		prompt: "Explain what our coverage figure does and does not guarantee, using this code as the example. Show a case that reaches full statement coverage while leaving a branch untaken, and a case with full branch coverage where a sub-condition in a compound predicate has never independently determined the result. Then tell me which criterion is worth paying for here given the cost of a defect in this module, and write the extra tests that would lift the weakest predicate to independent-condition coverage. Do not recommend a percentage target; recommend which specific decisions must be fully exercised.",
+		why: "Coverage debates are conducted in percentages and resolved by argument. Producing the concrete example of a hole inside a high number reframes it as a criterion choice.",
+		watchOut: "Coverage criteria say nothing about assertions. Code can be fully exercised by tests that assert nothing at all, which is why mutation testing is the better follow-up.",
+		related: [
+			"mutation-testing",
+			"coverage-ratchet",
+			"equivalence-partitioning",
+			"assertion-roulette"
+		],
+		tags: [
+			"testing",
+			"coverage",
+			"metrics",
+			"verification"
+		]
+	},
+	{
+		id: "coverage-ratchet",
+		name: "Coverage Ratchet",
+		aka: [
+			"coverage floor",
+			"no-worse-than rule",
+			"ratcheting quality gate"
+		],
+		origin: "Common continuous integration practice; related to the boy scout rule",
+		domains: ["engineering"],
+		intents: ["plan", "steer"],
+		oneLiner: "Instead of demanding a target today, block any change that lowers the current number, so quality improves monotonically without a big-bang project.",
+		useWhen: [
+			"coverage is at thirty percent and mandating eighty would stop all work",
+			"every quality initiative dies after two weeks",
+			"the untested legacy area keeps growing",
+			"we set a target and people wrote worthless checks to hit it"
+		],
+		prompt: "Design a ratchet for this metric. Specify what is measured on new and changed lines rather than the whole repository, because a whole-repo threshold punishes people for touching legacy code and that is the failure mode. Give the enforcement point, the exact failure message a developer sees, and the escape hatch — who can override it and what they must write down. Then name the gaming behaviours this creates, such as assertion-free tests or excluded files, and the counter-check for each. Finally, apply the same pattern to two other metrics where a floor would help more than a target.",
+		why: "Absolute thresholds fail on legacy code and targets invite gaming. Scoping to changed lines and pre-naming the gaming behaviours is what makes a gate survive.",
+		watchOut: "A ratchet on a bad metric locks in the bad metric. Make sure the number you are freezing is one you would defend on its own.",
+		related: [
+			"branch-coverage-criteria",
+			"mutation-testing",
+			"ci-signal-hygiene",
+			"goodharts-law"
+		],
+		tags: [
+			"testing",
+			"ci",
+			"quality gates",
+			"metrics"
+		]
+	},
+	{
+		id: "assertion-roulette",
+		name: "Assertion Roulette",
+		aka: ["unnamed assertions", "which assert failed"],
+		origin: "Gerard Meszaros, xUnit Test Patterns test smells, 2007",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "When a test carries many undifferentiated assertions, a failure tells you the test broke but not what broke — the diagnosis cost lands on every future reader.",
+		useWhen: [
+			"the failure says expected true got false and nothing else",
+			"I have to add print statements to find out which line failed",
+			"one test has fifteen asserts and the output is useless",
+			"debugging a red build takes longer than fixing the bug"
+		],
+		prompt: "Improve the diagnostic value of these tests. For each assertion, show the exact message that prints on failure today, then rewrite so the message alone identifies the behaviour, the expected value, the actual value and the input that produced it. Where a test carries several assertions about different behaviours, split it; where the assertions are all facets of one outcome, combine them into a single structural comparison so the diff is shown once. The measure of success is that I could triage a failure from the log alone without opening the test file — verify each rewritten test against that bar.",
+		why: "Test readability is usually argued aesthetically. Setting the bar at triage-from-the-log-alone makes it a checkable property rather than taste.",
+		watchOut: "Splitting every assertion into its own test multiplies setup cost and slows the suite. Split by behaviour, not by assertion count.",
+		related: [
+			"test-smell-audit",
+			"arrange-act-assert",
+			"branch-coverage-criteria",
+			"error-message-design"
+		],
+		tags: [
+			"testing",
+			"diagnostics",
+			"test smells",
+			"readability"
+		]
+	},
+	{
+		id: "test-smell-audit",
+		name: "Test Smell Audit",
+		aka: ["xUnit test smells", "test code quality review"],
+		origin: "Gerard Meszaros, xUnit Test Patterns, 2007",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Apply the catalogue of known test pathologies — mystery guest, eager test, fragile fixture, conditional logic, erratic behaviour — to a suite that is technically green but hated.",
+		useWhen: [
+			"the tests are harder to change than the code they test",
+			"nobody wants to touch the test file",
+			"we spend more time fixing tests than writing features",
+			"the checks are green but nobody trusts them"
+		],
+		prompt: "Audit these tests against the known smell catalogue. Look specifically for: a mystery guest (data from an external file or shared fixture whose relevance is invisible in the test), an eager test (one test verifying a whole workflow), conditional logic inside a test, a fragile fixture (setup coupled to fields the test does not use), and erratic tests that depend on order or timing. For each hit, name the smell, quote the lines, and give the refactoring. Then rank the findings by maintenance cost — how often that file has been edited — rather than by how bad the smell sounds.",
+		why: "Naming the specific catalogue produces a much sharper review than asking for improvements, and ranking by edit frequency stops the output being a hundred equally-weighted nits.",
+		watchOut: "Test code is allowed more duplication than production code; explicitness beats reuse when a test must be readable in isolation. Do not deduplicate a suite into unreadability.",
+		related: [
+			"assertion-roulette",
+			"test-data-builder",
+			"arrange-act-assert",
+			"ephemeral-test-fixtures"
+		],
+		tags: [
+			"testing",
+			"code smells",
+			"maintainability",
+			"review"
+		]
+	},
+	{
+		id: "object-mother",
+		name: "Object Mother",
+		aka: ["test fixture factory", "canonical test objects"],
+		origin: "Peter Schuh and Stephanie Punke, ThoughtWorks, 2001",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Centralise named, meaningful example objects — a delinquent account, a lapsed subscription — so tests read in domain terms instead of twelve lines of construction.",
+		useWhen: [
+			"every test starts with twenty lines of building a valid object",
+			"adding a required field broke four hundred tests",
+			"I cannot tell from the setup what makes this case special",
+			"we have five slightly different ways to build the same fixture"
+		],
+		prompt: "Introduce named example objects for these tests. Name them for the domain situation they represent rather than their shape — a customer past their trial, an order awaiting payment — because names like validUser are what turn this into a dumping ground. For each, show which fields carry meaning for the scenario and which are just filler, and make the filler invisible at the call site. Then state the rule for when a new named example is justified versus when a caller should tweak an existing one, and show how a test signals that a specific field is the thing under test rather than incidental.",
+		why: "The pattern degenerates into a god-module of near-identical builders. The naming rule and the meaningful-versus-filler distinction are the guardrails that prevent it.",
+		watchOut: "A shared fixture edited to suit one test can silently change the meaning of dozens of others. Builders that produce fresh instances are safer at scale.",
+		related: [
+			"test-data-builder",
+			"ephemeral-test-fixtures",
+			"test-smell-audit",
+			"arrange-act-assert"
+		],
+		tags: [
+			"testing",
+			"fixtures",
+			"test data",
+			"readability"
+		]
+	},
+	{
+		id: "test-data-builder",
+		name: "Test Data Builder",
+		aka: ["builder pattern for tests", "fluent fixture builder"],
+		origin: "Nat Pryce; Growing Object-Oriented Software Guided by Tests, 2009",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Construct fixtures through a builder with sensible defaults, so each test states only the fields that matter to it and stays readable as the type grows.",
+		useWhen: [
+			"adding a constructor parameter meant editing hundreds of test files",
+			"the setup obscures what the test is actually about",
+			"I keep copying a huge object literal and changing one field",
+			"the fixtures drifted and now some are invalid"
+		],
+		prompt: "Design builders for these fixtures. Defaults should be valid but deliberately boring, and any field that influences the behaviour under test must be set explicitly at the call site even when the default would do — otherwise a later change to the default silently changes what the test means. Show the builder, a test before and after, and the rule for nested objects so callers do not have to know the graph. Then add the sharp edge: builders that mutate shared default instances leak state between tests, so show how yours produces an independent object every time.",
+		why: "Default-driven fixtures create tests whose meaning depends on a value defined far away. The explicit-if-relevant rule is what keeps them honest as the schema evolves.",
+		watchOut: "A builder for a type with three fields is ceremony. Reach for this when the type is wide or the construction is fiddly, not by default.",
+		related: [
+			"object-mother",
+			"ephemeral-test-fixtures",
+			"test-smell-audit",
+			"red-green-refactor"
+		],
+		tags: [
+			"testing",
+			"fixtures",
+			"test data",
+			"maintainability"
+		]
+	},
+	{
+		id: "ephemeral-test-fixtures",
+		name: "Fresh Fixture",
+		aka: [
+			"ephemeral fixtures",
+			"per-test setup and teardown",
+			"transactional rollback tests"
+		],
+		origin: "Gerard Meszaros, xUnit Test Patterns, 2007",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Build the world for each test and tear it down after, rather than sharing a prepared environment that accumulates whatever previous tests left behind.",
+		useWhen: [
+			"the seeded database has drifted and nobody knows what is in it",
+			"a test only passes if the seed script ran first",
+			"cleanup is missing when a test fails midway",
+			"two suites fight over the same records"
+		],
+		prompt: "Convert this shared setup into per-test state. Compare three mechanisms for us specifically: transactional rollback per test, truncate-and-reseed, and a fresh schema or namespace per worker — and score each on speed, on whether it survives code that manages its own transactions, and on parallel safety. Then handle the case everyone gets wrong: teardown when the test throws, and teardown when the process is killed. Recommend one, and identify the read-only reference data that genuinely can be shared because nothing writes to it, since rebuilding that per test is where the time goes.",
+		why: "The mechanism choice is the whole decision and it hinges on details — self-managed transactions, parallel workers — that a generic answer skips.",
+		watchOut: "Rollback-based isolation hides bugs involving commit behaviour, triggers or connection state. If your code depends on those, it needs a heavier mechanism.",
+		related: [
+			"test-isolation",
+			"hermetic-tests",
+			"test-data-builder",
+			"object-mother"
+		],
+		tags: [
+			"testing",
+			"fixtures",
+			"database",
+			"isolation"
+		]
+	},
+	{
+		id: "snapshot-testing",
+		name: "Snapshot Testing",
+		aka: ["inline snapshots", "serialised output tests"],
+		origin: "Jest, Facebook, 2016; lineage from approval testing",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Serialise a component or output tree to a checked-in file and fail on change, trading precision of intent for near-zero cost of coverage.",
+		useWhen: [
+			"writing assertions for this rendered output is tedious",
+			"the snapshot file changed and everyone just pressed update",
+			"we have huge generated files in the repository nobody reads",
+			"I want to know if this markup changed but not assert every attribute"
+		],
+		prompt: "Review our use of serialised output tests. Split them into two groups: those where the snapshot is small enough that a reviewer will genuinely read the diff, and those where it is not — the second group only detects change and should be described that way, not counted as verification. For the large ones, propose narrowing to the specific properties that carry meaning. Then set the update policy: what a reviewer must do before accepting a diff, and why blanket-updating is equivalent to deleting the test. Flag every snapshot containing volatile values that will churn without meaning anything.",
+		why: "These tests are cheap to add and quietly become noise. Sorting them by whether a human will actually read the diff is the distinction that decides which to keep.",
+		watchOut: "A snapshot approved without reading it is worse than no test, because it produces a green tick and trains the team to click update.",
+		related: [
+			"approval-testing",
+			"visual-regression-testing",
+			"test-oracle-problem",
+			"test-smell-audit"
+		],
+		tags: [
+			"testing",
+			"frontend",
+			"regression",
+			"review"
+		]
+	},
+	{
+		id: "visual-regression-testing",
+		name: "Visual Regression Testing",
+		aka: ["screenshot diffing", "perceptual diff testing"],
+		origin: "Widespread frontend practice; tools such as BackstopJS and Percy",
+		domains: ["engineering", "design"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Compare rendered screenshots against approved baselines so unintended layout and styling changes are caught before a human notices them in production.",
+		useWhen: [
+			"a CSS change broke the layout on a page nobody looked at",
+			"the design system upgrade shifted spacing everywhere",
+			"we only find visual bugs when a customer sends a screenshot",
+			"the same page looks different on two browsers and we did not know"
+		],
+		prompt: "Design visual regression coverage for this interface. The engineering problem is noise, so lead with it: enumerate the sources of pixel churn — font loading, animations, scrollbars, cursor blink, dynamic content, device pixel ratio, GPU differences between local and CI — and give the stabilisation for each. Then choose the comparison method and threshold, explaining why a raw pixel count is the wrong metric and what perceptual or region-based alternative to use. Finally, select which viewports and states to capture based on where our layout actually branches, rather than capturing every page at every size.",
+		why: "Visual diffing is abandoned almost always because of false positives, not because of missed bugs. Front-loading the noise sources is what determines whether it survives.",
+		watchOut: "Baselines that get bulk-approved after a redesign lose all value. Treat baseline updates as a reviewed change, not a chore.",
+		related: [
+			"snapshot-testing",
+			"accessibility-audit",
+			"design-system-governance",
+			"smoke-test-suite"
+		],
+		tags: [
+			"testing",
+			"frontend",
+			"ui",
+			"regression"
+		]
+	},
+	{
+		id: "smoke-test-suite",
+		name: "Smoke Test Suite",
+		aka: [
+			"build verification test",
+			"sanity suite",
+			"canary checks"
+		],
+		origin: "Hardware testing origin; Microsoft daily build practice, 1990s",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "A short set of checks proving the system is alive and its critical paths work, run after every deploy to answer one question fast: is this catastrophically broken?",
+		useWhen: [
+			"we deployed and only found out it was broken an hour later",
+			"the full suite takes too long to run after a release",
+			"the health check returns ok while the site is down",
+			"I need something to run against production right after a rollout"
+		],
+		prompt: "Define a post-deploy smoke suite for this system. Constrain it hard: under two minutes total, and every check must map to a user-visible failure worth an automatic rollback — anything else belongs in the main suite. Cover the paths that break on deployment specifically, which is different from the paths that break on code change: configuration missing, migration not applied, dependency unreachable, credentials expired, static assets not published, and the first request after a cold start. For each check, give the failure signal, whether it should trigger rollback or page a human, and how to run it safely against production data.",
+		why: "Smoke suites bloat into slow half-regression runs. Tying every check to an automatic rollback decision is the constraint that keeps the set small and meaningful.",
+		watchOut: "Passing smoke tests are weak evidence of correctness. They prove the system is up, not that the change did what it was supposed to.",
+		related: [
+			"synthetic-monitoring",
+			"canary-release",
+			"testing-in-production",
+			"deployment-rollback-plan"
+		],
+		tags: [
+			"testing",
+			"deployment",
+			"release",
+			"monitoring"
+		]
+	},
+	{
+		id: "test-seams",
+		name: "Test Seams",
+		aka: [
+			"seams",
+			"enabling points",
+			"dependency breaking"
+		],
+		origin: "Michael Feathers, Working Effectively with Legacy Code, 2004",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "A seam is a place you can change behaviour without editing the code there — find one and untestable code becomes testable without a rewrite.",
+		useWhen: [
+			"I cannot instantiate this class without half the system",
+			"the constructor connects to a database on line one",
+			"to test this I would have to refactor it and I cannot test the refactor",
+			"everything is static methods and globals"
+		],
+		prompt: "Find the seams in this code. Identify object seams (a method I can override in a subclass), link seams (a dependency I can substitute at build or load time), and preprocessing seams, and rank them by how little I have to change to use them. Then propose the smallest dependency-breaking move for the top one — extract and override, parameterise the constructor, introduce an instance delegator, or wrap the static — naming the specific technique and showing the diff. Be explicit about which of these changes are safe to make without tests because they are mechanical, and which are not.",
+		why: "The chicken-and-egg problem of legacy code — needing tests to refactor safely and refactoring to make tests possible — is solved specifically by ranking changes by mechanical safety.",
+		watchOut: "Seams introduced purely for testing can outlive their purpose and become confusing indirection. Note which ones to remove once real tests exist.",
+		related: [
+			"characterization-tests",
+			"sprout-and-wrap",
+			"dependency-inversion",
+			"approval-testing"
+		],
+		tags: [
+			"testing",
+			"legacy code",
+			"refactoring",
+			"dependencies"
+		]
+	},
+	{
+		id: "sprout-and-wrap",
+		name: "Sprout and Wrap Method",
+		aka: [
+			"sprout method",
+			"wrap method",
+			"sprout class"
+		],
+		origin: "Michael Feathers, Working Effectively with Legacy Code, 2004",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Add new behaviour in a fresh tested unit and call it from the old code, or wrap the old call, rather than editing an untested method you cannot verify.",
+		useWhen: [
+			"I have to add a feature to a method that is nine hundred lines long",
+			"there is no way I can test the function I need to change",
+			"I do not have time to refactor this whole file first",
+			"the safest change still means touching code nobody dares to touch"
+		],
+		prompt: "I need to add behaviour to this untested method. Give me both options concretely. For sprout: the new tested unit, the single line inserted into the old method, and what makes that insertion safe to eyeball. For wrap: the renamed original, the new method taking its name, and where the new behaviour sits relative to the old call. Then pick one, and justify it by whether the new behaviour is conditional on the old code running — that is the actual deciding factor. Finish with the note to leave behind saying what remains untested, so the next person is not misled by the new tests.",
+		why: "Both moves are simple; the decision between them is the part people get wrong. Anchoring it to whether the new behaviour depends on the old outcome makes it mechanical.",
+		watchOut: "This accumulates structure around a rotten core. It is a way to ship safely today, not a substitute for eventually cleaning up the method.",
+		related: [
+			"test-seams",
+			"characterization-tests",
+			"strangler-fig",
+			"branch-by-abstraction"
+		],
+		tags: [
+			"legacy code",
+			"testing",
+			"refactoring",
+			"incremental change"
+		]
+	},
+	{
+		id: "fuzz-testing",
+		name: "Fuzz Testing",
+		aka: [
+			"fuzzing",
+			"coverage-guided fuzzing",
+			"random input testing"
+		],
+		origin: "Barton Miller, University of Wisconsin, 1988; AFL and libFuzzer later",
+		domains: ["engineering", "security"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Feed the program malformed and mutated input at high volume, guided by code coverage, and watch for crashes, hangs and assertion failures.",
+		useWhen: [
+			"we parse untrusted input and I have no idea how robust it is",
+			"a malformed upload took down the service",
+			"I want to find the crash before someone else does",
+			"the input format has a spec and we accept things it does not allow"
+		],
+		prompt: "Set up fuzzing for this input-handling code. Start with the target function and the harness: it must take a byte array, be deterministic, and fail loudly — so list every place the code currently swallows an error, because a swallowed error is invisible to a fuzzer. Then define the corpus seeds from real valid inputs, the structural mutations worth teaching it about, and the oracles beyond crashes: assertion violations, memory limits, timeouts, and round-trip properties. Finally say how a discovered input gets minimised and turned into a permanent regression test, and how the corpus is stored so runs build on each other.",
+		why: "Fuzzing fails silently when the harness catches exceptions or the run starts from nothing. The swallowed-error inventory and corpus persistence are what make it find anything.",
+		watchOut: "Coverage-guided fuzzing explores shallow branches well and deep stateful protocols badly. For those you need a structure-aware generator, not raw bytes.",
+		related: [
+			"property-based-testing",
+			"boundary-value-analysis",
+			"attack-surface-reduction",
+			"input-validation-boundary"
+		],
+		tags: [
+			"testing",
+			"security",
+			"robustness",
+			"crashes"
+		]
+	},
+	{
+		id: "regression-test-selection",
+		name: "Regression Test Selection",
+		aka: ["safe test selection", "change-based test subsetting"],
+		origin: "Rothermel and Harrold, regression testing research, 1996",
+		domains: ["engineering"],
+		intents: ["prioritize", "plan"],
+		oneLiner: "Run only the tests that could possibly be affected by a change, derived from a dependency graph rather than from folder names or intuition.",
+		useWhen: [
+			"the pipeline takes an hour for a one-line change",
+			"we run everything every time because nobody knows what is related",
+			"developers wait so long they start batching changes",
+			"the cost of CI is now a line item somebody is asking about"
+		],
+		prompt: "Design change-based test selection for this repository. Explain what the dependency graph must include to be safe, and be exhaustive about the edges people miss: reflection, dynamic imports, configuration files, database migrations, generated code, container images and test fixtures. For each unmodellable edge, give the fallback rule that forces a full run. Then specify the safety net — periodic full runs, and what happens when selection misses a failure — plus the measurement that tells us whether this is paying for itself, comparing time saved against defects that reached later stages.",
+		why: "Unsafe selection is worse than no selection because it produces confident green results. Forcing an explicit list of unmodellable edges and their fallbacks is the safety argument.",
+		watchOut: "Maintaining the graph is real work, and it silently degrades as the build system changes. Without periodic full runs you will not notice it has stopped being safe.",
+		related: [
+			"test-impact-analysis",
+			"test-pyramid",
+			"build-cache-strategy",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"testing",
+			"ci",
+			"build time",
+			"dependency analysis"
+		]
+	},
+	{
+		id: "test-impact-analysis",
+		name: "Test Impact Analysis",
+		aka: ["coverage-based test targeting", "per-test coverage mapping"],
+		origin: "Microsoft Visual Studio TIA; adopted broadly in large monorepos",
+		domains: ["engineering"],
+		intents: ["prioritize", "diagnose"],
+		oneLiner: "Record which code each test actually executed, then use that map to order or select tests when that code changes — and to find the code no test touches.",
+		useWhen: [
+			"I want the tests most likely to fail to run first",
+			"we cannot tell which tests cover this module",
+			"a critical file has coverage but I do not know from which test",
+			"developers get feedback thirty minutes into the run"
+		],
+		prompt: "Build a per-test coverage map for this codebase and tell me what to do with it. Beyond selecting tests for a change, extract the three findings the map gives you for free: code executed by no test at all, code executed by many tests (a change there is high risk), and tests that execute almost nothing (candidates for deletion). Then define failure-ordering: run the tests whose covered lines changed most recently first, so the pipeline fails fast. Say how often the map must be regenerated and what makes it stale, since a stale map is the failure mode nobody notices.",
+		why: "The map is usually built for selection and its diagnostic uses are more valuable. Asking for the many-tests-cover-this signal identifies the riskiest code to change.",
+		watchOut: "Coverage-based mapping misses effects that are not executions — configuration, data, ordering. It is a prioritisation aid, not a proof of independence.",
+		related: [
+			"regression-test-selection",
+			"branch-coverage-criteria",
+			"risk-based-testing",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"testing",
+			"ci",
+			"coverage",
+			"prioritisation"
+		]
+	},
+	{
+		id: "specification-by-example",
+		name: "Specification by Example",
+		aka: ["living documentation", "executable specifications"],
+		origin: "Gojko Adzic, Specification by Example, 2011",
+		domains: ["engineering", "product"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Replace abstract requirements with concrete worked examples agreed by business and engineering, then automate them so the examples cannot go stale.",
+		useWhen: [
+			"the spec is ambiguous and everyone read it differently",
+			"the documentation says one thing and the code does another",
+			"we discover the real requirements during code review",
+			"requirements arrive as adjectives like fast and simple"
+		],
+		prompt: "Turn this requirement into concrete examples with real values instead of descriptions. For each rule, give the illustrative example, then the counter-example that shows where the rule stops applying, because a rule without its boundary is what gets implemented wrong. Push back on any input specified as a category rather than a value — write the actual number, the actual string, the actual date. Then mark which examples are business-critical enough to automate and which are conversation aids only, and say what part of this specification is still unknown and needs a decision from a named person.",
+		why: "Ambiguity survives in abstractions and dies on concrete values. Demanding real values and a counter-example per rule is what exposes the disagreement before the code is written.",
+		watchOut: "Automating every example produces a slow, over-specified suite that resists legitimate change. Automate the rules, illustrate the rest.",
+		related: [
+			"three-amigos",
+			"given-when-then",
+			"decision-table-testing",
+			"definition-of-done"
+		],
+		tags: [
+			"testing",
+			"requirements",
+			"documentation",
+			"collaboration"
+		]
+	},
+	{
+		id: "three-amigos",
+		name: "Three Amigos",
+		aka: ["specification workshop", "example mapping session"],
+		origin: "George Dinwiddie, 2011; Matt Wynne on example mapping",
+		domains: ["engineering", "product"],
+		intents: ["plan", "communicate"],
+		oneLiner: "Before building, get the business, development and testing perspectives into the same short conversation about one story, and leave with rules, examples and open questions.",
+		useWhen: [
+			"we built the wrong thing and everyone had understood it differently",
+			"the tester finds the requirement gaps only after the code is done",
+			"stories come back from review needing rework every time",
+			"the developer had questions and asked them three days in"
+		],
+		prompt: "Run this story through a three-perspective review and produce the four outputs of an example mapping session: the story, the business rules under it, an example per rule, and — most importantly — the questions nobody in the room can answer. Play each role explicitly: business asking what outcome this serves, development asking what is technically implied and what it touches, testing asking how it fails and what happens at the edges. If the question list is longer than the rule list, say so and recommend the story is not ready. Keep the whole thing to what could be covered in twenty-five minutes.",
+		why: "The valuable artefact is the question list, and unstructured refinement meetings do not produce it. Forcing the three roles and the readiness signal is what makes the session decide something.",
+		watchOut: "This is a short conversation, not a design committee. If it regularly runs long, the stories are too big rather than the meeting being too short.",
+		related: [
+			"specification-by-example",
+			"given-when-then",
+			"definition-of-done",
+			"exploratory-testing-charter"
+		],
+		tags: [
+			"requirements",
+			"collaboration",
+			"refinement",
+			"testing"
+		]
+	},
+	{
+		id: "minimal-reproducible-example",
+		name: "Minimal Reproducible Example",
+		aka: [
+			"MRE",
+			"MCVE",
+			"reduced test case"
+		],
+		origin: "Long-standing open-source and Stack Overflow practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "communicate"],
+		oneLiner: "Strip a failure down to the smallest self-contained case that still fails — the reduction itself usually finds the cause before anyone else reads it.",
+		useWhen: [
+			"I need to file a bug against a library and cannot show them our codebase",
+			"the bug only happens in our full application",
+			"the maintainer asked for a repro and I do not know where to start",
+			"I have a failure and no idea which part of the setup matters"
+		],
+		prompt: "Reduce this failure to a minimal case. Work by systematic elimination rather than intuition: at each step remove or inline one dependency, one configuration option, or half the data, and re-check that the failure persists in exactly the same form — a failure that changes shape means you have found a second bug and should note it separately. Keep a log of what was removed and what could not be, because the irreducible set is the diagnosis. Finish with the report: environment and versions, the reduced code, the observed behaviour, the expected behaviour, and what you already ruled out.",
+		why: "Reduction is usually done by guessing which parts matter. The stop-when-the-failure-changes-shape rule is what prevents chasing a different bug halfway through.",
+		watchOut: "Some bugs only appear under load, timing or scale and genuinely cannot be minimised. Say so explicitly rather than producing a small case that does not reproduce.",
+		related: [
+			"binary-search-debugging",
+			"hypothesis-driven-debugging",
+			"defect-triage-matrix",
+			"exploratory-testing-charter"
+		],
+		tags: [
+			"debugging",
+			"bug reports",
+			"reduction",
+			"communication"
+		]
+	},
+	{
+		id: "defect-triage-matrix",
+		name: "Defect Triage Matrix",
+		aka: ["severity versus priority", "bug triage rubric"],
+		origin: "Standard QA and incident management practice",
+		domains: ["engineering"],
+		intents: ["prioritize", "decide"],
+		oneLiner: "Separate how bad a defect is when it happens from how soon it should be fixed, and make both a written rubric rather than a negotiation.",
+		useWhen: [
+			"every bug in the tracker is marked critical",
+			"we argue about priority in every triage meeting",
+			"a cosmetic issue got fixed before a data corruption bug",
+			"nobody can explain why this bug has been open for a year"
+		],
+		prompt: "Write a triage rubric for our defects. Define severity purely by impact when it occurs — data loss, security exposure, blocked workflow, degraded experience, cosmetic — with an observable test for each level, then define priority separately using frequency, affected population, workaround availability and business timing. Show why a high-severity, never-observed bug can rightly sit below a medium-severity daily annoyance. Then add the decision rules: what gets fixed in the current work, what becomes scheduled work, and what gets closed as will-not-fix, including who is allowed to make that call.",
+		why: "Conflating severity with priority is why every bug ends up critical. Separating them with observable tests turns triage into classification instead of advocacy.",
+		watchOut: "A rubric that nobody can apply without a debate is just a longer argument. Test it against twenty existing bugs before adopting it.",
+		related: [
+			"risk-based-testing",
+			"incident-severity-levels",
+			"minimal-reproducible-example",
+			"eisenhower-matrix"
+		],
+		tags: [
+			"testing",
+			"triage",
+			"prioritisation",
+			"process"
+		]
+	},
+	{
+		id: "testing-in-production",
+		name: "Testing in Production",
+		aka: ["production verification", "shift right testing"],
+		origin: "Charity Majors and the observability community, mid-2010s",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Accept that some behaviour only exists under real traffic and data, and build the controls — flags, cohorts, observability, kill switches — that make verifying there safe.",
+		useWhen: [
+			"the staging environment is nothing like production and never will be",
+			"the bug only appears with real customer data volumes",
+			"we spend a fortune maintaining an environment that still misses things",
+			"we cannot reproduce it anywhere except live"
+		],
+		prompt: "Design safe verification in production for this change. The prerequisites are the deliverable, so list them before any technique: the flag that scopes exposure, the cohort definition, the kill switch and who can pull it, the metric that says stop, and the data-safety rule for anything written during the test. Then choose among shadow traffic, dark launch, canary cohort and synthetic transactions, saying what each can and cannot verify here. Finally state what must never be tested this way — irreversible writes, money movement, anything affecting a third party — and why.",
+		why: "The idea is usually taken as permission to be reckless. Leading with the control list, and with an explicit never-this-way category, is what makes it a practice rather than a slogan.",
+		watchOut: "This requires observability that many teams do not have. Without the metric that says stop, you are not testing in production, you are just deploying and hoping.",
+		related: [
+			"canary-release",
+			"feature-flag-hygiene",
+			"synthetic-monitoring",
+			"smoke-test-suite"
+		],
+		tags: [
+			"testing",
+			"production",
+			"observability",
+			"release"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/patterns.ts
+var patterns = [
+	{
+		id: "strategy-pattern",
+		name: "Strategy Pattern",
+		aka: ["policy pattern", "pluggable algorithm"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Pull each variant of an algorithm behind a common interface so the choice becomes data the caller supplies rather than a branch buried in the code.",
+		useWhen: [
+			"there is a giant switch statement on customer type and it keeps growing",
+			"adding a new payment method means editing six unrelated files",
+			"the same if-else chain appears in four places",
+			"I cannot test one pricing rule without setting up all of them"
+		],
+		prompt: "Refactor this conditional into interchangeable implementations behind one interface. Before writing any code, define the interface from the caller's point of view — what it needs, not what the current branches happen to do — because an interface shaped by the existing branches inherits their coupling. List what each variant needs that the others do not, and say honestly whether those differences fit one signature or are telling you these are not variants of the same thing. Then show how a variant is selected, and where that selection now lives, since moving the branch to a registry is only progress if the registry is smaller than the switch.",
+		why: "The refactor is mechanical and the trap is producing an interface with a union of every variant's parameters. Forcing the caller-first definition catches it.",
+		watchOut: "Two branches that will never grow do not need this. You have traded a visible conditional for indirection that a reader has to chase across files.",
+		related: [
+			"open-closed-principle",
+			"state-pattern",
+			"plugin-architecture",
+			"template-method"
+		],
+		tags: [
+			"design patterns",
+			"polymorphism",
+			"conditionals",
+			"extensibility"
+		]
+	},
+	{
+		id: "state-pattern",
+		name: "State Pattern",
+		aka: ["objects for states", "state as a class"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Give each lifecycle state its own object holding the behaviour legal in that state, so illegal operations become impossible rather than guarded.",
+		useWhen: [
+			"every method starts by checking the status field",
+			"we shipped a bug where a cancelled order still got fulfilled",
+			"the status enum has nine values and the rules between them are implicit",
+			"nobody can tell me which operations are allowed when"
+		],
+		prompt: "Convert this status-flag logic into per-state behaviour. Start by extracting the transition table from the existing guard clauses, including the ones that are missing — a state where the code never checks is a state where anything is permitted, and that is the finding. Then define one type per state exposing only the operations legal there, so calling an illegal one fails at compile time rather than at runtime. Show what happens to persistence, since the state must serialise back to something the database already holds, and show the single place transitions are performed so the rules cannot be bypassed.",
+		why: "Most implementations forget persistence and the round trip is where the pattern falls over in real systems. Extracting the implicit table first is what surfaces the unguarded transitions.",
+		watchOut: "For three states with almost identical behaviour this is a lot of classes for one enum. Reach for it when the behavioural difference between states is real.",
+		related: [
+			"state-transition-testing",
+			"illegal-states-unrepresentable",
+			"strategy-pattern",
+			"aggregate-root"
+		],
+		tags: [
+			"design patterns",
+			"state machines",
+			"invalid states",
+			"lifecycle"
+		]
+	},
+	{
+		id: "decorator-pattern",
+		name: "Decorator Pattern",
+		aka: ["wrapper", "middleware chain"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Wrap an object in another with the same interface to add behaviour — logging, caching, retries, authorisation — without touching the thing being wrapped.",
+		useWhen: [
+			"I want to add caching without editing the class that does the work",
+			"retry logic is copy-pasted into every client method",
+			"the same cross-cutting concern appears in twenty places",
+			"the class does its job plus timing plus logging plus metrics"
+		],
+		prompt: "Extract these cross-cutting concerns into wrappers around the core object. Give me the composition order explicitly and justify it, because order is the whole design here: authorisation outside caching or a user sees another user's cached data; retry outside or inside the timeout changes what the timeout means. Show the stack for our case with the reasoning per layer. Then address debuggability, which is the real cost — describe how a stack trace looks through six wrappers, and what naming or context-passing keeps it readable. Flag any wrapper that needs to know something the interface does not expose, since that one does not belong here.",
+		why: "Composition order bugs in decorator stacks are subtle and expensive. Demanding the ordering rationale per layer is where the correctness lives.",
+		watchOut: "Deep wrapper stacks make stack traces and profiling almost unreadable. Beyond three or four layers, an explicit pipeline you can inspect is kinder.",
+		related: [
+			"facade-pattern",
+			"adapter-pattern",
+			"retry-with-backoff",
+			"composition-over-inheritance"
+		],
+		tags: [
+			"design patterns",
+			"cross-cutting concerns",
+			"composition",
+			"middleware"
+		]
+	},
+	{
+		id: "adapter-pattern",
+		name: "Adapter Pattern",
+		aka: ["wrapper adapter", "translation layer"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Translate one interface into another so two components that were never designed for each other can work together without either changing.",
+		useWhen: [
+			"the library we want to use has a completely different shape to our code",
+			"we are migrating and need old and new to coexist for a while",
+			"a third-party SDK has leaked its types into our domain",
+			"two teams built interfaces that almost but not quite match"
+		],
+		prompt: "Design an adapter between these two interfaces. The interesting part is the impedance mismatch, so enumerate it rather than glossing: fields on one side with no counterpart, different error models, sync versus async, different null and empty semantics, different units or time zones, and different transactional guarantees. For each, state the translation and what information is lost. Then decide which side the adapter belongs to — it should live with the consumer and speak the consumer's language — and show what happens when the foreign side introduces a new error case the adapter has never seen.",
+		why: "Adapters that quietly discard information cause bugs far from the adapter. The explicit loss inventory is what makes those decisions visible and reviewable.",
+		watchOut: "An adapter that grows business logic is no longer an adapter. If translation requires domain decisions, that is a service, and it needs its own tests.",
+		related: [
+			"anti-corruption-layer",
+			"facade-pattern",
+			"decorator-pattern",
+			"hexagonal-architecture"
+		],
+		tags: [
+			"design patterns",
+			"integration",
+			"translation",
+			"third party"
+		]
+	},
+	{
+		id: "facade-pattern",
+		name: "Facade Pattern",
+		aka: ["simplified interface", "coarse-grained API"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Offer one simple entry point over a complicated subsystem so ordinary callers do not have to learn the whole thing to do the common task.",
+		useWhen: [
+			"using our own module requires knowing six classes and a call order",
+			"new developers get the initialisation sequence wrong every time",
+			"the same four-step dance is repeated all over the codebase",
+			"callers have to know internal details they should not care about"
+		],
+		prompt: "Design a facade over this subsystem. Base it on the actual call sites: find every place callers use it today, cluster them into the two or three things people are really trying to do, and design the entry points around those clusters rather than around the subsystem's structure. Then answer the question that decides whether a facade helps or hurts — is the underlying subsystem still reachable? State explicitly which advanced cases must bypass the facade and how, because a facade that seals off necessary capability gets worked around and then you have two APIs.",
+		why: "Facades designed from the subsystem outward reproduce its complexity with new names. Deriving them from real call sites is what makes them simplify anything.",
+		watchOut: "A facade hides complexity, it does not remove it. If the subsystem is genuinely confusing, the facade eventually leaks and now there are two things to understand.",
+		related: [
+			"adapter-pattern",
+			"api-ergonomics",
+			"progressive-disclosure",
+			"backend-for-frontend"
+		],
+		tags: [
+			"design patterns",
+			"api design",
+			"simplification",
+			"usability"
+		]
+	},
+	{
+		id: "observer-pattern",
+		name: "Observer Pattern",
+		aka: [
+			"publish-subscribe in process",
+			"listeners",
+			"event emitter"
+		],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Let interested parties register for notifications instead of the source knowing them, decoupling the publisher at the cost of an invisible call graph.",
+		useWhen: [
+			"this class has to notify five other things and knows about all of them",
+			"I cannot tell what happens when this event fires without grepping",
+			"adding a new side effect means editing the core flow again",
+			"the listener list has a memory leak and I cannot find the leaker"
+		],
+		prompt: "Design event notification for this component and be honest about the costs alongside the decoupling. Specify the four things that make emitters go wrong: whether handlers run synchronously or are queued, what happens when one handler throws (does the rest still run, does the publisher see it), the ordering guarantee between handlers, and the unsubscribe path including who owns it. Then give me the discoverability answer — how a future reader finds every handler for an event — because an untraceable call graph is the real price of this pattern and it should be paid deliberately.",
+		why: "Handler exceptions and forgotten unsubscribes are the standard production failures, and neither shows up in the textbook diagram. Making them part of the design spec prevents both.",
+		watchOut: "In-process observers give decoupling without durability. If a missed notification means lost work, you need a queue and an outbox, not a listener list.",
+		related: [
+			"domain-events",
+			"transactional-outbox",
+			"event-driven-choreography",
+			"memory-leak-diagnosis"
+		],
+		tags: [
+			"design patterns",
+			"events",
+			"decoupling",
+			"callbacks"
+		]
+	},
+	{
+		id: "command-pattern",
+		name: "Command Pattern",
+		aka: [
+			"action object",
+			"undoable operation",
+			"request as object"
+		],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Turn an operation into a first-class object so it can be queued, logged, retried, undone or authorised without the caller executing it immediately.",
+		useWhen: [
+			"we need undo and the logic is scattered through the UI handlers",
+			"I want to queue these operations and run them later",
+			"every action needs an audit record and we keep forgetting some",
+			"retrying a failed operation means re-running a whole request path"
+		],
+		prompt: "Model these operations as command objects. Make each command self-contained enough to be executed later by something that has no access to the original context — that constraint is what makes queuing, replay and audit work, and it means resolving ambient state at construction time rather than at execution. List every piece of context the current code reads implicitly and decide for each whether it is captured or looked up fresh, with the consequence stated. Then, if undo is needed, show whether it is inverse-operation or state-snapshot based, and which operations cannot be undone at all.",
+		why: "Commands that read ambient state at execution time silently break the moment they are deferred, and that is exactly why they were made commands. Forcing the capture decision prevents it.",
+		watchOut: "A command class per trivial operation is boilerplate that buys nothing. Use it where deferral, audit or undo is actually required.",
+		related: [
+			"cqrs",
+			"transactional-outbox",
+			"idempotency-keys",
+			"event-sourcing"
+		],
+		tags: [
+			"design patterns",
+			"undo",
+			"queueing",
+			"audit"
+		]
+	},
+	{
+		id: "template-method",
+		name: "Template Method",
+		aka: ["hook methods", "skeleton algorithm"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Fix the shape of an algorithm in a base class and let subclasses fill in named steps — powerful for genuine variation, notorious for inheritance tangles.",
+		useWhen: [
+			"four importers follow the same steps with different details",
+			"I copied a class and changed two methods in the middle",
+			"the shared code is duplicated but the differences are scattered through it",
+			"the base class keeps growing hooks nobody uses"
+		],
+		prompt: "These implementations share a shape with varying steps. Show me both structural options and make me choose deliberately: an inheritance-based skeleton with overridable steps, and a composition-based version where the shape is a function taking the varying steps as parameters. Compare them on three specific things — how easy each is to test in isolation, what happens when one variant needs to skip a step entirely, and what happens when two variants need to share one of the steps but not the others. Recommend one for this case and say what would change your answer.",
+		why: "The inheritance version is the one everyone reaches for and the one that ossifies. Comparing on skip-a-step and share-one-step is what predicts which will hurt in a year.",
+		watchOut: "Base classes with many optional hooks become impossible to reason about, because behaviour is assembled from a class hierarchy rather than written down anywhere.",
+		related: [
+			"composition-over-inheritance",
+			"strategy-pattern",
+			"open-closed-principle",
+			"plugin-architecture"
+		],
+		tags: [
+			"design patterns",
+			"inheritance",
+			"duplication",
+			"extensibility"
+		]
+	},
+	{
+		id: "visitor-pattern",
+		name: "Visitor Pattern",
+		aka: ["double dispatch", "operations over a structure"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Move operations out of a stable type hierarchy into separate visitors, making it easy to add operations and hard to add types — the exact opposite trade to inheritance.",
+		useWhen: [
+			"I keep adding methods to every node class in my syntax tree",
+			"the same recursive walk is written five times slightly differently",
+			"adding a new report means touching every model class",
+			"the type hierarchy is stable but the things we do with it keep growing"
+		],
+		prompt: "Assess whether visitors fit this hierarchy using the expression problem as the frame: how often do we add new types versus new operations? Count both from our commit history rather than guessing. If operations dominate, design the visitor including the parts that get skipped — traversal control (who decides to recurse), accumulating results without shared mutable state, and what happens when a new type is added later and existing visitors do not handle it. If types dominate, say so and recommend keeping the operations on the types instead.",
+		why: "This pattern is either exactly right or a disaster, and the deciding evidence is in the commit history. Making the model count instead of theorise is what makes the recommendation trustworthy.",
+		watchOut: "In languages with pattern matching or multiple dispatch, the whole ceremony is unnecessary. Check the language before importing the structure.",
+		related: [
+			"composite-pattern",
+			"open-closed-principle",
+			"strategy-pattern",
+			"domain-events"
+		],
+		tags: [
+			"design patterns",
+			"traversal",
+			"extensibility",
+			"type hierarchy"
+		]
+	},
+	{
+		id: "composite-pattern",
+		name: "Composite Pattern",
+		aka: ["part-whole hierarchy", "tree of uniform nodes"],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Treat a single item and a group of items through the same interface so callers can operate on a tree without asking what kind of node they hold.",
+		useWhen: [
+			"the code is full of checks for whether this is a folder or a file",
+			"nested groups need the same operations as single items",
+			"permissions have to roll up through a hierarchy and it is all special cases",
+			"the recursive logic is duplicated wherever we walk the structure"
+		],
+		prompt: "Model this part-whole structure so leaves and groups share an interface. Confront the standard tension directly: operations that only make sense on a group, such as adding a child. Show both resolutions — a uniform interface where leaves throw or no-op, versus a safe interface where callers must narrow the type — and pick one with an argument about which errors we would rather have. Then cover the practical hazards: cycle detection, depth limits on recursion, and how an aggregate operation over a large tree avoids the N+1 problem if nodes are loaded lazily.",
+		why: "The uniform-versus-safe choice is the actual design decision and models present the pattern as though it does not exist. Cycles and lazy loading are where real implementations break.",
+		watchOut: "Deep recursive structures blow stacks and hide performance costs. If the tree can be large, plan for an iterative traversal from the start.",
+		related: [
+			"visitor-pattern",
+			"n-plus-one-queries",
+			"illegal-states-unrepresentable",
+			"information-architecture"
+		],
+		tags: [
+			"design patterns",
+			"trees",
+			"recursion",
+			"hierarchy"
+		]
+	},
+	{
+		id: "builder-pattern",
+		name: "Builder Pattern",
+		aka: ["fluent construction", "step builder"],
+		origin: "Gang of Four, 1994; refined by Joshua Bloch, Effective Java",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Assemble a complex object through named steps that validate as they go, instead of a constructor with eleven positional arguments nobody can read.",
+		useWhen: [
+			"the constructor takes nine parameters and four of them are booleans",
+			"I passed the arguments in the wrong order and it compiled fine",
+			"there are five constructors and I cannot tell which to use",
+			"half the fields are optional and the object can be built invalid"
+		],
+		prompt: "Replace this construction with a builder, and make invalid construction unrepresentable rather than merely validated. Show where each required field is enforced: if the language allows it, use a staged interface so the terminal build method is only reachable once the mandatory fields are set, which beats a runtime check. Handle the cases that decide whether this is worth it — mutually exclusive options, fields whose validity depends on another field, and defaults that should be explicit rather than silent. Then show the resulting call site and confirm it reads as a description of the object rather than a sequence of setters.",
+		why: "A builder that just moves runtime validation later is barely better than a long constructor. Pushing enforcement into the type is the version that eliminates a class of bugs.",
+		watchOut: "Builders make objects look mutable during construction and can leak half-built instances. Keep the built result immutable and never hand out the builder.",
+		related: [
+			"test-data-builder",
+			"illegal-states-unrepresentable",
+			"immutability-by-default",
+			"value-object"
+		],
+		tags: [
+			"design patterns",
+			"construction",
+			"api design",
+			"validation"
+		]
+	},
+	{
+		id: "factory-method",
+		name: "Factory Method",
+		aka: [
+			"creation method",
+			"named constructor",
+			"abstract factory"
+		],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Put object creation behind a named method so the caller states intent rather than choosing a concrete class, and construction rules live in one place.",
+		useWhen: [
+			"the same object gets constructed slightly differently in each caller",
+			"callers have to know which subclass to instantiate",
+			"we cannot swap the implementation in tests because it is created inline",
+			"the constructor cannot express the two different ways to make this thing"
+		],
+		prompt: "Introduce creation methods for this type. Name them for the situation they serve rather than the parameters they take — fromCsvRow and forNewCustomer, not createWithArgs — since intent-revealing names are the main benefit over a constructor. Say where the factory lives and why: a static method on the type when the rules are local, a separate factory when creation needs collaborators or configuration. Then flag any place where the factory is really hiding a decision that the caller should be making explicitly, because a factory that guesses is worse than a constructor that asks.",
+		why: "Factories multiply into layers of indirection with no clear ownership. The name-for-intent rule and the factory-hiding-a-decision check are what keep them useful.",
+		watchOut: "A factory whose only job is to call new adds a file and buys nothing. Wait until there is a genuine choice, configuration or invariant to enforce.",
+		related: [
+			"builder-pattern",
+			"dependency-injection",
+			"value-object",
+			"strategy-pattern"
+		],
+		tags: [
+			"design patterns",
+			"construction",
+			"naming",
+			"indirection"
+		]
+	},
+	{
+		id: "singleton-tradeoffs",
+		name: "Singleton Trade-offs",
+		aka: ["global instance", "shared mutable state"],
+		origin: "Gang of Four, 1994; widely reconsidered since",
+		domains: ["engineering"],
+		intents: ["critique", "decide"],
+		oneLiner: "A single shared instance is really global state with a polite name — evaluate it on testability, lifecycle and concurrency rather than on whether one instance is enough.",
+		useWhen: [
+			"the tests interfere with each other through a shared instance",
+			"we need two configurations at once and the design assumes one",
+			"nobody can tell when this gets initialised",
+			"it works until two threads touch it at the same time"
+		],
+		prompt: "Evaluate this shared instance honestly. Separate two questions that always get conflated: does the system need exactly one of these at runtime, and must the code be unable to obtain a second one? Almost always the answer to the first is yes and the second is no, which points to a single instance wired in at the top rather than enforced by the type. Then list the concrete costs we are paying today — tests that must run in sequence, hidden initialisation order, thread safety, inability to scope per request or per tenant — and give the smallest change that removes the ones that are actually hurting.",
+		why: "The debate is usually doctrinal. Splitting need-one from enforce-one makes it a wiring decision, which is both correct and easy to act on.",
+		watchOut: "Removing a shared instance wholesale can be a huge refactor. Wiring it as a parameter at the boundary often captures most of the benefit for a fraction of the work.",
+		related: [
+			"dependency-injection",
+			"test-isolation",
+			"immutability-by-default",
+			"hermetic-tests"
+		],
+		tags: [
+			"design patterns",
+			"global state",
+			"testability",
+			"lifecycle"
+		]
+	},
+	{
+		id: "null-object-pattern",
+		name: "Null Object",
+		aka: ["special case object", "do-nothing implementation"],
+		origin: "Bobby Woolf, 1996; Fowler's Special Case pattern",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Supply a harmless implementation of an interface for the absent case so callers stop guarding against nothing on every line.",
+		useWhen: [
+			"every method starts with three lines of checking for missing values",
+			"we get null pointer errors in production every week",
+			"the anonymous user case is special-cased everywhere",
+			"half this function is defensive checks and half is logic"
+		],
+		prompt: "Replace these absence checks with an explicit representation of the empty case. First list what the caller does today when the value is missing, because the answers differ — sometimes skip, sometimes default, sometimes error — and only the skip-or-default cases are candidates. For those, define the object and state its behaviour for every method, especially the ones where doing nothing is wrong. Then be strict about the boundary: where absence is genuinely an error the code must not swallow it, so name the call sites that must keep failing loudly and explain how a reader tells the two categories apart.",
+		why: "The failure mode is a silent no-op where an error was needed. Sorting call sites by what they do today is what keeps the pattern from hiding real faults.",
+		watchOut: "A null object that silently absorbs mistakes turns a crash into wrong data, which is worse. Only use it where doing nothing is genuinely correct.",
+		related: [
+			"parse-dont-validate",
+			"illegal-states-unrepresentable",
+			"result-error-handling",
+			"defensive-programming-limits"
+		],
+		tags: [
+			"design patterns",
+			"null handling",
+			"defensive code",
+			"readability"
+		]
+	},
+	{
+		id: "value-object",
+		name: "Value Object",
+		aka: [
+			"whole value",
+			"domain primitive",
+			"tiny types"
+		],
+		origin: "Ward Cunningham, Whole Value, 1994; Eric Evans, Domain-Driven Design",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Wrap a meaningful quantity — money, email address, quantity, identifier — in its own immutable type carrying its rules, instead of passing raw strings and numbers.",
+		useWhen: [
+			"we swapped two string parameters and nothing complained",
+			"the same validation is repeated at every boundary",
+			"a currency mix-up got into production",
+			"ids are strings and we passed a user id where an order id belonged"
+		],
+		prompt: "Identify the primitives in this code that are really domain concepts and wrap them. For each, define construction that cannot produce an invalid instance, equality by value not identity, and the operations that make sense on it — including the ones that must be forbidden, since preventing money from being added to money in another currency is most of the value here. Show the boundaries where raw input is converted in and out, and count how many scattered validations disappear. Then rank the candidates by how many bugs the type would have prevented, and recommend only the top few rather than wrapping everything.",
+		why: "The technique is often applied indiscriminately until the codebase drowns in tiny classes. Ranking by prevented bugs and naming forbidden operations keeps it to the ones that pay.",
+		watchOut: "Serialisation, database mapping and API boundaries all need conversions. If your stack makes that painful, the tax may exceed the benefit for minor concepts.",
+		related: [
+			"parse-dont-validate",
+			"immutability-by-default",
+			"illegal-states-unrepresentable",
+			"ubiquitous-language"
+		],
+		tags: [
+			"domain modelling",
+			"types",
+			"validation",
+			"primitives"
+		]
+	},
+	{
+		id: "aggregate-root",
+		name: "Aggregate Root",
+		aka: [
+			"consistency boundary",
+			"aggregate design",
+			"transactional boundary"
+		],
+		origin: "Eric Evans, Domain-Driven Design, 2003; Vaughn Vernon on aggregate sizing",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Group the objects that must stay consistent together behind one entry point, and make that group the unit of transaction and of concurrency control.",
+		useWhen: [
+			"two users edited related records and the totals no longer add up",
+			"a transaction locks half the database and everything queues behind it",
+			"I do not know which objects should be saved together",
+			"we load an enormous object graph to change one field"
+		],
+		prompt: "Design the consistency boundaries for this model. Drive it from invariants, not from the object graph: list every rule that must never be violated even momentarily, and let each rule pull the objects it constrains into one boundary. Rules that can tolerate brief inconsistency belong across boundaries and are handled by events instead — say which of ours those are. Then size the result: name any boundary that would be modified by many users at once or that would load hundreds of children, since those are the ones that cause contention. Finish with how one boundary references another, which should be by identity only.",
+		why: "Aggregates drawn from the entity-relationship diagram are always too big. Deriving them from invariants and then checking for contention is what produces workable sizes.",
+		watchOut: "Small aggregates push you into eventual consistency between them, which the business has to accept. Get agreement on the tolerated staleness before designing around it.",
+		related: [
+			"bounded-context",
+			"domain-events",
+			"optimistic-concurrency",
+			"saga-pattern"
+		],
+		tags: [
+			"domain-driven design",
+			"consistency",
+			"transactions",
+			"modelling"
+		]
+	},
+	{
+		id: "domain-events",
+		name: "Domain Events",
+		aka: ["business events", "something happened records"],
+		origin: "Eric Evans and Martin Fowler; central to event-driven DDD",
+		domains: ["engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Record the meaningful things that happened in the business as named past-tense facts, and let reactions subscribe rather than being wired into the action.",
+		useWhen: [
+			"placing an order now triggers seven side effects inside one function",
+			"adding a new notification means editing core business logic again",
+			"the audit trail is reconstructed from database timestamps",
+			"nobody can list what happens when a customer cancels"
+		],
+		prompt: "Model the meaningful business occurrences here as named past-tense facts. Name them in the language the business uses, and be strict that an event describes what happened rather than what should happen next — OrderPlaced, not SendConfirmationEmail — because command-shaped events recreate the coupling you are removing. For each, define the payload using the rule that consumers should not need to call back for basic context, but the event must not become a copy of the whole record. Then state which reactions must happen inside the original transaction and which may be eventual, since that split is the real design decision.",
+		why: "The naming rule and the in-transaction-versus-eventual split are the two places this goes wrong, and both are invisible until something is missing in production.",
+		watchOut: "Events published before the transaction commits can describe things that never happened. That is what an outbox is for.",
+		related: [
+			"transactional-outbox",
+			"event-driven-choreography",
+			"aggregate-root",
+			"event-sourcing"
+		],
+		tags: [
+			"domain-driven design",
+			"events",
+			"decoupling",
+			"audit"
+		]
+	},
+	{
+		id: "specification-pattern",
+		name: "Specification Pattern",
+		aka: ["composable business rules", "predicate objects"],
+		origin: "Eric Evans and Martin Fowler, 2002",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Express each business rule as a small composable predicate that can be combined with and, or and not, and reused for validation, selection and construction.",
+		useWhen: [
+			"the eligibility rules are duplicated in the query and in the validation",
+			"the same condition is written in SQL and again in code and they disagree",
+			"the where clause has eleven conditions and nobody knows why",
+			"a rule changed and we only updated it in one of the three places"
+		],
+		prompt: "Extract these business rules into composable predicates. The design problem is the two execution contexts — in memory over an object, and pushed down into a database query — so address it directly: show which of our rules can be translated to a query and which can only run in memory, and what the code does when a combination mixes both. Name each predicate after the business rule rather than the field it inspects. Then show a combination reading like the policy statement it implements, and identify the rules currently duplicated between query and validation that this would unify.",
+		why: "Everyone builds the in-memory version and then discovers it cannot be used for querying. Forcing the translation question up front decides whether the pattern is worth it here.",
+		watchOut: "A composition of ten predicates can be far slower than one hand-written query. Keep an eye on what the abstraction generates.",
+		related: [
+			"ubiquitous-language",
+			"value-object",
+			"decision-table-testing",
+			"query-plan-reading"
+		],
+		tags: [
+			"domain modelling",
+			"business rules",
+			"composition",
+			"validation"
+		]
+	},
+	{
+		id: "ubiquitous-language",
+		name: "Ubiquitous Language",
+		aka: ["shared domain vocabulary", "domain glossary"],
+		origin: "Eric Evans, Domain-Driven Design, 2003",
+		domains: ["engineering", "product"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Use one vocabulary across conversation, documentation and code, so the translation step where meaning gets lost simply does not exist.",
+		useWhen: [
+			"support calls it a subscription and the code calls it a plan",
+			"every conversation starts with clarifying what a word means",
+			"the database columns are named after a process we stopped doing years ago",
+			"requirements get misimplemented because a word meant something else"
+		],
+		prompt: "Build a glossary from this material and then use it as an audit. First extract every term with its business definition, marking synonyms and near-synonyms explicitly. Then compare against the code: list every place a term in the code differs from the business word, and every place one business word maps to several code names or the reverse. The many-to-one cases are the interesting ones because they usually mean two different concepts are being conflated. Recommend the renames, in order of how often the confused terms appear in defect reports, and say which are safe mechanical changes.",
+		why: "A glossary alone changes nothing. Using it as a diff against the codebase turns vocabulary work into a concrete rename list with an evidence-based order.",
+		watchOut: "The same word legitimately means different things in different parts of the business. Forcing one definition across them is what bounded contexts exist to avoid.",
+		related: [
+			"bounded-context",
+			"naming-as-design",
+			"value-object",
+			"event-storming"
+		],
+		tags: [
+			"domain-driven design",
+			"naming",
+			"communication",
+			"glossary"
+		]
+	},
+	{
+		id: "event-storming",
+		name: "Event Storming",
+		aka: ["big picture modelling", "sticky note domain workshop"],
+		origin: "Alberto Brandolini, 2013",
+		domains: ["engineering", "product"],
+		intents: ["structure", "explain"],
+		oneLiner: "Map a business process as a timeline of events, then layer on commands, actors, policies and systems until the boundaries and the confusion both become visible.",
+		useWhen: [
+			"nobody has the whole picture of how this process works end to end",
+			"we are about to split a system and do not know where to cut",
+			"each team knows their part and the handoffs are a mystery",
+			"the process documentation is five years out of date"
+		],
+		prompt: "Facilitate this as a written event storm. Start with the timeline of business occurrences in past tense, unordered at first, then sequence them. Layer on what triggers each — a user command, a policy reacting to a previous event, or an external system — and who performs it. The output that matters most is the hot spots: every place where the participants would disagree, where a term means two things, or where nobody knows what happens. Surface those explicitly as a list. Then propose candidate boundaries where the event flow is thin and the vocabulary shifts, and say which are confident and which are guesses.",
+		why: "The value is in the disagreements surfaced, not in the tidy diagram. Explicitly asking for hot spots and marking boundary confidence is what makes the output actionable.",
+		watchOut: "A storm run without the people who actually know the process produces a confident fiction. The technique is a facilitation structure, not a substitute for domain knowledge.",
+		related: [
+			"bounded-context",
+			"ubiquitous-language",
+			"domain-events",
+			"aggregate-root"
+		],
+		tags: [
+			"domain-driven design",
+			"workshop",
+			"process mapping",
+			"boundaries"
+		]
+	},
+	{
+		id: "tell-dont-ask",
+		name: "Tell, Don't Ask",
+		aka: ["behaviour with data", "avoid feature envy"],
+		origin: "Alec Sharp, 1997; popularised by the Pragmatic Programmers",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Send an object a request rather than pulling out its data and deciding for it, so the rules live next to the state they constrain.",
+		useWhen: [
+			"the service class reads six fields off the model and then decides",
+			"the same calculation is done by every caller slightly differently",
+			"our objects are just bags of getters and setters",
+			"business rules are spread across the callers instead of the thing they govern"
+		],
+		prompt: "Find the places here where a caller extracts state and makes a decision that belongs to the object it took the state from. For each, show the move: the method that should exist on the object, and what it returns. Then apply the discriminator that stops this becoming dogma — the logic belongs to the object only if it depends on that object's internals; logic that coordinates several objects or depends on external policy belongs in a service and should stay there. Sort the findings into those two piles and only refactor the first. Finish with what stops being possible once the fields are private.",
+		why: "Applied without the discriminator, this principle inflates domain objects with orchestration logic. Splitting internal-state logic from coordination logic is what makes it safe to apply.",
+		watchOut: "Data transfer objects at boundaries are supposed to be dumb. Do not push behaviour into serialisation shapes.",
+		related: [
+			"law-of-demeter",
+			"single-responsibility",
+			"value-object",
+			"aggregate-root"
+		],
+		tags: [
+			"design principles",
+			"encapsulation",
+			"object design",
+			"refactoring"
+		]
+	},
+	{
+		id: "law-of-demeter",
+		name: "Law of Demeter",
+		aka: [
+			"principle of least knowledge",
+			"one dot rule",
+			"train wreck code"
+		],
+		origin: "Ian Holland, Northeastern University, 1987",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Talk only to your immediate collaborators, because every chained call through an object graph is a dependency on a structure you do not own.",
+		useWhen: [
+			"a change to a nested class broke code three levels away",
+			"the code is full of long chains of dot calls",
+			"testing this needs a mock returning a mock returning a mock",
+			"renaming a field on an inner object broke six unrelated modules"
+		],
+		prompt: "Find the chained navigations through object structure in this code and assess each. Distinguish real violations — where we reach through one object to reason about another's internals — from fluent interfaces and collection pipelines that are chained by design and are not violations at all. For the real ones, propose the delegating method that would remove the chain, and then apply the check that keeps this from generating dozens of pass-through methods: does the intermediate object have a reason to expose this as behaviour of its own? If not, the right fix is usually to pass the inner object directly rather than to delegate.",
+		why: "Naive application produces a wall of forwarding methods that is worse than the chains. Distinguishing fluent chains from real reach-through, and preferring direct passing, is the corrective.",
+		watchOut: "Configuration objects, builders and query DSLs chain intentionally. Enforcing this by lint rule punishes them for no benefit.",
+		related: [
+			"tell-dont-ask",
+			"interface-segregation",
+			"test-doubles-taxonomy",
+			"coupling-metrics"
+		],
+		tags: [
+			"design principles",
+			"coupling",
+			"encapsulation",
+			"refactoring"
+		]
+	},
+	{
+		id: "single-responsibility",
+		name: "Single Responsibility Principle",
+		aka: [
+			"SRP",
+			"one reason to change",
+			"axis of change"
+		],
+		origin: "Robert C. Martin, SOLID principles, early 2000s",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "A module should answer to one stakeholder or one reason to change — the useful reading is about who requests the change, not about how many methods it has.",
+		useWhen: [
+			"this class is two thousand lines and does everything",
+			"a reporting change forces us to retest the billing path",
+			"two teams keep colliding in the same file",
+			"I cannot name this class without using the word manager"
+		],
+		prompt: "Assess this module against the stakeholder reading of single responsibility rather than the size reading. For each method, name the role or business function that would request a change to it — finance, operations, compliance, the mobile client — and group by that. If the groups are disjoint, that is the split, and it is a much better argument than the class being long. Then check the counter-evidence: pieces that different stakeholders would both want changed together should stay together. Recommend a split only where the commit history shows those groups actually changing at different times.",
+		why: "The line-count reading of this principle produces pointless fragmentation. The stakeholder reading plus commit-history evidence turns it into a defensible boundary argument.",
+		watchOut: "Splitting by responsibility can raise coupling if the pieces need constant coordination. Cohesion and coupling have to be judged together.",
+		related: [
+			"package-by-feature",
+			"coupling-metrics",
+			"bounded-context",
+			"tell-dont-ask"
+		],
+		tags: [
+			"design principles",
+			"cohesion",
+			"modularity",
+			"refactoring"
+		]
+	},
+	{
+		id: "open-closed-principle",
+		name: "Open-Closed Principle",
+		aka: ["OCP", "open for extension closed for modification"],
+		origin: "Bertrand Meyer, 1988; reframed by Robert C. Martin",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Design so that new behaviour arrives as new code rather than edits to working code — but only along the axis where variation actually happens.",
+		useWhen: [
+			"adding the tenth report type means editing the same file again",
+			"every new country requires changes in eleven places",
+			"we broke an existing feature while adding a new one",
+			"the switch statement grows with every customer request"
+		],
+		prompt: "Identify the axis of variation in this code from evidence rather than speculation: look at what has actually been added repeatedly — new types, new formats, new regions — and design the extension point along that axis only. Show what adding the next variant would look like as pure addition. Then state clearly what is now hard: extension points make one axis cheap and every other axis more expensive, so name the change we would find harder after this refactor. If the history shows variation along two axes, say so and recommend which one to make cheap, because you cannot have both.",
+		why: "Speculative extension points are the main cost of this principle. Anchoring the axis to actual history and naming what gets harder is what prevents over-engineering.",
+		watchOut: "Guessing the axis wrong is worse than not abstracting at all, because the abstraction now blocks the change you do need. Wait for the third instance.",
+		related: [
+			"strategy-pattern",
+			"plugin-architecture",
+			"yagni",
+			"rule-of-three-duplication"
+		],
+		tags: [
+			"design principles",
+			"extensibility",
+			"abstraction",
+			"variation"
+		]
+	},
+	{
+		id: "liskov-substitution",
+		name: "Liskov Substitution Principle",
+		aka: [
+			"LSP",
+			"behavioural subtyping",
+			"substitutability"
+		],
+		origin: "Barbara Liskov, 1987; formalised with Jeannette Wing, 1994",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "A subtype must be usable anywhere its parent is without the caller noticing — which constrains preconditions, postconditions and exceptions, not just signatures.",
+		useWhen: [
+			"the subclass throws not-implemented for half the interface",
+			"code that works for one implementation breaks for another",
+			"we had to add a check for which subclass we actually have",
+			"the read-only version of this type still has a save method"
+		],
+		prompt: "Check these implementations for substitutability using the three rules that matter beyond signatures: a subtype may not strengthen what it demands of callers, may not weaken what it promises, and may not throw exceptions the parent did not declare. Test each implementation against every documented and undocumented expectation of the parent, including things like ordering, idempotence, thread safety and performance class — the last one matters because a hundredfold slower implementation breaks callers just as effectively. For each violation, say whether the fix is to change the subtype, split the interface, or admit these are not the same abstraction.",
+		why: "Signature-level checking passes trivially and misses every real violation. Including implicit contracts like ordering and cost is where the actual breakage lives.",
+		watchOut: "Type checkers cannot see behavioural contracts. A shared test suite run against every implementation is the only enforcement that works.",
+		related: [
+			"interface-segregation",
+			"contract-testing",
+			"composition-over-inheritance",
+			"null-object-pattern"
+		],
+		tags: [
+			"design principles",
+			"inheritance",
+			"contracts",
+			"polymorphism"
+		]
+	},
+	{
+		id: "interface-segregation",
+		name: "Interface Segregation Principle",
+		aka: [
+			"ISP",
+			"role interfaces",
+			"fat interface"
+		],
+		origin: "Robert C. Martin, SOLID principles",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Clients should not be forced to depend on methods they never call — split wide interfaces into the roles that consumers actually need.",
+		useWhen: [
+			"implementing this interface means writing eight methods I do not need",
+			"a change to a method nobody uses forced a rebuild everywhere",
+			"the test double has to stub twelve methods to test one",
+			"our repository interface has forty methods on it"
+		],
+		prompt: "Split this interface by consumer need. Build the usage matrix first — every consumer against every method — because the clusters in that matrix are the interfaces, and they are usually not the ones you would guess. Define role interfaces from the clusters, named for the role rather than the type, and show the one implementation that still implements several of them. Then note the cost side: more interfaces means more names to learn and more places to look, so recommend the split only where the matrix shows genuinely disjoint clusters rather than splitting on principle.",
+		why: "The usage matrix converts an aesthetic argument into evidence, and it routinely reveals that the natural split is by role rather than by the type's own structure.",
+		watchOut: "Excessive segregation scatters a concept across many tiny names. If every consumer uses a different subset, the interface may be fine and the consumers may be doing too much.",
+		related: [
+			"law-of-demeter",
+			"single-responsibility",
+			"liskov-substitution",
+			"api-ergonomics"
+		],
+		tags: [
+			"design principles",
+			"interfaces",
+			"coupling",
+			"modularity"
+		]
+	},
+	{
+		id: "composition-over-inheritance",
+		name: "Composition Over Inheritance",
+		aka: [
+			"favour composition",
+			"has-a over is-a",
+			"delegation"
+		],
+		origin: "Gang of Four, Design Patterns, 1994",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Assemble behaviour by holding collaborators rather than by extending a base class, because inheritance couples you to a hierarchy you cannot change later.",
+		useWhen: [
+			"the class hierarchy is five levels deep and nobody understands it",
+			"I need behaviour from two different base classes",
+			"a change in the base class broke six subclasses in different ways",
+			"the subclass overrides half the parent to disable it"
+		],
+		prompt: "Rework this hierarchy into composition. For each subclass, list what it inherits and reuses, what it inherits and overrides, and what it inherits and ignores — the second and third categories are the evidence the hierarchy is wrong. Then design the collaborator objects that would supply the varying behaviour, and show the wiring for each former subclass. Be explicit about what gets worse: more objects to construct, more indirection at the call site, and the loss of the compiler enforcing that every variant implements a step. Say whether that trade is worth it here or whether the hierarchy is actually fine.",
+		why: "The inherit-and-ignore audit gives an objective read on whether a hierarchy is modelling an is-a relationship or being used as code reuse, which is the actual question.",
+		watchOut: "Composition can scatter behaviour across many small objects with no single place that describes the whole. Shallow inheritance for genuine specialisation is not a sin.",
+		related: [
+			"template-method",
+			"liskov-substitution",
+			"decorator-pattern",
+			"plugin-architecture"
+		],
+		tags: [
+			"design principles",
+			"inheritance",
+			"composition",
+			"refactoring"
+		]
+	},
+	{
+		id: "yagni",
+		name: "You Aren't Gonna Need It",
+		aka: ["YAGNI", "build it when you need it"],
+		origin: "Ron Jeffries, Extreme Programming, late 1990s",
+		domains: ["engineering"],
+		intents: ["decide", "prioritize"],
+		oneLiner: "Do not build for a requirement you only imagine, because the cost is paid now, the guess is usually wrong, and the wrong abstraction is harder to remove than to add.",
+		useWhen: [
+			"we are adding configuration for a case nobody has asked for",
+			"the design supports four backends and we have one",
+			"someone said we might need this later so it is in the plan",
+			"the generic version is taking three times as long as the specific one"
+		],
+		prompt: "Review this design for speculative generality. For each configurable option, extension point and abstraction, ask three questions: is there a committed requirement for it today, what does it cost us now in code and cognitive load, and how expensive would it be to add later if we skipped it? The third question is the one that decides — cheap-to-add-later means cut it now, expensive-to-retrofit means it may be worth keeping. Name the small number of decisions that are genuinely hard to reverse, such as data model and public interface shape, and treat only those as worth designing ahead for.",
+		why: "Applied bluntly this principle also argues against necessary foresight. Sorting by reversibility separates speculative generality from the decisions that really are one-way.",
+		watchOut: "Data formats, public interfaces and stored records are much harder to change later than internal code. Applying this uniformly to them is how you end up with a schema you cannot migrate.",
+		related: [
+			"rule-of-three-duplication",
+			"open-closed-principle",
+			"type-1-type-2-decisions",
+			"walking-skeleton"
+		],
+		tags: [
+			"design principles",
+			"simplicity",
+			"scope",
+			"over-engineering"
+		]
+	},
+	{
+		id: "rule-of-three-duplication",
+		name: "Rule of Three",
+		aka: ["wait for the third instance", "duplication before abstraction"],
+		origin: "Don Roberts, quoted in Fowler's Refactoring, 1999",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Tolerate the second copy and abstract on the third, because two examples rarely show you which parts vary and which are essential.",
+		useWhen: [
+			"I have written something similar twice and want to extract it",
+			"the shared helper now has five boolean flags to serve its callers",
+			"we deduplicated early and the abstraction fights us constantly",
+			"two things look identical but I suspect they will diverge"
+		],
+		prompt: "Assess whether these similar pieces should be unified. Apply the test that matters more than counting: are they the same because they express the same rule, or the same by coincidence? Coincidental duplication that gets merged creates a shared component that must change for two unrelated reasons — the worst kind of coupling. For each candidate, name the rule both instances implement, and if you cannot name one, recommend leaving them separate. If you can, show the abstraction and predict what the third caller would need, and check whether that need fits without adding a flag.",
+		why: "Counting occurrences is the weak version of this heuristic. The same-rule-versus-same-shape test is what separates helpful deduplication from coupling unrelated code together.",
+		watchOut: "Duplication of security-critical or correctness-critical logic should be unified immediately regardless of count, because divergence there is a defect rather than an inconvenience.",
+		related: [
+			"yagni",
+			"open-closed-principle",
+			"single-responsibility",
+			"refactoring-catalog"
+		],
+		tags: [
+			"design principles",
+			"duplication",
+			"abstraction",
+			"coupling"
+		]
+	},
+	{
+		id: "principle-of-least-astonishment",
+		name: "Principle of Least Astonishment",
+		aka: ["least surprise", "POLA"],
+		origin: "Long-standing in interface design; formalised in language design literature",
+		domains: ["engineering", "design"],
+		intents: ["critique", "structure"],
+		oneLiner: "A component should behave the way a competent user of it would guess, because surprising behaviour is a defect even when it is documented.",
+		useWhen: [
+			"people keep using this function wrong and the docs say it clearly",
+			"the getter has a side effect and it bit somebody",
+			"the flag is called enable but it disables things in one mode",
+			"every new hire makes the same mistake with this API"
+		],
+		prompt: "Audit this interface for surprise. For each element, state what a competent user would predict from the name and signature alone, then what it actually does, and flag every gap. Pay particular attention to the classic surprises: a read that mutates, an operation that is not idempotent when the name implies it is, silent truncation or coercion, an argument order that differs from the neighbouring function, a default that differs from the platform convention, and an error case that returns success. For each gap, recommend either changing the behaviour or renaming, and say which is cheaper given existing callers.",
+		why: "Named surprise categories — read-that-mutates, inconsistent argument order, silent coercion — turn a subjective complaint into a checklist that catches specific defects.",
+		watchOut: "Expectations are shaped by the surrounding ecosystem. What is astonishing in one language is idiomatic in another, so judge against the conventions your users actually have.",
+		related: [
+			"api-ergonomics",
+			"naming-as-design",
+			"error-message-design",
+			"idempotency-keys"
+		],
+		tags: [
+			"design principles",
+			"api design",
+			"usability",
+			"naming"
+		]
+	},
+	{
+		id: "immutability-by-default",
+		name: "Immutability by Default",
+		aka: [
+			"persistent data structures",
+			"value semantics",
+			"no shared mutable state"
+		],
+		origin: "Functional programming tradition; mainstreamed via Rich Hickey and Rust",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Make data unchangeable after construction so aliasing bugs, concurrent corruption and impossible-to-trace mutations stop being possible.",
+		useWhen: [
+			"something changed this list and I cannot find what",
+			"we passed an object to a function and it came back different",
+			"two threads corrupted the same structure",
+			"a cached value got mutated by a caller and poisoned everything downstream"
+		],
+		prompt: "Identify the mutable state in this code and propose making it immutable. Sort by what the mutation is actually for: accumulation in a loop (fine, keep it local), caching (needs a different mechanism), and shared state that outlives a single call (the dangerous kind). For the last category, show the immutable version and the copy-on-write or structural sharing that keeps it affordable. Then quantify the cost rather than hand-waving: where we would copy large structures frequently, say so and propose the localised exception. Finish with the aliasing bugs the change would have prevented in our defect history.",
+		why: "Blanket immutability advice ignores allocation cost and gets rejected. Sorting mutation by purpose and pricing the copies is what makes the recommendation adoptable.",
+		watchOut: "Deep copies on a hot path can dominate runtime. Immutability at boundaries with controlled mutation inside a scope is often the right compromise.",
+		related: [
+			"value-object",
+			"functional-core-imperative-shell",
+			"singleton-tradeoffs",
+			"data-race-diagnosis"
+		],
+		tags: [
+			"design principles",
+			"state",
+			"concurrency",
+			"correctness"
+		]
+	},
+	{
+		id: "illegal-states-unrepresentable",
+		name: "Make Illegal States Unrepresentable",
+		aka: ["type-driven design", "algebraic data modelling"],
+		origin: "Yaron Minsky, Jane Street, 2011",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Choose types such that the invalid combinations cannot be written down, moving whole categories of bug from runtime checks to compile errors.",
+		useWhen: [
+			"we have three nullable fields and only certain combinations are valid",
+			"there is a comment saying these two fields must never both be set",
+			"validation is duplicated everywhere because the type allows nonsense",
+			"the record has a status field and fields that only apply to some statuses"
+		],
+		prompt: "Redesign these types so the invalid states cannot be constructed. Start by enumerating the combinations the current type permits and marking which are meaningful — the ratio of legal to representable is the size of the problem. Then propose the replacement using sum types or the nearest equivalent in our language, where each case carries exactly the fields that case needs. Show what happens at the edges where data arrives from a database or an API in the loose shape, since that conversion is where the remaining validation must live. Finally, list the runtime checks that become unnecessary.",
+		why: "The legal-to-representable ratio makes an abstract modelling argument concrete, and the boundary conversion is the part that decides whether the design survives contact with persistence.",
+		watchOut: "Languages without sum types can only approximate this, and the workaround can be more confusing than a validated record. Judge against what your type system can actually express.",
+		related: [
+			"parse-dont-validate",
+			"value-object",
+			"state-pattern",
+			"mvi-architecture"
+		],
+		tags: [
+			"design principles",
+			"types",
+			"validation",
+			"correctness"
+		]
+	},
+	{
+		id: "parse-dont-validate",
+		name: "Parse, Don't Validate",
+		aka: ["parsing over validation", "validation at the boundary"],
+		origin: "Alexis King, 2019",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Convert untrusted input into a type that proves it was checked, so downstream code cannot forget the check because the type already carries the evidence.",
+		useWhen: [
+			"we validate the same input at four different layers",
+			"somebody added a code path that skipped validation",
+			"the function checks its arguments even though the caller already did",
+			"we cannot tell from the type whether this string has been sanitised"
+		],
+		prompt: "Restructure this validation into a parse at the boundary. Define the type that can only exist if the check passed, and show the single conversion function that produces it, returning a result rather than throwing. Then trace downstream and delete every re-check that is now impossible to fail — that deletion is the measurable payoff, so count them. Identify the places where input enters the system that currently bypass this path, since one unparsed entry point defeats the design. Finish with the error reporting: parsing must accumulate all the problems in the input, not stop at the first.",
+		why: "The idea is easy to agree with and rarely completed. Counting the deleted re-checks and hunting for bypass entry points is what turns it from a nicer shape into fewer defects.",
+		watchOut: "This works best where the type system can enforce it. In dynamic languages the discipline has to be maintained by convention and review, which is weaker.",
+		related: [
+			"illegal-states-unrepresentable",
+			"value-object",
+			"input-validation-boundary",
+			"result-error-handling"
+		],
+		tags: [
+			"design principles",
+			"validation",
+			"types",
+			"boundaries"
+		]
+	},
+	{
+		id: "railway-oriented-programming",
+		name: "Railway-Oriented Programming",
+		aka: [
+			"result chaining",
+			"error track",
+			"monadic error handling"
+		],
+		origin: "Scott Wlaschin, F# for Fun and Profit, 2013",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Model a pipeline as two tracks — success and failure — so each step either continues or diverts, and the error path stops being a maze of nested conditionals.",
+		useWhen: [
+			"the function is a pyramid of if-error-return blocks",
+			"every step needs the same error handling and it is copy-pasted",
+			"the happy path is invisible under error checking",
+			"an error in step three has to be reported with context from step one"
+		],
+		prompt: "Restructure this sequence of fallible steps into a chain where each step either continues or short-circuits. Define the error type first, and make it carry enough to produce a good message at the end — which step failed, with what input, and whether it is retryable — because a chain that collapses everything to a single opaque error is worse than nested conditionals. Show the composition, then handle the two awkward cases explicitly: a step that must run regardless of earlier failure (cleanup), and a set of independent validations where we want all failures rather than the first.",
+		why: "Collapsing errors into one type loses diagnostic information, and cleanup steps break naive chains. Requiring both up front produces a design that survives real error handling.",
+		watchOut: "In languages without good sum types or syntax support, this reads as unfamiliar machinery. The readability gain has to outweigh the idiom cost for your team.",
+		related: [
+			"result-error-handling",
+			"parse-dont-validate",
+			"functional-core-imperative-shell",
+			"error-message-design"
+		],
+		tags: [
+			"error handling",
+			"composition",
+			"functional",
+			"pipelines"
+		]
+	},
+	{
+		id: "functional-core-imperative-shell",
+		name: "Functional Core, Imperative Shell",
+		aka: ["pure core", "effects at the edge"],
+		origin: "Gary Bernhardt, 2012",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Concentrate decisions in pure functions with no input or output, and keep all the effects in a thin outer layer that mostly just moves data.",
+		useWhen: [
+			"testing our logic requires a database and a network call",
+			"the business rules are tangled with the code that saves and sends",
+			"I want fast unit tests but everything touches infrastructure",
+			"the same logic has to run in a job and in a request handler"
+		],
+		prompt: "Split this code into a decision-making core with no effects and a thin shell that performs them. The technique is to make the core return descriptions of what should happen rather than performing it — a list of commands, not a set of calls — so start by defining that return shape. Then show the shell interpreting it. Confront the hard case honestly: logic that needs to fetch more data based on what it found. Show how to restructure so all the data is gathered before the decision, and say where that is genuinely impossible and what compromise you would accept there.",
+		why: "The read-then-decide-then-write shape is what makes the split work, and the interleaved-fetch case is where teams give up. Naming it as the hard case and addressing it is the difference.",
+		watchOut: "Gathering all possible data up front can be far more expensive than fetching lazily. Where the data is large or rarely needed, the pure core becomes a performance problem.",
+		related: [
+			"immutability-by-default",
+			"hexagonal-architecture",
+			"railway-oriented-programming",
+			"testing-trophy"
+		],
+		tags: [
+			"architecture",
+			"purity",
+			"testability",
+			"side effects"
+		]
+	},
+	{
+		id: "dependency-injection",
+		name: "Dependency Injection",
+		aka: [
+			"inversion of control",
+			"constructor injection",
+			"wiring"
+		],
+		origin: "Martin Fowler, 2004; named from the inversion of control literature",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Hand a component its collaborators rather than letting it construct or locate them, so composition happens in one place you can see.",
+		useWhen: [
+			"the class creates its own database connection inside the constructor",
+			"I cannot substitute anything in tests without patching globals",
+			"configuration is read from the environment deep inside business logic",
+			"nobody can tell what this component actually depends on"
+		],
+		prompt: "Make this component's dependencies explicit. List everything it currently reaches for — constructed objects, static calls, environment variables, service locators, ambient context — and convert them into things it is handed. Then confront the two failure modes: a constructor with fifteen parameters, which usually signals the class does too much rather than that injection is wrong, and a container configuration so dynamic that nobody can trace what is wired to what. Recommend plain manual wiring at the entry point if the graph is small enough, and say at what size a container starts paying for itself.",
+		why: "The pattern is usually conflated with the container. Separating the principle from the framework, and treating a huge constructor as a design smell, is what makes the advice actionable.",
+		watchOut: "Reflection-based containers turn wiring errors from compile-time into startup-time or worse, request-time. That trade is often not worth it for a small service.",
+		related: [
+			"dependency-inversion",
+			"singleton-tradeoffs",
+			"factory-method",
+			"test-seams"
+		],
+		tags: [
+			"design principles",
+			"wiring",
+			"testability",
+			"inversion of control"
+		]
+	},
+	{
+		id: "vertical-slice-architecture",
+		name: "Vertical Slice Architecture",
+		aka: ["feature slices", "slice by use case"],
+		origin: "Jimmy Bogard, 2018",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Organise code by use case end to end rather than by technical layer, so a change touches one slice instead of a controller, a service, a mapper and a repository.",
+		useWhen: [
+			"a simple change means editing five files in five folders",
+			"the layers all mirror each other and the mapping code is enormous",
+			"two features share a service class and keep interfering",
+			"I cannot find everything involved in one feature"
+		],
+		prompt: "Reorganise this by use case rather than by layer. For one representative feature, show every file it currently touches and what the co-located version would look like. Then address the objection that decides whether this works: duplication between slices. State the rule for when logic is promoted out of a slice into shared code — genuinely shared domain rules yes, incidentally similar code no — and show how a slice depends on shared code without slices depending on each other. Finish with what gets worse: cross-cutting changes such as adding a field to every response now touch many slices.",
+		why: "This trades one kind of change cost for another, and the honest version of the argument names both. The promotion rule is what stops slices from either duplicating everything or collapsing back into layers.",
+		watchOut: "Slices work best where features are genuinely independent. A system whose features all manipulate the same rich domain model may be better served by shared domain code.",
+		related: [
+			"package-by-feature",
+			"clean-architecture",
+			"bounded-context",
+			"single-responsibility"
+		],
+		tags: [
+			"architecture",
+			"code organisation",
+			"features",
+			"layers"
+		]
+	},
+	{
+		id: "package-by-feature",
+		name: "Package by Feature",
+		aka: ["screaming architecture", "organise by domain not by type"],
+		origin: "Robert C. Martin, Screaming Architecture, 2011",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Top-level directories should name what the system does, not what framework it uses — controllers and models are a filing system, not an architecture.",
+		useWhen: [
+			"the repository root tells you the framework but not the business",
+			"related code is scattered across folders named after patterns",
+			"we have a models directory with two hundred files in it",
+			"deleting a feature means hunting through every layer folder"
+		],
+		prompt: "Reorganise this repository so the top level names business capabilities. Propose the structure, then validate it with two tests: could a new engineer guess which directory a given feature lives in without asking, and could an entire capability be deleted by removing one directory plus a small number of known references? Report where the second test fails, because those are the real coupling points and they are worth knowing regardless of whether we do the move. Then give the migration order, starting with the capability that has the fewest inbound references.",
+		why: "The delete-a-capability test is a precise measure of modularity and produces a coupling report as a by-product, which is useful even if the reorganisation never happens.",
+		watchOut: "Directory structure is cosmetic if the dependencies still run everywhere. Moving files without fixing the import graph produces a nicer-looking tangle.",
+		related: [
+			"vertical-slice-architecture",
+			"bounded-context",
+			"single-responsibility",
+			"coupling-metrics"
+		],
+		tags: [
+			"architecture",
+			"code organisation",
+			"modularity",
+			"naming"
+		]
+	},
+	{
+		id: "plugin-architecture",
+		name: "Plugin Architecture",
+		aka: [
+			"extension points",
+			"microkernel architecture",
+			"hook system"
+		],
+		origin: "Microkernel pattern; Buschmann and colleagues, POSA, 1996",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "A small stable core plus registered extensions, where the core knows the contract and nothing about the extensions themselves.",
+		useWhen: [
+			"every customer needs a slightly different variation of the workflow",
+			"we keep forking the codebase per client",
+			"third parties want to extend the product and we have no story",
+			"the core is full of conditionals for special cases"
+		],
+		prompt: "Design an extension mechanism for this system. The contract is the whole product, so specify it precisely: the exact hook points, what data an extension receives, what it may return, whether extensions can veto or only observe, ordering when several register for the same point, and what happens when one throws or hangs. Then define the versioning and isolation policy — how the core changes without breaking extensions, and what an extension cannot do such as blocking the main path or reading other extensions' state. Finally, name the flexibility we are deliberately not offering, since an unbounded hook system becomes ungovernable.",
+		why: "Plugin systems fail on the operational details — error handling, ordering, versioning — rather than on the concept. Specifying the refusals is what keeps the core changeable.",
+		watchOut: "Every hook point is a public interface you must support forever. Start with fewer than you think you need; adding one later is easy, removing one is not.",
+		related: [
+			"open-closed-principle",
+			"strategy-pattern",
+			"api-versioning-strategy",
+			"feature-flag-hygiene"
+		],
+		tags: [
+			"architecture",
+			"extensibility",
+			"contracts",
+			"customisation"
+		]
+	},
+	{
+		id: "object-calisthenics",
+		name: "Object Calisthenics",
+		aka: ["nine rules exercise", "design constraints practice"],
+		origin: "Jeff Bay, The ThoughtWorks Anthology, 2008",
+		domains: ["engineering", "learning"],
+		intents: ["critique", "explain"],
+		oneLiner: "A set of deliberately extreme rules — one level of indentation, no else, wrap primitives, no getters — used as an exercise to feel where a design is tangled.",
+		useWhen: [
+			"I know this code is bad but I cannot articulate why",
+			"our team writes code that works and reads badly",
+			"I want a concrete exercise rather than general advice about clean code",
+			"reviews keep producing vague comments about complexity"
+		],
+		prompt: "Apply the nine constraints to this code as an exercise, not as a policy: one level of indentation per method, no else keyword, wrap primitives and strings in types, first-class collections, one dot per line, no abbreviations, keep classes small, no more than two instance variables, no getters or setters. Rewrite the code obeying all nine, then — and this is the actual output — tell me which constraints were painful and what that pain revealed about the design. Recommend which two or three are worth keeping permanently in this codebase and which were only useful as diagnostics.",
+		why: "Taken as rules these are impractical; taken as diagnostics they are excellent. Asking which constraints hurt and why converts the exercise into a specific design finding.",
+		watchOut: "Enforcing these in review or lint produces contorted code and resentment. The value is entirely in the noticing, not in the compliance.",
+		related: [
+			"tell-dont-ask",
+			"value-object",
+			"cyclomatic-complexity",
+			"code-review-checklist"
+		],
+		tags: [
+			"learning",
+			"code quality",
+			"exercise",
+			"design principles"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/distributed.ts
+var distributed = [
+	{
+		id: "fallacies-of-distributed-computing",
+		name: "Fallacies of Distributed Computing",
+		aka: ["eight fallacies", "network assumptions"],
+		origin: "Peter Deutsch and James Gosling, Sun Microsystems, 1994",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "The eight assumptions every distributed system quietly makes — reliable network, zero latency, infinite bandwidth, secure, unchanging topology, one administrator, zero transport cost, homogeneous network — and each one is false.",
+		useWhen: [
+			"it works perfectly on my machine and falls over between services",
+			"we never thought about what happens if that call just hangs",
+			"the design assumes the other service is always there",
+			"everything is fine until the network has a bad ten minutes"
+		],
+		prompt: "Audit this design against the eight classic false assumptions. For each, do not just note it — find the specific line or call where we depend on it being true and state the observable failure when it is not. The network is reliable becomes what happens when this call never returns; latency is zero becomes what our page load looks like at the ninety-ninth percentile of this dependency; topology does not change becomes what happens when this host is replaced mid-request. Rank the findings by how likely the assumption is to break in our actual environment and what it costs when it does.",
+		why: "The list is famous and rarely applied concretely. Tying each fallacy to a specific line and an observable failure turns a poster into a defect list.",
+		watchOut: "Applied maximally this justifies infinite defensive engineering. Use it to find the handful of dependencies where failure is both likely and expensive.",
+		related: [
+			"partial-failure-handling",
+			"timeout-budgets",
+			"circuit-breaker",
+			"graceful-degradation"
+		],
+		tags: [
+			"distributed systems",
+			"assumptions",
+			"failure modes",
+			"design review"
+		]
+	},
+	{
+		id: "cap-theorem",
+		name: "CAP Theorem",
+		aka: [
+			"Brewer's theorem",
+			"consistency availability partition tolerance",
+			"PACELC"
+		],
+		origin: "Eric Brewer, 2000; proved by Gilbert and Lynch, 2002; PACELC by Daniel Abadi, 2010",
+		domains: ["engineering", "data"],
+		intents: ["decide", "explain"],
+		oneLiner: "When the network splits you must choose between refusing requests and serving possibly stale data — and the more useful question is what you trade when it has not split.",
+		useWhen: [
+			"we cannot decide whether to keep serving during a network problem",
+			"the two regions disagreed and we do not know which one was right",
+			"someone says our database is highly available and I do not know what that costs",
+			"the read replica served old data and a customer noticed"
+		],
+		prompt: "Apply this trade-off to our system, per operation rather than globally, because a single system-wide answer is always wrong. For each significant operation, state what should happen during a partition — refuse, serve stale, or accept writes that may conflict — and justify from the business consequence, not from a preference for consistency. Then extend to the normal case with no partition, where the real trade is latency against consistency, and say which operations may read from a replica. Finish by naming, for each stale-tolerant operation, the maximum staleness the business would accept and how we would know if we exceeded it.",
+		why: "The theorem gets used as a label for a database rather than a per-operation design decision. Forcing the operation-level table and the staleness budget is what makes it actionable.",
+		watchOut: "Partitions are rarer than slow networks. The everyday version of this trade is latency versus consistency, which the classic framing does not cover.",
+		related: [
+			"eventual-consistency",
+			"quorum-consistency",
+			"read-your-writes",
+			"multi-region-failover"
+		],
+		tags: [
+			"distributed systems",
+			"consistency",
+			"availability",
+			"trade-offs"
+		]
+	},
+	{
+		id: "eventual-consistency",
+		name: "Eventual Consistency",
+		aka: [
+			"convergence",
+			"BASE",
+			"weak consistency"
+		],
+		origin: "Werner Vogels, Amazon Dynamo lineage, 2007",
+		domains: ["engineering", "data"],
+		intents: ["explain", "decide"],
+		oneLiner: "Replicas converge to the same value if updates stop — which means correctness has to be defined in terms of what a user may observe during the window before they do.",
+		useWhen: [
+			"the user updated their profile and it still shows the old name",
+			"two services report different totals for the same thing",
+			"the count is off by a few for a while and then corrects itself",
+			"support keeps getting tickets about data that fixes itself"
+		],
+		prompt: "Specify the consistency behaviour our users will actually experience. For each read path, state what anomaly is possible — reading your own stale write, seeing updates out of order, two users seeing different values simultaneously, a total that does not match its parts — and whether that anomaly is acceptable, with the business reason. Then design around the unacceptable ones with the cheapest available mechanism rather than a global upgrade: sticky routing, read-after-write from the primary, client-side echo of the pending change, or a version token. Finally, define the convergence time we promise and how it is measured.",
+		why: "Teams adopt this and then treat every symptom as a bug. Enumerating the specific anomalies and deciding acceptability per read path is what makes it a design rather than a surprise.",
+		watchOut: "Convergence assumes updates stop and conflicts resolve. If two writers can update the same field concurrently, you also need a merge rule, and last-write-wins silently loses data.",
+		related: [
+			"cap-theorem",
+			"read-your-writes",
+			"crdt",
+			"compensating-transactions"
+		],
+		tags: [
+			"distributed systems",
+			"consistency",
+			"replication",
+			"user experience"
+		]
+	},
+	{
+		id: "read-your-writes",
+		name: "Read-Your-Writes Consistency",
+		aka: [
+			"session consistency",
+			"monotonic reads",
+			"sticky reads"
+		],
+		origin: "Session guarantees literature; Terry and colleagues, 1994",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Guarantee that a user always sees at least their own most recent change, which is the specific weak-consistency promise that makes an interface feel correct.",
+		useWhen: [
+			"I saved the form and the next page showed the old value",
+			"the item I just created does not appear in the list",
+			"refreshing twice shows different answers",
+			"it only happens sometimes depending on which server you hit"
+		],
+		prompt: "Diagnose and fix this stale-read symptom. First confirm the mechanism: replica lag, a cache, a search index, or a CDN — each has a different fix and they are routinely confused. Then choose the guarantee mechanism: route this session to the primary for a bounded window, pass a version or log position the read must wait for, or have the client merge its own pending write into what it displays. Compare those on load impact and complexity for our case. Also cover the neighbouring guarantee, monotonic reads, so a second refresh never goes backwards, since fixing only the first symptom leaves that one visible.",
+		why: "People reach for full strong consistency when a session-scoped guarantee is enough and far cheaper. Naming the mechanisms and the sibling guarantee gets the right size of fix.",
+		watchOut: "Pinning sessions to the primary undoes the point of replicas if the window is generous. Bound it by lag measurement rather than a fixed guess.",
+		related: [
+			"eventual-consistency",
+			"cache-invalidation-strategy",
+			"session-affinity",
+			"cap-theorem"
+		],
+		tags: [
+			"distributed systems",
+			"consistency",
+			"caching",
+			"replication"
+		]
+	},
+	{
+		id: "idempotency-keys",
+		name: "Idempotency Keys",
+		aka: [
+			"request deduplication",
+			"safe retries",
+			"exactly-once effects"
+		],
+		origin: "Payments API practice; Stripe's implementation is the reference",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Let the caller supply a unique key so a retried request is recognised as the same request, turning an unreliable network into a safe one for writes.",
+		useWhen: [
+			"the customer got charged twice because they clicked twice",
+			"our retry created a duplicate record",
+			"the timeout fired but the operation had actually succeeded",
+			"the webhook arrived three times and we processed all three"
+		],
+		prompt: "Design safe retries for this write operation. Specify who generates the key and from what — a client-supplied identifier, or a hash of the meaningful request content — and be explicit that hashing must exclude fields like timestamps that vary between identical retries. Then handle the concurrency case properly: two identical requests arriving at once, where the second must wait for or reflect the first rather than both proceeding. State how long keys are retained, what happens when the same key arrives with a different body, and whether the stored response is replayed or the operation is re-executed. Finish with the failure case where the operation partially completed.",
+		why: "Most implementations handle the sequential retry and break on the concurrent one. Making concurrency and key-reuse-with-different-body explicit is what produces a correct design.",
+		watchOut: "This gives idempotent effects, not exactly-once delivery, which does not exist. Downstream systems still need their own protection.",
+		related: [
+			"delivery-semantics",
+			"retry-with-backoff",
+			"transactional-outbox",
+			"state-transition-testing"
+		],
+		tags: [
+			"distributed systems",
+			"retries",
+			"duplicates",
+			"api design"
+		]
+	},
+	{
+		id: "delivery-semantics",
+		name: "Delivery Semantics",
+		aka: [
+			"at-least-once",
+			"at-most-once",
+			"exactly-once processing"
+		],
+		origin: "Messaging systems literature; sharpened by Kafka and Flink design discussions",
+		domains: ["engineering"],
+		intents: ["decide", "explain"],
+		oneLiner: "Choose between possibly losing a message and possibly processing it twice, and know that exactly-once is only ever achieved by making duplicate processing harmless.",
+		useWhen: [
+			"the queue redelivered a message and we did the work again",
+			"a message vanished during a restart and nobody noticed",
+			"the vendor promises exactly-once and I do not believe it",
+			"I do not know whether to acknowledge before or after processing"
+		],
+		prompt: "Determine the delivery guarantee this consumer needs and what it currently has. Trace the acknowledgement point precisely — before processing gives at-most-once and loses messages on crash, after gives at-least-once and duplicates on crash — and say which our code does today, including on the paths where an exception is caught. Then, since at-least-once is almost always the right choice, design the deduplication or idempotent effect that makes redelivery harmless, naming the specific side effects that are not naturally repeatable, such as sending email or charging a card. Finish with what happens to a message that fails permanently.",
+		why: "The acknowledgement point is the whole guarantee and it is usually implicit in a framework default. Making the model locate it in our code is what reveals the actual semantics.",
+		watchOut: "Broker-level exactly-once covers the broker's own state, not your side effects. If processing calls an external API, the guarantee stops at the boundary.",
+		related: [
+			"idempotency-keys",
+			"dead-letter-queue",
+			"transactional-outbox",
+			"message-ordering-guarantees"
+		],
+		tags: [
+			"distributed systems",
+			"messaging",
+			"queues",
+			"reliability"
+		]
+	},
+	{
+		id: "transactional-outbox",
+		name: "Transactional Outbox",
+		aka: [
+			"outbox pattern",
+			"reliable event publishing",
+			"dual write problem"
+		],
+		origin: "Chris Richardson, microservices patterns; widely used with change data capture",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Write the event into the same database transaction as the state change and publish it from there, instead of writing to the database and the broker separately and hoping both succeed.",
+		useWhen: [
+			"we saved the order but the event never got published",
+			"the message went out and then the transaction rolled back",
+			"downstream systems are missing some records and we cannot explain it",
+			"we publish then commit and it usually works"
+		],
+		prompt: "Fix this dual-write with an outbox. Show the table, the write inside the existing transaction, and the relay that publishes and marks rows sent. Then cover the details that decide whether it works: ordering guarantees if events for one entity must stay in order, the at-least-once nature of the relay and therefore the need for consumer-side deduplication, what happens if the relay crashes between publishing and marking, and how the table is pruned so it does not grow forever. Compare against change data capture reading the transaction log directly, and say which suits us given our operational appetite.",
+		why: "The concept is simple; the relay crash window, ordering and pruning are where implementations break. Requiring them up front produces something that survives production.",
+		watchOut: "The outbox adds write load and a background process to operate. For a system where a lost event is merely annoying, a simpler retry may be enough.",
+		related: [
+			"delivery-semantics",
+			"domain-events",
+			"idempotency-keys",
+			"change-data-capture"
+		],
+		tags: [
+			"distributed systems",
+			"messaging",
+			"consistency",
+			"events"
+		]
+	},
+	{
+		id: "dead-letter-queue",
+		name: "Dead Letter Queue",
+		aka: [
+			"DLQ",
+			"poison message handling",
+			"parking lot queue"
+		],
+		origin: "Enterprise messaging practice; IBM MQ lineage",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Move messages that repeatedly fail into a separate queue so one bad record cannot block the stream, and so failures become a visible, workable list.",
+		useWhen: [
+			"one malformed message is blocking the whole queue",
+			"the consumer crashes on the same record forever",
+			"we found ten thousand failed messages nobody had looked at",
+			"a bad deploy poisoned the stream and we had to purge everything"
+		],
+		prompt: "Design failure handling for this consumer. Distinguish the three failure classes and treat them differently: transient (retry with backoff), poison (this message will never succeed, park it), and systemic (everything is failing, so stop consuming rather than draining the whole queue into the dead letter store). That third case is the one most designs miss — specify the detection rule and the circuit that halts consumption. Then define what a parked message carries so it can be diagnosed and replayed, who is alerted, the alert threshold, and the replay procedure including how to avoid re-parking the same message forever.",
+		why: "A dead letter queue with no owner is a silent data loss mechanism. Separating systemic failure from poison messages, and specifying the alert and replay path, is what makes it a safety net.",
+		watchOut: "Parked messages are unprocessed work with a business meaning. If they represent orders or payments, an unattended queue is a customer-facing outage nobody has noticed.",
+		related: [
+			"delivery-semantics",
+			"retry-with-backoff",
+			"circuit-breaker",
+			"alert-fatigue"
+		],
+		tags: [
+			"distributed systems",
+			"messaging",
+			"error handling",
+			"operations"
+		]
+	},
+	{
+		id: "message-ordering-guarantees",
+		name: "Message Ordering Guarantees",
+		aka: [
+			"partition ordering",
+			"ordered delivery",
+			"per-key ordering"
+		],
+		origin: "Log-based messaging design; Kafka partitioning model",
+		domains: ["engineering"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Global ordering is expensive and rarely needed; per-key ordering with a well-chosen partition key gives correctness plus parallelism.",
+		useWhen: [
+			"the update was applied before the create and the record broke",
+			"events for one customer arrive out of order",
+			"we made it single-threaded to keep order and now it is too slow",
+			"a retry pushed one message behind a later one"
+		],
+		prompt: "Determine what ordering this stream actually requires. Identify the entity whose events must be ordered relative to each other, and check whether the current partition key matches it — a mismatch here is the usual root cause. Then design for the cases ordering alone will not save you: a retry that reorders relative to newer messages, a consumer restart that reprocesses, and a rebalance that moves a partition mid-flight. Recommend making handlers order-insensitive where possible using version numbers or last-write-wins on a timestamp the producer sets, since that is more robust than relying on transport ordering.",
+		why: "Transport-level ordering is fragile under retries and rebalances. Pushing toward version-carrying, order-insensitive handlers is the design that actually holds.",
+		watchOut: "A partition key with skew — one enormous customer — serialises most of your traffic behind one consumer. Check key distribution before committing to it.",
+		related: [
+			"delivery-semantics",
+			"logical-clocks",
+			"idempotency-keys",
+			"partitioning-strategy"
+		],
+		tags: [
+			"distributed systems",
+			"messaging",
+			"ordering",
+			"partitioning"
+		]
+	},
+	{
+		id: "event-driven-choreography",
+		name: "Choreography vs Orchestration",
+		aka: [
+			"event choreography",
+			"central coordinator",
+			"process manager"
+		],
+		origin: "Service-oriented architecture literature; sharpened in microservices practice",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Decide whether a multi-service process is driven by each service reacting to events, or by one coordinator that knows the whole flow and calls each step.",
+		useWhen: [
+			"nobody can draw the end-to-end flow of our checkout",
+			"a step failed halfway and we do not know what state we are in",
+			"adding a step means changing three services that publish events",
+			"the process is implicit in a chain of subscriptions"
+		],
+		prompt: "Choose between event choreography and a central coordinator for this process, and decide with these criteria rather than preference: how many people need to understand the whole flow, whether we need to answer where is this order right now, how failure compensation is triggered, and how a new step is added. Show the same process both ways, then recommend one. Whichever you pick, specify the observability requirement — with choreography, the flow exists nowhere, so say what tracing or process log makes it visible; with a coordinator, say what stops it becoming a monolith that owns all the logic.",
+		why: "The choice is usually made by architectural fashion. Anchoring it to where-is-my-order and how-compensation-fires makes it a decision about operability.",
+		watchOut: "Choreography looks decoupled and creates a hidden coupling in event schemas plus a process nobody can see. Its cost lands on operations, not development.",
+		related: [
+			"saga-pattern",
+			"workflow-orchestration",
+			"domain-events",
+			"distributed-tracing"
+		],
+		tags: [
+			"distributed systems",
+			"workflow",
+			"events",
+			"coordination"
+		]
+	},
+	{
+		id: "workflow-orchestration",
+		name: "Durable Workflow Orchestration",
+		aka: [
+			"process manager",
+			"durable execution",
+			"state machine engine"
+		],
+		origin: "Workflow engines; Temporal, Cadence and AWS Step Functions lineage",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Run long-lived multi-step processes on an engine that persists progress, so a crash resumes where it left off instead of losing the process.",
+		useWhen: [
+			"the multi-step job died halfway and we had to fix it by hand",
+			"this process takes three days and lives in cron jobs and database flags",
+			"retrying the whole thing would re-send the emails",
+			"nobody can tell which step a given case is stuck on"
+		],
+		prompt: "Model this long-running process as a durable workflow. Separate the deterministic coordination logic from the side-effecting steps, and be strict about it: the coordinator may not read the clock, generate randomness, or call services directly, because replay-based recovery requires determinism. List every place our current code would violate that. Then define each step's retry policy, timeout and compensation, the human-intervention points, and how a workflow is queried for its current position. Finish with versioning: what happens to processes already running when the definition changes, since that is the operational cliff.",
+		why: "Determinism constraints and in-flight versioning are the two things that break workflow adoption, and both are invisible until you are committed.",
+		watchOut: "These engines are significant operational dependencies. For a process with three steps and a short lifetime, a state column and a retry loop is less to run.",
+		related: [
+			"saga-pattern",
+			"event-driven-choreography",
+			"compensating-transactions",
+			"idempotency-keys"
+		],
+		tags: [
+			"distributed systems",
+			"workflow",
+			"reliability",
+			"long-running processes"
+		]
+	},
+	{
+		id: "retry-with-backoff",
+		name: "Exponential Backoff with Jitter",
+		aka: [
+			"retry policy",
+			"backoff and jitter",
+			"retry storms"
+		],
+		origin: "Ethernet collision backoff; AWS Architecture Blog on jitter, 2015",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Space retries out exponentially and randomise the delay, so a struggling dependency is not hit by every client at the same synchronised moment.",
+		useWhen: [
+			"the service recovered and immediately fell over again",
+			"everything retried at once and made the outage worse",
+			"we retry three times in a tight loop and call that resilience",
+			"a brief blip turned into a twenty minute incident"
+		],
+		prompt: "Design the retry policy for this dependency. Start with what must not be retried: anything non-idempotent without a deduplication key, and any error class where retrying cannot help — authentication failures, validation errors, not-found. Then set base delay, multiplier, jitter and maximum attempts, and derive them from the caller's own deadline rather than picking round numbers, showing the arithmetic. Add the two multiplication traps: retries at several layers of the stack compounding into hundreds of attempts, and a retry budget that caps total retries across the client rather than per request. Finish with what the caller does when retries are exhausted.",
+		why: "Retry policies are usually copied without checking the layer interaction, which is how three layers of triple-retry becomes twenty-seven attempts. Deriving from the deadline and adding a budget prevents it.",
+		watchOut: "Retrying into a saturated dependency is how brownouts become outages. Retries need to be paired with a circuit breaker or a budget, not used alone.",
+		related: [
+			"circuit-breaker",
+			"timeout-budgets",
+			"thundering-herd",
+			"idempotency-keys"
+		],
+		tags: [
+			"distributed systems",
+			"resilience",
+			"retries",
+			"failure handling"
+		]
+	},
+	{
+		id: "thundering-herd",
+		name: "Thundering Herd",
+		aka: [
+			"cache stampede",
+			"dogpile effect",
+			"synchronised load spike"
+		],
+		origin: "Operating systems scheduling term; adapted to caching and web practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "When many clients wake or expire at the same instant, the correlated burst can be far larger than the steady load the system was sized for.",
+		useWhen: [
+			"the database melts every hour exactly on the hour",
+			"when the cache entry expires a thousand requests hit the origin",
+			"after a restart everything reconnects simultaneously and dies",
+			"load is fine on average but has enormous spikes at regular intervals"
+		],
+		prompt: "Find the synchronisation in this load pattern. Look for every source of correlated timing — cache entries created together and therefore expiring together, cron jobs on the hour, clients reconnecting after a deploy, tokens with identical lifetimes, and retry timers without randomisation — and for each, state the burst size relative to steady state. Then apply the fixes per source: randomised expiry spread, single-flight so one request populates a cache while others wait, serving stale while refreshing in the background, and startup jitter. Say which of these change correctness or freshness guarantees and by how much.",
+		why: "People treat these spikes as a capacity problem and buy more machines. Identifying the specific correlation source is what turns it into a small code change.",
+		watchOut: "Serving stale content during refresh has a business meaning. Confirm the staleness is acceptable before adopting it as a load-shedding mechanism.",
+		related: [
+			"retry-with-backoff",
+			"request-coalescing",
+			"cache-invalidation-strategy",
+			"load-shedding"
+		],
+		tags: [
+			"distributed systems",
+			"load",
+			"caching",
+			"performance"
+		]
+	},
+	{
+		id: "circuit-breaker",
+		name: "Circuit Breaker",
+		aka: [
+			"fail fast breaker",
+			"trip switch",
+			"half-open state"
+		],
+		origin: "Michael Nygard, Release It!, 2007",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Stop calling a dependency that is clearly failing, fail fast instead, and probe occasionally to see whether it has recovered.",
+		useWhen: [
+			"one slow dependency took down our whole service",
+			"all our threads are stuck waiting on a service that is down",
+			"we keep hammering a system that is obviously struggling",
+			"the timeout is thirty seconds and users wait the full thirty"
+		],
+		prompt: "Design a breaker for this dependency. Specify the trip condition using a rate over a window rather than a raw count, and be precise about which failures count — timeouts and connection errors yes, business-level rejections no, since counting the latter trips the breaker during normal operation. Define the open duration, the half-open probe policy including how many requests are admitted and what happens if the probe fails, and the granularity: per host, per endpoint or per dependency, because the wrong granularity either trips constantly or never. Then specify what callers do while it is open, since fail-fast is only useful if there is a fallback or a clear error.",
+		why: "Breakers that count the wrong errors or sit at the wrong granularity are the common failure, and both are invisible until an incident. Making them explicit is the design.",
+		watchOut: "A breaker converts a slow failure into a fast one; it does not make the feature work. Without a fallback you have improved your latency graph and not your users' experience.",
+		related: [
+			"retry-with-backoff",
+			"bulkhead-isolation",
+			"timeout-budgets",
+			"graceful-degradation"
+		],
+		tags: [
+			"distributed systems",
+			"resilience",
+			"failure isolation",
+			"dependencies"
+		]
+	},
+	{
+		id: "bulkhead-isolation",
+		name: "Bulkhead Isolation",
+		aka: [
+			"resource partitioning",
+			"thread pool isolation",
+			"blast compartment"
+		],
+		origin: "Michael Nygard, Release It!, 2007; naval architecture metaphor",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Partition resources so that one failing consumer, tenant or dependency exhausts only its own share and the rest of the system stays up.",
+		useWhen: [
+			"one customer's huge job consumed every worker",
+			"a slow third-party call starved the connection pool",
+			"the reporting queries took down the transactional path",
+			"one bad tenant degraded service for everyone"
+		],
+		prompt: "Design resource partitioning for this system. Find the shared resources that create the coupling first — thread pools, connection pools, memory, queue consumers, rate limit allowances — and for each identify the noisy neighbour that could exhaust it. Then propose the partition boundary, choosing between per-dependency, per-tenant and per-workload, and size each partition including the reserve for the critical path. State what happens when a partition is exhausted: queue, shed or degrade. Finish with the cost, which is utilisation — partitioned resources are idle when their partition is quiet — and say whether that is acceptable here.",
+		why: "The utilisation cost is the reason this gets rejected, so pricing it explicitly alongside the isolation benefit is what makes the decision honest.",
+		watchOut: "Too many small partitions make the system inefficient and hard to size. Partition along the dimension where failures actually correlate, not on every dimension.",
+		related: [
+			"circuit-breaker",
+			"cell-based-architecture",
+			"rate-limiting-algorithms",
+			"load-shedding"
+		],
+		tags: [
+			"distributed systems",
+			"isolation",
+			"resilience",
+			"multi-tenancy"
+		]
+	},
+	{
+		id: "backpressure",
+		name: "Backpressure",
+		aka: [
+			"flow control",
+			"pushback",
+			"bounded queues"
+		],
+		origin: "Reactive Streams specification; long-standing in networking",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Let a slow consumer tell its producer to slow down, instead of buffering the difference until memory or latency collapses.",
+		useWhen: [
+			"the queue grows without limit until the process runs out of memory",
+			"the producer is faster than the consumer and nothing pushes back",
+			"latency creeps up for hours and then everything falls over",
+			"we added a bigger buffer and the problem got worse later"
+		],
+		prompt: "Add flow control to this pipeline. Find every unbounded buffer — explicit queues, channels, in-memory lists, connection backlogs, and the implicit buffering in async frameworks — and give each a bound derived from the latency we are willing to accept, showing the arithmetic from throughput and queue depth. Then choose the behaviour when a bound is reached: block the producer, drop oldest, drop newest, or reject with an error, and justify per stage. Explain how the signal propagates all the way to the original client, because backpressure that stops at an internal boundary just moves the unbounded buffer upstream.",
+		why: "Sizing queues by latency budget rather than by memory is the move that makes them meaningful, and end-to-end propagation is what people miss.",
+		watchOut: "A big buffer feels like resilience and is really latency you have not measured yet. Queueing theory says the queue length is the delay.",
+		related: [
+			"load-shedding",
+			"timeout-budgets",
+			"queueing-theory-basics",
+			"rate-limiting-algorithms"
+		],
+		tags: [
+			"distributed systems",
+			"flow control",
+			"queues",
+			"stability"
+		]
+	},
+	{
+		id: "rate-limiting-algorithms",
+		name: "Rate Limiting Algorithms",
+		aka: [
+			"token bucket",
+			"leaky bucket",
+			"sliding window limiter"
+		],
+		origin: "Network traffic shaping; standard in API gateway design",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose among fixed window, sliding window, token bucket and leaky bucket by whether you need to allow bursts, smooth output, or enforce a hard ceiling.",
+		useWhen: [
+			"one client is hammering our API and degrading it for everyone",
+			"our limiter allows double the rate at the window boundary",
+			"legitimate bursty clients keep getting blocked",
+			"we need to protect a downstream system with a hard capacity limit"
+		],
+		prompt: "Design rate limiting for this API. Pick the algorithm from the requirement, and show why the alternatives fail here — fixed windows permit a double burst across the boundary, token buckets allow accumulated bursts which may be exactly right or exactly wrong, leaky buckets smooth output at the cost of queuing. Then handle the distributed problem: where the counter lives, its consistency, and what happens when that store is unavailable, since failing open defeats the limiter and failing closed causes an outage. Finish with the client contract: the response status, the retry-after header, and how a client discovers its limit before hitting it.",
+		why: "Algorithm choice is usually copied from a blog post, and the distributed counter plus the client contract are where real implementations are weak.",
+		watchOut: "Limiting by IP address punishes users behind shared networks and misses distributed abuse. Limit by the identity that maps to cost.",
+		related: [
+			"load-shedding",
+			"backpressure",
+			"bulkhead-isolation",
+			"api-quota-design"
+		],
+		tags: [
+			"distributed systems",
+			"rate limiting",
+			"api",
+			"protection"
+		]
+	},
+	{
+		id: "load-shedding",
+		name: "Load Shedding",
+		aka: [
+			"brownout",
+			"admission control",
+			"graceful overload"
+		],
+		origin: "Power grid term; adopted in service reliability practice",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "When demand exceeds capacity, deliberately reject some work early so the rest completes, rather than accepting everything and failing all of it slowly.",
+		useWhen: [
+			"under heavy load every request times out and none succeed",
+			"we accept everything and then fall over completely",
+			"the system spends all its time on requests that will time out anyway",
+			"a traffic spike turned into a total outage instead of a slow site"
+		],
+		prompt: "Design overload behaviour for this service. Define the signal that says we are overloaded, preferring an internal one like queue depth or request latency over CPU, since CPU saturates late. Then define the shedding policy by priority: which traffic is dropped first, with the business ranking stated — health checks and paying customers survive, bulk exports do not. The critical detail is shedding early, before expensive work is done, so name the exact point in the request path where the decision is made. Finally, specify the client-visible behaviour and how shedding is distinguished from a failure in monitoring, since these must not look like the same thing.",
+		why: "Shedding after the expensive work is done costs almost as much as serving. Fixing the decision point and the priority order is what turns overload into degradation instead of collapse.",
+		watchOut: "A shedding policy that has never been exercised will not work when needed. It has to be tested under synthetic overload or it is theatre.",
+		related: [
+			"backpressure",
+			"rate-limiting-algorithms",
+			"graceful-degradation",
+			"capacity-planning"
+		],
+		tags: [
+			"distributed systems",
+			"overload",
+			"reliability",
+			"availability"
+		]
+	},
+	{
+		id: "timeout-budgets",
+		name: "Timeout Budgets",
+		aka: [
+			"latency budget",
+			"timeout hierarchy",
+			"call tree timeouts"
+		],
+		origin: "Distributed systems operations practice; Google SRE lineage",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Derive every timeout from the end-to-end deadline the user experiences, so inner calls always give up before the outer one does.",
+		useWhen: [
+			"the client gave up but our servers kept working on the request",
+			"our timeouts are all thirty seconds because that was the default",
+			"the outer call times out before the retries even finish",
+			"nobody can say what our total worst-case latency actually is"
+		],
+		prompt: "Construct the timeout hierarchy for this request path. Start from the user-facing deadline and allocate downward, showing every hop with its share and the arithmetic — including retries, because a three-attempt retry inside a one-second budget cannot use a one-second timeout. Flag every place where an inner timeout exceeds its parent, since that is wasted work and a source of phantom load. Then cover cancellation: when the outer call gives up, what actually stops the inner work, and what continues running and consuming resources. Finish with the timeouts that are currently absent entirely, which are usually the dangerous ones.",
+		why: "Timeouts are set independently at each layer and then contradict each other. Deriving them from one budget, and asking what actually gets cancelled, exposes the phantom load.",
+		watchOut: "Aggressive timeouts turn slow successes into failures and can amplify load through retries. Set them from the observed latency distribution, not from a round number.",
+		related: [
+			"deadline-propagation",
+			"retry-with-backoff",
+			"circuit-breaker",
+			"tail-latency"
+		],
+		tags: [
+			"distributed systems",
+			"latency",
+			"timeouts",
+			"resource management"
+		]
+	},
+	{
+		id: "deadline-propagation",
+		name: "Deadline Propagation",
+		aka: [
+			"request deadlines",
+			"context cancellation",
+			"time budget passing"
+		],
+		origin: "Google internal RPC practice; exposed via gRPC deadlines and context",
+		domains: ["engineering"],
+		intents: ["structure"],
+		oneLiner: "Pass the absolute deadline along with the request so every downstream hop knows how much time is genuinely left and can refuse work that cannot finish in time.",
+		useWhen: [
+			"services keep doing work for requests the caller abandoned",
+			"each service has its own timeout and the total makes no sense",
+			"a cancelled request still ran an expensive database query",
+			"we waste capacity on responses nobody will ever receive"
+		],
+		prompt: "Introduce end-to-end deadlines through this call chain. Specify the representation — an absolute time rather than a remaining duration, so clock skew is the only correction needed — and how it travels across each transport we use, including queues where the message may sit before being picked up. Then define the behaviour on receipt: reject immediately if the remaining time is below the minimum needed, and cancel in-flight work when the deadline passes, naming which of our operations can actually be cancelled and which cannot. Finish with what we log when work is rejected on arrival, since that signal is how you find the real bottleneck.",
+		why: "Deadline propagation is mostly a plumbing exercise, and its value comes from the reject-on-arrival behaviour that stops doomed work early. Naming what cannot be cancelled is the honest part.",
+		watchOut: "Absolute deadlines depend on reasonably synchronised clocks. Where skew is significant, you need a duration plus a hop-count correction instead.",
+		related: [
+			"timeout-budgets",
+			"load-shedding",
+			"distributed-tracing",
+			"logical-clocks"
+		],
+		tags: [
+			"distributed systems",
+			"latency",
+			"cancellation",
+			"rpc"
+		]
+	},
+	{
+		id: "hedged-requests",
+		name: "Hedged Requests",
+		aka: [
+			"tied requests",
+			"speculative retry",
+			"request hedging"
+		],
+		origin: "Jeff Dean and Luiz Barroso, The Tail at Scale, 2013",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Send a second copy of a request to another replica once the first is slower than usual, and take whichever answers first, trading a little extra load for a much better tail.",
+		useWhen: [
+			"most requests are fast but the slowest one percent ruins the page",
+			"one slow replica drags down our overall latency",
+			"the average looks fine and users still complain about waiting",
+			"a garbage collection pause on one node hurts every request that hits it"
+		],
+		prompt: "Evaluate hedging for this read path. Set the trigger at a high percentile of the observed latency distribution rather than a fixed delay, and show the extra load that implies — hedging at the ninety-fifth percentile costs about five percent more requests, which is the number that makes this decision. Then handle the safety conditions: only for idempotent operations, with cancellation of the loser so we do not pay twice downstream, and with a cap so hedging cannot amplify an overload. Model what happens when the whole system is slow rather than one replica, because that is when hedging turns a brownout into an outage.",
+		why: "The overload interaction is the part that gets people hurt, and the load cost is directly derivable from the trigger percentile. Both are usually left implicit.",
+		watchOut: "Hedging masks a slow replica rather than fixing it. Keep alerting on per-replica latency or you will silently run degraded capacity forever.",
+		related: [
+			"tail-latency",
+			"timeout-budgets",
+			"load-shedding",
+			"retry-with-backoff"
+		],
+		tags: [
+			"distributed systems",
+			"latency",
+			"tail latency",
+			"replication"
+		]
+	},
+	{
+		id: "graceful-degradation",
+		name: "Graceful Degradation",
+		aka: [
+			"fallback behaviour",
+			"degraded mode",
+			"static stability"
+		],
+		origin: "Fault-tolerant systems design; AWS static stability writing",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Decide in advance which features may be turned off or served stale so that a dependency failure removes a capability instead of the whole product.",
+		useWhen: [
+			"the recommendations service went down and the entire page failed",
+			"a non-essential feature took the checkout with it",
+			"everything is treated as critical so any failure is total",
+			"we have no plan for running without that dependency"
+		],
+		prompt: "Design degraded operating modes for this system. Classify every dependency as critical, degradable or optional from the user's perspective, and for each degradable one specify exactly what the user sees instead — cached data with an age indicator, a generic default, or the feature hidden entirely — plus how the system decides to enter and leave that mode. Prefer static stability where possible, meaning the fallback path does not itself require a new call to something that might be down. Then say how each mode is tested and how anyone knows we are currently degraded, because unnoticed degradation becomes permanent.",
+		why: "Fallbacks that call another service to find the fallback fail together with the original. Naming static stability and the entry-exit conditions is what makes degradation real.",
+		watchOut: "Degraded modes that nobody exercises rot silently. If you cannot demonstrate the fallback on demand, assume it does not work.",
+		related: [
+			"circuit-breaker",
+			"feature-flag-hygiene",
+			"load-shedding",
+			"chaos-engineering"
+		],
+		tags: [
+			"distributed systems",
+			"resilience",
+			"fallbacks",
+			"availability"
+		]
+	},
+	{
+		id: "consistent-hashing",
+		name: "Consistent Hashing",
+		aka: [
+			"ring hashing",
+			"virtual nodes",
+			"rendezvous hashing"
+		],
+		origin: "Karger and colleagues, MIT, 1997; used in Dynamo and Memcached clients",
+		domains: ["engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Map keys to nodes so that adding or removing a node moves only a small fraction of keys, instead of remapping everything as a modulo scheme does.",
+		useWhen: [
+			"adding a cache node invalidated the entire cache",
+			"scaling the cluster means every key moves to a different server",
+			"one shard is much hotter than the others",
+			"a node failure caused a total cache miss storm"
+		],
+		prompt: "Design key distribution for this cluster. Explain what fraction of keys move when a node joins or leaves under our current scheme versus a ring, with the numbers. Then cover the two practical requirements: virtual nodes to smooth the distribution, with a recommended count and its memory cost, and the handling of hot keys, since a well-distributed ring still concentrates a single popular key on one node. Say what happens during a membership change — do requests for moved keys miss, fall back, or get forwarded — and how nodes agree on membership, because inconsistent views of the ring are the failure that produces mystifying cache behaviour.",
+		why: "The ring is easy and the operational parts — membership agreement and hot keys — are where systems actually break. Rendezvous hashing is often simpler and rarely considered.",
+		watchOut: "This solves distribution, not popularity. A single celebrity key needs replication or client-side caching, which the hashing scheme cannot provide.",
+		related: [
+			"partitioning-strategy",
+			"cache-invalidation-strategy",
+			"session-affinity",
+			"thundering-herd"
+		],
+		tags: [
+			"distributed systems",
+			"sharding",
+			"caching",
+			"scaling"
+		]
+	},
+	{
+		id: "quorum-consistency",
+		name: "Quorum Reads and Writes",
+		aka: [
+			"R plus W greater than N",
+			"majority quorum",
+			"tunable consistency"
+		],
+		origin: "Quorum systems literature; popularised by Amazon Dynamo, 2007",
+		domains: ["engineering", "data"],
+		intents: ["decide", "explain"],
+		oneLiner: "Tune how many replicas must acknowledge a read and a write so their overlap guarantees you see the latest value — and see what that costs in latency and availability.",
+		useWhen: [
+			"we set the replication factor and do not know what consistency we get",
+			"a read returned an old value even though the write succeeded",
+			"writes fail whenever one node is down",
+			"someone asked whether we can lose data on failover and I could not answer"
+		],
+		prompt: "Work out the quorum settings for this data. Show the overlap arithmetic and what each configuration guarantees, then translate to operational consequences: how many nodes can fail while writes still succeed, what the write latency becomes given it is bounded by the slowest required acknowledgement, and what happens on a partition. Then state the guarantees quorums do not give — no ordering across keys, no atomicity across records, and the possibility of a write acknowledged by a minority still existing afterwards. Recommend the settings per operation class and name the ones where a stale read is genuinely harmless.",
+		why: "Quorum settings are usually inherited from a default. Deriving them from tolerated failures and stating what they still do not guarantee is what prevents false confidence.",
+		watchOut: "Quorum overlap without read repair or anti-entropy still leaves replicas divergent over time. The repair mechanism is part of the design, not an optimisation.",
+		related: [
+			"cap-theorem",
+			"eventual-consistency",
+			"leader-election",
+			"split-brain"
+		],
+		tags: [
+			"distributed systems",
+			"consistency",
+			"replication",
+			"databases"
+		]
+	},
+	{
+		id: "leader-election",
+		name: "Leader Election",
+		aka: [
+			"consensus",
+			"Raft",
+			"Paxos",
+			"primary selection"
+		],
+		origin: "Lamport's Paxos, 1998; Ongaro and Ousterhout's Raft, 2014",
+		domains: ["engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "A consensus protocol lets a group agree on one coordinator despite failures — and the guarantee is only as good as the fencing that stops a deposed leader from still acting.",
+		useWhen: [
+			"we need exactly one instance running this job and sometimes two do",
+			"after a failover the old node kept writing",
+			"two nodes both think they are in charge",
+			"we decide who is in charge using a database row and a timestamp"
+		],
+		prompt: "Design coordinator selection for this workload. First challenge the requirement: does the work truly need a single actor, or would partitioning it by key give the same safety with no consensus at all? If a leader is genuinely needed, specify the term or epoch number and how it fences every side effect the leader performs, because a leader that has lost its lease but not noticed is the actual failure mode and a lease alone does not prevent it. Then define lease duration against detection time, what the leader does when it cannot renew, and what happens to in-flight work during a handover.",
+		why: "Homegrown election almost always omits fencing, so a paused-then-resumed old leader corrupts state. Making fencing tokens the centre of the design is what makes it correct.",
+		watchOut: "Building consensus yourself is a research-grade mistake. Use a proven implementation, and remember the guarantee ends where your side effects begin.",
+		related: [
+			"split-brain",
+			"distributed-locking-pitfalls",
+			"quorum-consistency",
+			"multi-region-failover"
+		],
+		tags: [
+			"distributed systems",
+			"consensus",
+			"coordination",
+			"failover"
+		]
+	},
+	{
+		id: "split-brain",
+		name: "Split Brain",
+		aka: [
+			"dual primary",
+			"partition divergence",
+			"fencing"
+		],
+		origin: "Cluster management literature; standard in HA database operations",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "When a partition leaves two halves each believing they are in charge, both accept writes and the reconciliation afterwards is the expensive part.",
+		useWhen: [
+			"both data centres accepted writes during the network outage",
+			"after the network healed the two copies disagreed",
+			"the failover promoted a replica while the primary was still alive",
+			"we lost data during a failover and cannot explain which writes"
+		],
+		prompt: "Analyse this cluster for divergence risk during a partition. Identify every component that could be promoted while the original is still running, and for each state the fencing mechanism — a majority requirement, a shared-storage lock, an epoch token rejected by downstream systems, or physically disabling the old node. If a component has no fencing, the failover is unsafe and should be said so plainly. Then define the reconciliation plan for the divergence we could not prevent: how conflicts are detected, which side wins, and how the losing writes are recovered rather than silently discarded, since that recovery is what the business will ask for.",
+		why: "Automatic failover is usually configured without fencing, which is the difference between availability and data loss. Demanding the reconciliation plan makes the residual risk visible.",
+		watchOut: "Requiring a majority makes an even-numbered cluster across two sites unsafe by construction. A third witness location is not optional.",
+		related: [
+			"leader-election",
+			"quorum-consistency",
+			"multi-region-failover",
+			"distributed-locking-pitfalls"
+		],
+		tags: [
+			"distributed systems",
+			"failover",
+			"data loss",
+			"high availability"
+		]
+	},
+	{
+		id: "distributed-locking-pitfalls",
+		name: "Distributed Lock Pitfalls",
+		aka: [
+			"lock leases",
+			"fencing tokens",
+			"Redlock debate"
+		],
+		origin: "Martin Kleppmann's critique of Redlock, 2016",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "A lock with a timeout does not prevent two holders, because the first can be paused past expiry and resume believing it still holds — only a fencing token at the resource stops it.",
+		useWhen: [
+			"we use a cached lock key to stop duplicate processing",
+			"two workers processed the same job despite the lock",
+			"a long garbage collection pause caused a mystery duplicate",
+			"the lock expired mid-operation and something else grabbed it"
+		],
+		prompt: "Review this locking scheme for correctness. Walk the failure sequence explicitly: holder acquires, holder is paused by a garbage collection or scheduling stall longer than the lease, lock expires, second holder acquires, first holder resumes and writes. Ask what in our design stops that final write, and if the answer is nothing, then the lock provides efficiency but not correctness. Say which of our uses need only efficiency — avoiding duplicate work — and which need correctness. For the latter, design a monotonically increasing token checked and rejected by the resource itself, or restructure so the operation is idempotent and the lock is unnecessary.",
+		why: "The pause-past-expiry sequence is unintuitive and is the actual mechanism behind rare duplicate-processing bugs. Splitting efficiency uses from correctness uses is the practical resolution.",
+		watchOut: "Locks in a system without a fencing-capable resource cannot be made safe by a better lock service. The safety has to be enforced where the write lands.",
+		related: [
+			"leader-election",
+			"idempotency-keys",
+			"optimistic-concurrency",
+			"split-brain"
+		],
+		tags: [
+			"distributed systems",
+			"locking",
+			"correctness",
+			"concurrency"
+		]
+	},
+	{
+		id: "logical-clocks",
+		name: "Logical Clocks",
+		aka: [
+			"Lamport timestamps",
+			"vector clocks",
+			"happens-before"
+		],
+		origin: "Leslie Lamport, Time, Clocks and the Ordering of Events, 1978",
+		domains: ["engineering"],
+		intents: ["explain", "structure"],
+		oneLiner: "Order events by causality rather than by wall-clock time, because machine clocks disagree and a later timestamp does not mean a later event.",
+		useWhen: [
+			"we order events by timestamp and sometimes they are wrong",
+			"two servers disagreed about which update came first",
+			"the log shows the response before the request",
+			"clock drift caused a record to be overwritten by an older version"
+		],
+		prompt: "Fix the ordering in this system. First show where wall-clock comparison is currently used to decide precedence and what breaks under a few hundred milliseconds of skew — a realistic amount. Then choose the mechanism: a simple counter per record for detecting concurrent modification, a Lamport counter for a total order that respects causality, or vector clocks when we must distinguish concurrent from sequential and are willing to pay the size. Explain the storage and comparison cost of each. Where wall-clock time must be kept for business reasons, keep it separate from the ordering value so the two are never confused.",
+		why: "Timestamp ordering fails rarely and expensively, and the fix is often just a version counter. Separating business time from ordering is the distinction that prevents recurrence.",
+		watchOut: "Logical clocks give ordering, not time. Anything a human reads still needs wall-clock timestamps, so both usually have to exist.",
+		related: [
+			"message-ordering-guarantees",
+			"optimistic-concurrency",
+			"crdt",
+			"deadline-propagation"
+		],
+		tags: [
+			"distributed systems",
+			"ordering",
+			"causality",
+			"clocks"
+		]
+	},
+	{
+		id: "two-phase-commit-limits",
+		name: "Two-Phase Commit and Its Limits",
+		aka: [
+			"2PC",
+			"distributed transactions",
+			"XA transactions"
+		],
+		origin: "Jim Gray, transaction processing literature, 1978",
+		domains: ["engineering", "data"],
+		intents: ["decide", "explain"],
+		oneLiner: "A coordinator can make several systems commit atomically, at the cost of blocking every participant if the coordinator dies at the wrong moment.",
+		useWhen: [
+			"we need to update two databases and both must succeed",
+			"someone suggested distributed transactions and I do not know the cost",
+			"a partial failure left the two systems disagreeing",
+			"the transaction spans a database and a message broker"
+		],
+		prompt: "Assess whether we need an atomic commit across these systems. Describe the protocol and then the blocking window precisely: after participants vote to commit and before they learn the outcome, they hold locks and cannot decide alone, so a coordinator failure freezes them until it recovers. Quantify what that means for us given our lock scope and traffic. Then present the alternatives that most systems should prefer — an outbox making one system authoritative, a saga with compensations, or restructuring so the two updates land in one store — and recommend one with the specific business consistency requirement that justifies it.",
+		why: "Distributed transactions are either dismissed reflexively or adopted without understanding the blocking window. Quantifying the window against our own locking makes the choice concrete.",
+		watchOut: "Many systems people want to enrol in a transaction, such as HTTP APIs and message brokers, cannot participate at all. That usually settles the decision.",
+		related: [
+			"saga-pattern",
+			"transactional-outbox",
+			"compensating-transactions",
+			"aggregate-root"
+		],
+		tags: [
+			"distributed systems",
+			"transactions",
+			"consistency",
+			"trade-offs"
+		]
+	},
+	{
+		id: "crdt",
+		name: "Conflict-Free Replicated Data Types",
+		aka: [
+			"CRDT",
+			"mergeable replicas",
+			"operational transformation alternative"
+		],
+		origin: "Shapiro, Preguiça, Baquero and Zawirski, 2011",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Data types whose concurrent updates merge deterministically without coordination, so replicas converge without a central arbiter or user-visible conflict.",
+		useWhen: [
+			"two people edited offline and we have to merge their changes",
+			"our last-write-wins rule silently loses one person's work",
+			"the mobile app needs to work offline and sync later",
+			"the counter is wrong when two servers increment at once"
+		],
+		prompt: "Evaluate conflict-free merge types for this data. Map each field to the closest available type — grow-only or positive-negative counters, add-wins or remove-wins sets, last-writer-wins registers, sequence types for text — and state the merge semantics each gives in business terms, because add-wins versus remove-wins is a product decision about whether a deletion can be resurrected. Then price the costs honestly: metadata that grows with the number of replicas and operations, tombstones that must be retained, and the compaction strategy. Finish with the fields where these types cannot express the rule and coordination is genuinely required.",
+		why: "The merge semantics are a product decision disguised as a data structure choice, and metadata growth is the reason implementations get abandoned. Both need to be surfaced early.",
+		watchOut: "Convergence is not correctness. Two replicas can converge on a state that violates a business invariant, such as a balance below zero, because no type enforces cross-field rules.",
+		related: [
+			"eventual-consistency",
+			"logical-clocks",
+			"offline-first-sync",
+			"compensating-transactions"
+		],
+		tags: [
+			"distributed systems",
+			"replication",
+			"merge",
+			"offline"
+		]
+	},
+	{
+		id: "gossip-protocol",
+		name: "Gossip Protocol",
+		aka: [
+			"epidemic protocol",
+			"anti-entropy",
+			"SWIM membership"
+		],
+		origin: "Demers and colleagues, Xerox PARC, 1987; SWIM by Das and colleagues, 2002",
+		domains: ["engineering"],
+		intents: ["explain", "structure"],
+		oneLiner: "Nodes exchange state with a few random peers periodically, spreading information through the cluster reliably without any central coordinator.",
+		useWhen: [
+			"our service registry is a single point of failure",
+			"nodes need to know about each other without a central list",
+			"the cluster is too large for everyone to talk to everyone",
+			"we need failure detection that survives losing the coordinator"
+		],
+		prompt: "Assess gossip for our membership and state propagation. Give the convergence time from fanout, interval and cluster size with the actual arithmetic for our numbers, and the resulting background bandwidth per node — that bandwidth is what decides feasibility. Then handle failure detection specifically: distinguishing a slow node from a dead one, the suspicion mechanism that reduces false positives, and what happens during a partition when each side declares the other dead. Say what state is appropriate to spread this way, which is small and eventually consistent, and what absolutely is not.",
+		why: "Convergence and bandwidth are directly computable and rarely computed, and the false-positive-under-load problem is the reason naive failure detection causes outages.",
+		watchOut: "Gossip gives eventual membership knowledge. Anything requiring agreement rather than awareness still needs consensus.",
+		related: [
+			"service-discovery",
+			"leader-election",
+			"eventual-consistency",
+			"cell-based-architecture"
+		],
+		tags: [
+			"distributed systems",
+			"membership",
+			"failure detection",
+			"clustering"
+		]
+	},
+	{
+		id: "service-discovery",
+		name: "Service Discovery",
+		aka: [
+			"service registry",
+			"client-side discovery",
+			"DNS-based discovery"
+		],
+		origin: "Service-oriented architecture practice; Consul, Eureka, Kubernetes services",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "How a caller finds a healthy instance of a service — via a registry, DNS, or a proxy — and how quickly it learns that an instance is gone.",
+		useWhen: [
+			"we hardcoded the host and now the deploy moved it",
+			"traffic kept going to an instance that was already terminated",
+			"scaling up did not distribute load until we restarted callers",
+			"the config file with all the endpoints is out of date again"
+		],
+		prompt: "Choose a discovery mechanism for this environment and pay attention to the timings, since that is where the failures live. For each option — DNS, a registry with client-side lookup, a proxy or mesh — state how long a terminated instance can still receive traffic given registration lag, health check interval and any caching including DNS resolver behaviour that ignores short lifetimes. Then specify the connection draining and deregistration sequence for a normal shutdown, since most stale-endpoint errors happen during ordinary deploys rather than failures. Finish with the fallback when the discovery system itself is unavailable.",
+		why: "The staleness window is a compound of several timings people never add up, and it explains the errors that appear on every deploy.",
+		watchOut: "Caching resolvers and connection pools hold on to old addresses far longer than your registry thinks. Verify empirically rather than trusting the configured lifetime.",
+		related: [
+			"service-mesh",
+			"sidecar-pattern",
+			"gossip-protocol",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"distributed systems",
+			"networking",
+			"discovery",
+			"deployment"
+		]
+	},
+	{
+		id: "sidecar-pattern",
+		name: "Sidecar Pattern",
+		aka: [
+			"ambassador container",
+			"co-process",
+			"out-of-process helper"
+		],
+		origin: "Container orchestration practice; formalised in cloud-native patterns",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Run cross-cutting infrastructure — proxying, telemetry, secret rotation, log shipping — as a separate process beside the application rather than as a library inside it.",
+		useWhen: [
+			"we have to upgrade the same client library in twelve services in four languages",
+			"adding telemetry means changing every application",
+			"services in different languages need identical networking behaviour",
+			"the shared library upgrade is blocked on one team for months"
+		],
+		prompt: "Assess moving this cross-cutting concern out of the application into a co-located process. Compare against a shared library on the axes that decide it: how upgrades roll out, what happens with multiple languages, resource overhead per instance, added latency per hop, and — the one that gets missed — startup and shutdown ordering, since an application that starts before its helper or outlives it produces confusing failures. Specify that ordering explicitly for both directions. Then say what must stay in the application because it needs business context the helper cannot see.",
+		why: "Startup and shutdown ordering is the recurring operational bug with this pattern, and per-instance overhead is what makes it expensive at scale. Both are usually discovered late.",
+		watchOut: "One helper per instance multiplies memory and CPU across the fleet. At high instance counts this is a real cost line, not a rounding error.",
+		related: [
+			"service-mesh",
+			"service-discovery",
+			"container-resource-limits",
+			"observability-instrumentation"
+		],
+		tags: [
+			"distributed systems",
+			"containers",
+			"cross-cutting concerns",
+			"infrastructure"
+		]
+	},
+	{
+		id: "service-mesh",
+		name: "Service Mesh",
+		aka: [
+			"data plane and control plane",
+			"Istio",
+			"Linkerd"
+		],
+		origin: "Buoyant and Linkerd, 2016; term coined by William Morgan",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Move retries, timeouts, mutual TLS, traffic splitting and telemetry into a proxy layer configured centrally, so services stop implementing them individually.",
+		useWhen: [
+			"every service implements retries slightly differently",
+			"we cannot get consistent traces without editing every codebase",
+			"securing service-to-service traffic means touching every application",
+			"someone is proposing a mesh and I do not know if we need one"
+		],
+		prompt: "Decide whether a mesh is justified here. List the specific capabilities we need — mutual TLS, uniform retry and timeout policy, traffic shifting for releases, request-level telemetry, authorisation between services — and for each, name the simpler alternative and what it would cost to do without a mesh. Then price the mesh honestly: proxy resource overhead, added latency per hop, an extra control plane to operate and upgrade, and the debugging cost when a request fails inside the proxy layer rather than in code. Recommend adopt, partially adopt, or not yet, with the service count where the answer would change.",
+		why: "Meshes are adopted for a single capability and then owned forever. Forcing per-capability alternatives and a service-count threshold turns it into a sizing decision.",
+		watchOut: "A mesh adds a highly privileged, cluster-wide component to your critical path. Its failure modes are less familiar than the problems it solves.",
+		related: [
+			"sidecar-pattern",
+			"service-discovery",
+			"circuit-breaker",
+			"distributed-tracing"
+		],
+		tags: [
+			"distributed systems",
+			"infrastructure",
+			"networking",
+			"platform"
+		]
+	},
+	{
+		id: "cell-based-architecture",
+		name: "Cell-Based Architecture",
+		aka: [
+			"cells",
+			"shuffle sharding",
+			"blast radius partitioning"
+		],
+		origin: "AWS and Salesforce operational practice; shuffle sharding from AWS",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Run many complete, independent copies of the stack and assign each customer to one, so a failure or bad deploy affects one cell rather than everybody.",
+		useWhen: [
+			"any incident affects one hundred percent of customers",
+			"a bad deploy took down the entire platform at once",
+			"one enormous tenant destabilises the shared system",
+			"we cannot test a change on a small slice of real traffic"
+		],
+		prompt: "Design cell partitioning for this platform. Choose the assignment key and the cell size, and justify size from two directions: small enough that losing one is tolerable, large enough that the per-cell fixed cost is affordable — show that arithmetic. Then identify everything that cannot be cellular, such as global identity, billing, DNS and the routing layer itself, since those remain the true single points of failure and should be listed as the residual risk. Specify how a customer is routed to their cell, how they are migrated between cells, and how deployments proceed cell by cell with what verification between.",
+		why: "The residual global components are what determine your real availability, and cell diagrams usually omit them. Making the router and identity layer explicit is the honest version.",
+		watchOut: "Cells multiply operational surface — more environments, more deploys, more monitoring. Without strong automation the fleet becomes unmanageable before it becomes safe.",
+		related: [
+			"bulkhead-isolation",
+			"multi-region-failover",
+			"blast-radius",
+			"canary-release"
+		],
+		tags: [
+			"distributed systems",
+			"isolation",
+			"multi-tenancy",
+			"availability"
+		]
+	},
+	{
+		id: "multi-region-failover",
+		name: "Multi-Region Failover",
+		aka: [
+			"disaster recovery",
+			"active-active",
+			"RTO and RPO"
+		],
+		origin: "Business continuity planning; standard cloud architecture practice",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Decide how much downtime and how much data loss are acceptable, then build only the topology those two numbers require — and rehearse it.",
+		useWhen: [
+			"someone asked what happens if the region goes down and nobody knew",
+			"we have a standby that has never been tested",
+			"the compliance team wants a disaster recovery plan",
+			"we do not know how much data we would lose in a failover"
+		],
+		prompt: "Design regional resilience from the two numbers rather than from a topology preference: the recovery time objective and the recovery point objective, agreed with the business in writing. Derive what those require — backup restore, warm standby with asynchronous replication, or active-active with all the consistency consequences — and price each. Then focus on the parts that fail in real events: DNS and its cached lifetimes, data replication lag at the moment of failure, dependencies that exist in only one region including third parties, capacity in the surviving region for full load, and how failback works. Finish with the rehearsal schedule and what a game day would actually exercise.",
+		why: "Untested standbys are the norm and they do not work when needed. Deriving from stated objectives and demanding a rehearsal plan is what separates a design from a document.",
+		watchOut: "Active-active means accepting write conflicts and cross-region latency in your data model. Most teams want the availability without acknowledging that consequence.",
+		related: [
+			"split-brain",
+			"cell-based-architecture",
+			"chaos-engineering",
+			"backup-restore-testing"
+		],
+		tags: [
+			"distributed systems",
+			"disaster recovery",
+			"availability",
+			"planning"
+		]
+	},
+	{
+		id: "fan-out-fan-in",
+		name: "Fan-Out Fan-In",
+		aka: [
+			"scatter-gather",
+			"parallel aggregation",
+			"request amplification"
+		],
+		origin: "Parallel computing pattern; common in search and aggregation services",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Split a request across many workers and combine the results — which means your latency is the slowest of them and your load is multiplied by the fan-out factor.",
+		useWhen: [
+			"one incoming request becomes two hundred downstream calls",
+			"the aggregation waits for the slowest shard every time",
+			"a modest traffic increase caused a huge spike downstream",
+			"one failing partition makes the whole response fail"
+		],
+		prompt: "Analyse this scatter-gather path. Compute the amplification factor and the resulting downstream load per incoming request, then show why the combined latency tracks the slowest branch rather than the average, using our own percentile numbers to demonstrate how quickly that degrades with fan-out width. Then design the partial-result policy: how long we wait, what we return when some branches fail or time out, and how the response indicates it is incomplete. Add the protections — concurrency caps so a burst does not overwhelm the downstream tier, and per-branch timeouts derived from the overall budget rather than set independently.",
+		why: "The percentile arithmetic is the part that surprises people: a rare slow branch becomes a common slow request once you fan out widely. Making it explicit drives the partial-result design.",
+		watchOut: "Returning partial results silently is a correctness bug for anything that looks like a total or a count. The incompleteness has to reach the caller.",
+		related: [
+			"tail-latency",
+			"timeout-budgets",
+			"hedged-requests",
+			"n-plus-one-queries"
+		],
+		tags: [
+			"distributed systems",
+			"latency",
+			"parallelism",
+			"aggregation"
+		]
+	},
+	{
+		id: "request-coalescing",
+		name: "Request Coalescing",
+		aka: [
+			"single flight",
+			"request collapsing",
+			"batching in flight"
+		],
+		origin: "Caching practice; the singleflight package in Go is the reference implementation",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "When many identical requests arrive at once, let one do the work and have the rest wait for its result rather than duplicating it.",
+		useWhen: [
+			"a popular item causes hundreds of identical queries at the same moment",
+			"a cache miss on a hot key floods the database",
+			"we compute the same expensive result concurrently many times",
+			"a burst of duplicate requests overwhelms the origin"
+		],
+		prompt: "Add in-flight deduplication to this path. Define the key that determines identity, being careful to include anything that changes the result such as tenant, permissions and locale, since collapsing requests that are not truly identical leaks data between callers. Then specify the sharing semantics: what happens to all the waiters when the leader fails or times out, whether they retry individually or all receive the error, and whether the leader's deadline is its own or the earliest waiter's. Finish with the observability — the collapse ratio is the metric that shows whether this is doing anything.",
+		why: "Key selection is a security question as much as a performance one, and error propagation to waiters is the part that produces cascading confusion. Both need specifying.",
+		watchOut: "Coalescing couples the fate of many requests to one execution. A single slow leader now makes every waiter slow, so it needs its own timeout discipline.",
+		related: [
+			"thundering-herd",
+			"cache-invalidation-strategy",
+			"backpressure",
+			"batch-vs-stream"
+		],
+		tags: [
+			"distributed systems",
+			"caching",
+			"performance",
+			"deduplication"
+		]
+	},
+	{
+		id: "partial-failure-handling",
+		name: "Partial Failure Handling",
+		aka: [
+			"half-success",
+			"unknown outcome",
+			"ambiguous result"
+		],
+		origin: "Distributed systems fundamentals; central to Waldo and colleagues, 1994",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "The defining problem of distributed systems is not failure but ambiguity — a timed-out call may have succeeded, and the caller cannot tell which.",
+		useWhen: [
+			"the call timed out and I do not know if it went through",
+			"the payment may or may not have been taken",
+			"three of the five updates succeeded and now what",
+			"the response was lost but the work was done"
+		],
+		prompt: "Enumerate the ambiguous outcomes in this operation. For every remote call, list the three results — clear success, clear failure, and unknown — and specify what our code does in the unknown case today, because that branch is usually missing entirely. Then design for it: an idempotent retry, a query-the-status operation so the caller can find out what happened, or a reconciliation process that repairs the discrepancy later. Where the operation spans several systems, define the order that leaves the least harmful partial state, and say which partial states are detectable and which would be silent, since the silent ones need active reconciliation.",
+		why: "Code is written for success and failure and almost never for unknown, which is the case that produces double charges and orphaned records. Forcing the third branch is the whole exercise.",
+		watchOut: "Reconciliation processes that nobody monitors accumulate discrepancies quietly. The repair job needs its own alerting on the number of items it fixes.",
+		related: [
+			"idempotency-keys",
+			"compensating-transactions",
+			"fallacies-of-distributed-computing",
+			"reconciliation-jobs"
+		],
+		tags: [
+			"distributed systems",
+			"failure modes",
+			"correctness",
+			"error handling"
+		]
+	},
+	{
+		id: "compensating-transactions",
+		name: "Compensating Transactions",
+		aka: [
+			"semantic rollback",
+			"undo actions",
+			"business-level compensation"
+		],
+		origin: "Sagas paper, Garcia-Molina and Salem, 1987",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "When you cannot roll back across systems, define a business action that counteracts each completed step — a refund rather than an unwritten charge.",
+		useWhen: [
+			"we booked the flight and the hotel failed and now what",
+			"we cannot undo the email that was already sent",
+			"the multi-step process failed at step four and left a mess",
+			"rolling back means calling a third party that has no undo"
+		],
+		prompt: "Define compensation for each step of this process. For every step, write the compensating action and then classify it honestly: perfectly reversible, partially reversible with a residue such as a fee or a visible record, or irreversible such as a sent notification. The irreversible ones determine the design, so order the steps to put them as late as possible and say which cannot be moved. Then specify what happens when a compensation itself fails, since that needs retry and eventually a human queue rather than silent abandonment, and how the user is told what state their request ended in.",
+		why: "Compensation is usually specified only for the convenient steps. Classifying reversibility and reordering around the irreversible ones is the design decision that actually reduces harm.",
+		watchOut: "Compensation is visible to users and often to auditors. A refund is not the same as a charge that never happened, and the business needs to accept that difference.",
+		related: [
+			"saga-pattern",
+			"workflow-orchestration",
+			"partial-failure-handling",
+			"two-phase-commit-limits"
+		],
+		tags: [
+			"distributed systems",
+			"transactions",
+			"rollback",
+			"business process"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/reliability.ts
+var reliability = [
+	{
+		id: "service-level-objectives",
+		name: "Service Level Objectives",
+		aka: [
+			"SLO",
+			"reliability target",
+			"SLA versus SLO"
+		],
+		origin: "Google Site Reliability Engineering, 2016",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Set an explicit numeric reliability target for a user-visible behaviour, so reliability becomes a budget to spend rather than an argument to win.",
+		useWhen: [
+			"we argue about whether the system is reliable enough and never resolve it",
+			"every incident triggers a demand for more hardening",
+			"nobody can say how much downtime is actually acceptable",
+			"the contract promises uptime and we do not measure the same thing"
+		],
+		prompt: "Define objectives for this service. Start from the user journey rather than the infrastructure: what does a user do, and what makes that experience unacceptable. Write each objective as a measurable proportion of good events over total events, with the window stated, and be explicit about what counts as an event — because the denominator choice quietly determines whether one big customer's outage even registers. Propose a target based on what users would notice rather than on how many nines sound impressive, and state what the target implies operationally: the allowed downtime per month, and what we would have to stop doing to make it stricter.",
+		why: "Targets picked as round numbers of nines are unmoored from user impact and unaffordable to defend. Deriving from journeys and stating the cost of one more nine makes it a real decision.",
+		watchOut: "An objective nobody is willing to act on is worse than none, because it teaches the organisation that the number is decorative. Agree the consequence before the target.",
+		related: [
+			"sli-selection",
+			"error-budget-policy",
+			"availability-math",
+			"burn-rate-alerting"
+		],
+		tags: [
+			"reliability",
+			"slo",
+			"measurement",
+			"operations"
+		]
+	},
+	{
+		id: "sli-selection",
+		name: "Indicator Selection",
+		aka: [
+			"SLI",
+			"choosing the right metric",
+			"user-centred measurement"
+		],
+		origin: "Google Site Reliability Engineering; the SRE Workbook",
+		domains: ["engineering", "data"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Pick the small number of measurements that actually track user happiness, and measure them where the user is rather than where it is convenient.",
+		useWhen: [
+			"all our dashboards are green and customers are complaining",
+			"we measure server errors but users see timeouts at the edge",
+			"the average response time hides the requests that failed",
+			"we have four hundred metrics and no idea which matter"
+		],
+		prompt: "Choose the indicators for this service. For each candidate, state the measurement point and what it misses — server-side latency misses network and client render time, success rate at the load balancer misses errors rendered as a valid page with an error message inside it. Prefer a ratio of good events to valid events, and define precisely which events are excluded and why, since exclusions are where these get gamed. Then check the proposed set against three past incidents: would each indicator have moved? An indicator that stayed flat during a real outage is not measuring what we care about.",
+		why: "Testing candidate indicators against past incidents is the check that separates measurable from meaningful, and it is almost never done.",
+		watchOut: "Every additional indicator dilutes attention. Three that map to user journeys beat twenty that map to components.",
+		related: [
+			"service-level-objectives",
+			"golden-signals",
+			"real-user-monitoring",
+			"dashboard-design"
+		],
+		tags: [
+			"reliability",
+			"metrics",
+			"measurement",
+			"monitoring"
+		]
+	},
+	{
+		id: "error-budget-policy",
+		name: "Error Budget Policy",
+		aka: [
+			"error budget",
+			"reliability budget",
+			"freeze policy"
+		],
+		origin: "Google Site Reliability Engineering, 2016",
+		domains: ["engineering"],
+		intents: ["decide", "prioritize"],
+		oneLiner: "The allowed unreliability under an objective is a budget, and the policy says what changes when it is spent — that policy, not the number, is the mechanism.",
+		useWhen: [
+			"reliability work always loses to feature work until there is an outage",
+			"we have targets but nothing happens when we miss them",
+			"the team wants to ship and operations wants to stabilise and neither wins",
+			"every outage produces a promise to do better and nothing changes"
+		],
+		prompt: "Write the policy for what happens as this budget depletes. Define graduated responses rather than a single cliff: at fifty percent consumed, at seventy-five, and at exhausted — with each response being a concrete change in what the team does, such as reliability work taking priority over the roadmap or risky changes requiring additional review. Name who has authority to invoke and to override, and what an override must record. Then handle the case that breaks these policies: budget consumed by a single large incident outside the team's control, versus steady erosion, which deserve different responses. Say which of ours is which historically.",
+		why: "A budget without a pre-agreed consequence is a number on a dashboard. Graduated responses and named authority are what let the policy fire without a negotiation during a bad week.",
+		watchOut: "Freezing all feature work is a blunt response that breeds resentment and gaming of the measurement. Prefer changing what work is prioritised over stopping work entirely.",
+		related: [
+			"service-level-objectives",
+			"burn-rate-alerting",
+			"toil-reduction",
+			"corrective-action-tracking"
+		],
+		tags: [
+			"reliability",
+			"prioritisation",
+			"policy",
+			"operations"
+		]
+	},
+	{
+		id: "burn-rate-alerting",
+		name: "Burn Rate Alerting",
+		aka: ["multi-window multi-burn-rate alerts", "budget consumption alerts"],
+		origin: "Google SRE Workbook, 2018",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Alert on how fast the reliability budget is being consumed over several time windows at once, so fast outages page immediately and slow erosion still gets noticed.",
+		useWhen: [
+			"our alert fires on a brief blip that fixed itself",
+			"a slow degradation ran for a week before anyone noticed",
+			"we alert on a threshold and it is either too noisy or too late",
+			"the page fired after the outage was already over"
+		],
+		prompt: "Design budget-consumption alerts for this objective. Give at least two windows — a short one for fast burn that pages, and a long one for slow burn that opens a ticket — with the burn rate multiplier and the fraction of the budget consumed before firing for each, shown as arithmetic rather than assertion. Include the short secondary window that stops an alert from staying fired long after recovery. Then state the detection time and the minimum outage size each configuration can see, so we know what we are choosing not to detect, and map each alert to whether it pages a human or creates work for later.",
+		why: "Threshold alerts on error rate are either noisy or slow, and the multi-window construction is the standard fix that most teams have never seen laid out numerically.",
+		watchOut: "This requires a well-defined objective with a trustworthy denominator. Applied to a poorly chosen indicator it produces confident alerts about the wrong thing.",
+		related: [
+			"error-budget-policy",
+			"alert-fatigue",
+			"symptom-based-alerting",
+			"service-level-objectives"
+		],
+		tags: [
+			"reliability",
+			"alerting",
+			"slo",
+			"monitoring"
+		]
+	},
+	{
+		id: "availability-math",
+		name: "Availability Arithmetic",
+		aka: [
+			"nines",
+			"dependency availability multiplication",
+			"serial and parallel reliability"
+		],
+		origin: "Reliability engineering; standard in system design practice",
+		domains: ["engineering"],
+		intents: ["estimate", "explain"],
+		oneLiner: "Availability of dependencies in series multiplies downward and redundancy multiplies failure probabilities — which usually shows a target is impossible before you build it.",
+		useWhen: [
+			"we promised four nines and I have no idea if that is achievable",
+			"each service is reliable but the whole path is not",
+			"someone wants a guarantee that exceeds what our vendors provide",
+			"we added redundancy and availability barely improved"
+		],
+		prompt: "Compute the achievable availability of this request path. List every dependency in series including the ones people forget — DNS, the load balancer, the identity provider, the certificate authority, the payment processor — with each one's published or observed availability, and multiply. Compare the result against our target and state the gap plainly. Then evaluate redundancy for the weakest links, and be rigorous about correlated failure: two instances sharing a control plane, a region, or a configuration deployment do not multiply independently. Finish with the achievable target given the dependencies we cannot change.",
+		why: "The serial multiplication almost always shows the promised target is unattainable, and the correlated-failure correction is what stops redundancy being over-credited.",
+		watchOut: "Vendor availability numbers describe their control plane, often exclude planned maintenance, and are measured differently from your users' experience. Treat them as optimistic.",
+		related: [
+			"service-level-objectives",
+			"single-point-of-failure-audit",
+			"dependency-failure-matrix",
+			"multi-region-failover"
+		],
+		tags: [
+			"reliability",
+			"estimation",
+			"dependencies",
+			"availability"
+		]
+	},
+	{
+		id: "golden-signals",
+		name: "Four Golden Signals",
+		aka: ["latency traffic errors saturation", "monitoring basics"],
+		origin: "Google Site Reliability Engineering, 2016",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "If you can only watch four things per service, watch latency, traffic, errors and saturation — and watch latency of failures separately from successes.",
+		useWhen: [
+			"we do not know what to put on the dashboard for a new service",
+			"we monitor CPU and disk but not whether users are being served",
+			"the graphs look fine and something is clearly wrong",
+			"a new service went live with no monitoring at all"
+		],
+		prompt: "Instrument this service against the four signals, and apply the refinements that make them useful. Split latency by outcome, since fast failures otherwise flatter the distribution and hide an outage. Report latency as a distribution with high percentiles rather than a mean. Define saturation against the resource that will actually run out first for this workload — often a connection pool or a queue rather than CPU — and state how you determined that. For each signal, give the alerting threshold and whether it pages, and note what class of problem this set is blind to, which is usually correctness.",
+		why: "Splitting latency by outcome and choosing the right saturation resource are the two refinements that turn a generic dashboard into one that catches real incidents.",
+		watchOut: "These four say nothing about whether the answers are correct. A service happily returning wrong data at low latency looks perfect here.",
+		related: [
+			"red-method",
+			"use-method",
+			"sli-selection",
+			"saturation-monitoring"
+		],
+		tags: [
+			"reliability",
+			"monitoring",
+			"metrics",
+			"observability"
+		]
+	},
+	{
+		id: "red-method",
+		name: "RED Method",
+		aka: ["rate errors duration", "request-centric monitoring"],
+		origin: "Tom Wilkie, Weaveworks, 2015",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "For anything that serves requests, track rate, errors and duration per endpoint — a uniform shape that makes every service comparable on one dashboard.",
+		useWhen: [
+			"every team built a different dashboard and none of them are comparable",
+			"during an incident we cannot tell which service is the problem",
+			"we have metrics per service but no consistent way to read them",
+			"onboarding to a new service means learning a new dashboard"
+		],
+		prompt: "Apply a uniform request-centric metric shape across our services. Define the three measures with consistent naming and labels so one dashboard template works everywhere, and specify the label set carefully — enough to identify an endpoint, not so much that cardinality explodes. Then define errors precisely, because that definition is where consistency breaks: does a rejection due to invalid input count, does a rate limit response count, does a client cancellation count? Write the rule and apply it identically everywhere. Finish with the template dashboard and how a responder would use it to narrow from symptom to service in under a minute.",
+		why: "The value is entirely in uniformity, and uniformity dies on inconsistent error definitions and label sets. Nailing both is the actual work.",
+		watchOut: "This covers request-driven services only. Batch jobs, stream processors and queue consumers need a different shape based on lag and throughput.",
+		related: [
+			"use-method",
+			"golden-signals",
+			"metric-cardinality",
+			"dashboard-design"
+		],
+		tags: [
+			"reliability",
+			"monitoring",
+			"metrics",
+			"standardisation"
+		]
+	},
+	{
+		id: "use-method",
+		name: "USE Method",
+		aka: ["utilisation saturation errors", "resource-centric analysis"],
+		origin: "Brendan Gregg, 2012",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "For every resource, check utilisation, saturation and errors — a checklist that finds the constrained resource quickly instead of guessing.",
+		useWhen: [
+			"the machine looks fine but everything is slow",
+			"I do not know which resource is the bottleneck",
+			"CPU is at forty percent so it cannot be a capacity problem",
+			"the performance problem moves around and I keep chasing it"
+		],
+		prompt: "Walk this system resource by resource with a utilisation, saturation and error reading for each. Enumerate the resources completely, including the ones without obvious gauges: CPU, memory, storage capacity and throughput, network, but also file descriptors, thread pools, connection pools, lock contention and any fixed-size queue. Saturation is the column that finds most problems, so for each resource say specifically what queueing looks like and how to observe it. Then produce a ranked shortlist of suspects with the exact command or query that would confirm each, so this becomes a procedure rather than a description.",
+		why: "Utilisation-only monitoring misses the resources that queue rather than saturate visibly. Demanding a saturation observation per resource is what surfaces the real constraint.",
+		watchOut: "This finds resource bottlenecks and not logical ones. An inefficient algorithm or a lock convoy will show as saturation somewhere without telling you the cause.",
+		related: [
+			"golden-signals",
+			"saturation-monitoring",
+			"queueing-theory-basics",
+			"observability-triage"
+		],
+		tags: [
+			"reliability",
+			"performance",
+			"diagnosis",
+			"resources"
+		]
+	},
+	{
+		id: "saturation-monitoring",
+		name: "Saturation and Headroom",
+		aka: [
+			"headroom monitoring",
+			"queue depth",
+			"utilisation limits"
+		],
+		origin: "Queueing theory applied to operations; Google SRE practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "estimate"],
+		oneLiner: "Watch how much work is waiting rather than how busy things are, because latency rises sharply well before utilisation reaches one hundred percent.",
+		useWhen: [
+			"the system fell over at seventy percent CPU and we did not expect it",
+			"latency doubled with no change in traffic",
+			"we plan capacity from average utilisation and keep getting surprised",
+			"everything is fine until suddenly it is not, with no warning"
+		],
+		prompt: "Identify the saturation signals for this system and derive the operating limit. Explain, with the relevant queueing relationship, why waiting time climbs non-linearly as utilisation approaches capacity, and compute the utilisation at which our latency objective would be violated — that number, not one hundred percent, is our ceiling. Then list the observable queues: run queue, connection pool wait time, thread pool queue depth, disk request queue, message backlog. For each, give the healthy range and the alerting threshold, set so we get warning before the knee of the curve rather than after it.",
+		why: "Sizing to a percentage of capacity without the queueing relationship is why systems fall over below full utilisation. Deriving the ceiling from the latency objective is the correction.",
+		watchOut: "Bursty arrivals push you over the knee at much lower average utilisation than smooth arrivals. Average utilisation is a poor guide when traffic is spiky.",
+		related: [
+			"use-method",
+			"queueing-theory-basics",
+			"capacity-planning",
+			"backpressure"
+		],
+		tags: [
+			"reliability",
+			"performance",
+			"capacity",
+			"queueing"
+		]
+	},
+	{
+		id: "observability-instrumentation",
+		name: "Wide Structured Events",
+		aka: [
+			"observability instrumentation",
+			"canonical log lines",
+			"high cardinality events"
+		],
+		origin: "Charity Majors, Honeycomb; Stripe's canonical log line practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Emit one rich event per unit of work carrying every dimension you might slice by, instead of scattered log lines and pre-aggregated counters.",
+		useWhen: [
+			"the dashboard shows a spike and I cannot find which requests caused it",
+			"the problem only affects one customer and our metrics are aggregated",
+			"I have to grep across five services to reconstruct one request",
+			"every new question needs a code change and a deploy to answer"
+		],
+		prompt: "Design a single wide event per request for this service. List the fields it should carry, covering identity (user, tenant, request id, trace id), routing (endpoint, version, region, instance, feature flags active), outcome (status, error class, retry count), and cost (duration, database time, external call time, rows examined, bytes returned). The design test is unknown-unknowns: name three questions we cannot answer today and show which fields make each answerable without a deploy. Then state the sampling strategy, keeping all errors and slow requests while sampling the fast successful ones, and the resulting volume.",
+		why: "Pre-aggregated metrics can only answer questions you thought of first. Designing against three currently-unanswerable questions is the test that produces the right field set.",
+		watchOut: "Wide events are expensive to store and easy to fill with personal data. Sampling and field-level redaction have to be part of the design, not an afterthought.",
+		related: [
+			"structured-logging",
+			"distributed-tracing",
+			"metric-cardinality",
+			"observability-cost-control"
+		],
+		tags: [
+			"observability",
+			"logging",
+			"instrumentation",
+			"debugging"
+		]
+	},
+	{
+		id: "distributed-tracing",
+		name: "Distributed Tracing",
+		aka: [
+			"spans and traces",
+			"OpenTelemetry",
+			"request tracing"
+		],
+		origin: "Google Dapper, 2010; standardised by OpenTelemetry",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Propagate a trace identifier through every hop so one request's path across services becomes a single timeline you can read.",
+		useWhen: [
+			"the request is slow and I cannot tell which service is responsible",
+			"a request touches nine services and I have nine separate logs",
+			"we found the error but not what called it",
+			"nobody can explain why this endpoint got slower last month"
+		],
+		prompt: "Plan tracing for this system. Context propagation is the whole battle, so enumerate every boundary the trace context must cross — synchronous calls, message queues where it has to ride in headers, background jobs, thread and coroutine handoffs, and third-party callbacks — and identify where it would be lost today, since a broken trace is worse than none. Then define span naming and the attributes carried, keeping them low cardinality on the span name and rich in attributes. Specify the sampling decision, where it is made, and how it stays consistent across services so traces are not half-captured.",
+		why: "Traces break at asynchronous boundaries and inconsistent sampling, and both produce a system that looks instrumented while giving unusable data. Auditing the boundaries first prevents that.",
+		watchOut: "Head-based sampling decides before knowing whether the request was interesting, so it usually discards the errors you needed. Tail-based sampling costs more and captures them.",
+		related: [
+			"observability-instrumentation",
+			"deadline-propagation",
+			"observability-triage",
+			"tail-latency"
+		],
+		tags: [
+			"observability",
+			"tracing",
+			"microservices",
+			"latency"
+		]
+	},
+	{
+		id: "structured-logging",
+		name: "Structured Logging",
+		aka: [
+			"machine-readable logs",
+			"key-value logging",
+			"JSON logs"
+		],
+		origin: "Widespread operational practice; formalised in twelve-factor logging",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Log events as fields rather than sentences, so they can be filtered, aggregated and joined instead of grepped with increasingly desperate regular expressions.",
+		useWhen: [
+			"finding anything in the logs means writing a regular expression",
+			"the same event is logged in three different formats",
+			"I cannot count how often this happened without parsing free text",
+			"the log message changed and our alerting silently stopped working"
+		],
+		prompt: "Convert this logging to structured events. Define the standard field set every log line carries — timestamp, level, service, version, trace id, request id, tenant — and the rule that variable data goes in fields while the message stays a stable constant, because interpolated messages are exactly what breaks downstream queries. Then audit our existing lines for the two failure modes: personal or secret data being logged, and messages that embed values in the text. Finish with the retention and volume implication, and the small number of lines that should be treated as an audit record with stricter retention rather than as an operational log.",
+		why: "The stable-message-plus-fields rule is what makes logs queryable, and separating audit records from operational logs is the distinction that prevents both being wrong.",
+		watchOut: "Structured logs are more verbose and more expensive. Without sampling and level discipline the bill grows faster than the usefulness.",
+		related: [
+			"log-level-discipline",
+			"log-sampling",
+			"observability-instrumentation",
+			"audit-logging"
+		],
+		tags: [
+			"observability",
+			"logging",
+			"operations",
+			"debugging"
+		]
+	},
+	{
+		id: "log-level-discipline",
+		name: "Log Level Discipline",
+		aka: [
+			"severity levels",
+			"when to use warn",
+			"logging policy"
+		],
+		origin: "Long-standing operational convention; syslog severity lineage",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Give each level an operational meaning — who acts, and when — rather than a vague sense of importance, so filtering by level actually means something.",
+		useWhen: [
+			"everything is logged at info and the signal is buried",
+			"we get thousands of warnings a day and ignore all of them",
+			"errors are logged for things that are handled fine",
+			"turning on debug in production is the only way to understand anything"
+		],
+		prompt: "Define what each level means here in terms of action rather than severity: error means a human must eventually look and something did not work for a user, warn means the system handled it but a pattern of these matters, info means a record of normal significant transitions, debug means detail useful when investigating. Then audit our current usage against those definitions and report the two common errors — handled situations logged as errors, which is why nobody trusts the error count, and genuine failures logged as warnings. Finish with the mechanism for raising verbosity in production for one request or one tenant without a deploy.",
+		why: "Defining levels by required action rather than by adjective makes the audit mechanical and directly reduces alert noise driven by log-based alerts.",
+		watchOut: "A library that logs errors for conditions the caller handles will pollute your signal regardless of your policy. Those need suppressing at the boundary.",
+		related: [
+			"structured-logging",
+			"alert-fatigue",
+			"log-sampling",
+			"error-message-design"
+		],
+		tags: [
+			"observability",
+			"logging",
+			"noise",
+			"operations"
+		]
+	},
+	{
+		id: "log-sampling",
+		name: "Log Sampling",
+		aka: [
+			"adaptive sampling",
+			"telemetry volume control",
+			"head and tail sampling"
+		],
+		origin: "High-volume observability practice; Honeycomb and Google sampling designs",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Keep a representative fraction of routine telemetry and all of the interesting parts, so you can afford the volume without losing the events that matter.",
+		useWhen: [
+			"our logging bill is larger than our compute bill",
+			"we turned off debug logging and now we are blind",
+			"one noisy endpoint generates ninety percent of our log volume",
+			"we cannot keep everything and do not know what to drop"
+		],
+		prompt: "Design a sampling policy for this telemetry. Define the retention rules by class: keep every error, every slow request and every event for a small always-on set of traced tenants, then sample successful fast requests at a rate derived from the volume we can afford. Include the sampling rate as a field on every retained event so downstream aggregations can reweight correctly — omitting this is what makes sampled data lie about volumes. Then specify dynamic behaviour: increase retention automatically when error rates rise, and allow per-tenant or per-endpoint overrides during an investigation without a deploy.",
+		why: "Sampled telemetry without a stored sample rate produces silently wrong counts, and that mistake survives for years. Making it a required field is the fix.",
+		watchOut: "Sampling destroys your ability to answer questions about rare events after the fact. Decide in advance which rare things are always kept.",
+		related: [
+			"observability-cost-control",
+			"structured-logging",
+			"distributed-tracing",
+			"observability-instrumentation"
+		],
+		tags: [
+			"observability",
+			"cost",
+			"logging",
+			"sampling"
+		]
+	},
+	{
+		id: "metric-cardinality",
+		name: "Metric Cardinality",
+		aka: [
+			"label explosion",
+			"time series cardinality",
+			"high cardinality metrics"
+		],
+		origin: "Prometheus and time-series database operational practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "Every distinct combination of label values is a separate stored series, so one unbounded label can multiply your monitoring cost by thousands overnight.",
+		useWhen: [
+			"our monitoring system fell over after a deploy",
+			"someone added a user id as a metric label",
+			"queries that used to be instant now time out",
+			"the metrics bill jumped and nobody knows why"
+		],
+		prompt: "Audit these metrics for cardinality. For each label, state its expected distinct values and multiply across labels per metric to get the series count — then flag any label that is unbounded by nature: user id, request id, full URL path with identifiers, error message text, container id in an autoscaling group. For each, give the alternative: bucket it, strip the variable segment, or move that dimension to a wide event or a trace where high cardinality belongs. Then propose a guardrail that stops a future deploy from doing this again, and say what it costs to enforce.",
+		why: "The multiplication is what people fail to do, and the correct fix is usually to move the dimension into events rather than to delete the question. Naming both is the useful output.",
+		watchOut: "Aggressive label stripping removes the ability to answer per-tenant questions during an incident. Move those dimensions elsewhere rather than losing them.",
+		related: [
+			"observability-cost-control",
+			"observability-instrumentation",
+			"red-method",
+			"dashboard-design"
+		],
+		tags: [
+			"observability",
+			"metrics",
+			"cost",
+			"scaling"
+		]
+	},
+	{
+		id: "dashboard-design",
+		name: "Dashboard Design",
+		aka: [
+			"operational dashboards",
+			"incident dashboards",
+			"graph hygiene"
+		],
+		origin: "Operational practice; influenced by Tufte and by SRE dashboard conventions",
+		domains: ["engineering", "design"],
+		intents: ["structure", "communicate"],
+		oneLiner: "A dashboard should answer a specific question for a specific reader in seconds — most are a wall of graphs that answer nothing under pressure.",
+		useWhen: [
+			"during an incident nobody knows which dashboard to open",
+			"we have sixty panels and read none of them",
+			"the graphs look alarming and we cannot tell if that is normal",
+			"each dashboard was built by one person for one investigation"
+		],
+		prompt: "Redesign this dashboard around a stated question and reader. Structure it top-down: user-visible symptoms first, then the service-level signals, then the resource detail — so a responder moves from is-it-broken to what-is-broken without switching pages. For every panel, state the question it answers and what a bad value looks like; delete any panel that fails that test. Add the context that makes graphs readable under stress: the objective threshold drawn on the panel, the comparison to the same time last week, and deployment markers. Finish with the one-sentence summary at the top that says whether we are currently healthy.",
+		why: "Requiring a question and a bad-value definition per panel is a ruthless filter, and comparison-to-last-week is what makes an unfamiliar graph interpretable during an incident.",
+		watchOut: "Dashboards are for exploring known failure shapes. Novel incidents need ad hoc querying, so do not let dashboard building substitute for queryable telemetry.",
+		related: [
+			"sli-selection",
+			"red-method",
+			"observability-triage",
+			"alert-fatigue"
+		],
+		tags: [
+			"observability",
+			"dashboards",
+			"incident response",
+			"visualisation"
+		]
+	},
+	{
+		id: "alert-fatigue",
+		name: "Alert Fatigue",
+		aka: [
+			"pager noise",
+			"alarm fatigue",
+			"alert hygiene"
+		],
+		origin: "Clinical alarm fatigue research; adapted in operations practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "prioritize"],
+		oneLiner: "When most alerts are not actionable, responders stop reading them — so noise is not merely annoying, it is the mechanism by which real alerts get missed.",
+		useWhen: [
+			"we get forty pages a night and most are nothing",
+			"the on-call engineer acknowledges alerts without reading them",
+			"we missed a real incident because it looked like the usual noise",
+			"nobody wants to be on call anymore"
+		],
+		prompt: "Audit our alerts using the actionability test: for each, what would a responder do at three in the morning, and would that action be different from doing nothing? Classify every alert as page (a human must act now), ticket (act during working hours) or delete. Then measure rather than assume — for each alert, pull how many times it fired in the last month and how many resulted in a corrective action, and delete or downgrade anything with a poor ratio. Finish with the two structural fixes: alerts that fire per instance rather than per service, and alerts on causes that should be alerts on symptoms.",
+		why: "Firing-versus-action ratios turn a subjective complaint into a delete list, and the page-ticket-delete triage is the decision most alerting setups have never made.",
+		watchOut: "Deleting a noisy alert without addressing the underlying instability just removes the evidence. Track whether the condition still occurs after you stop paging on it.",
+		related: [
+			"symptom-based-alerting",
+			"runbook-writing",
+			"on-call-health",
+			"burn-rate-alerting"
+		],
+		tags: [
+			"reliability",
+			"alerting",
+			"on-call",
+			"noise"
+		]
+	},
+	{
+		id: "symptom-based-alerting",
+		name: "Symptom-Based Alerting",
+		aka: ["alert on symptoms not causes", "user-facing alerting"],
+		origin: "Rob Ewaschuk, My Philosophy on Alerting, Google, 2013",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Page on what users are experiencing, not on the many internal conditions that might one day cause it — causes belong in the investigation, not the pager.",
+		useWhen: [
+			"we page on high CPU and it usually means nothing",
+			"we have an alert for every possible failure cause and still miss outages",
+			"the disk filled up and the alert fired but users were fine",
+			"each alert tells us a component is unhappy but not whether anyone is affected"
+		],
+		prompt: "Restructure these alerts around user-visible symptoms. For each existing alert, decide whether it describes something a user would notice or an internal condition, and for the internal ones ask whether the symptom it predicts is already covered — if so, delete it. Keep cause-based alerts only in the specific case where the cause gives useful lead time before harm, such as a resource that will exhaust in hours, and treat those as tickets not pages. Then check coverage the other way: for each way this service could fail a user, name the alert that would fire, and list the failure modes with no alert at all.",
+		why: "The both-directions audit is what makes this work — removing cause alerts without checking symptom coverage leaves gaps, and that is the fear that keeps the noise around.",
+		watchOut: "Symptom alerts arrive later than cause alerts by construction. That is acceptable only if your diagnosis tooling is good enough to close the gap.",
+		related: [
+			"alert-fatigue",
+			"burn-rate-alerting",
+			"runbook-writing",
+			"sli-selection"
+		],
+		tags: [
+			"reliability",
+			"alerting",
+			"monitoring",
+			"on-call"
+		]
+	},
+	{
+		id: "anomaly-detection-alerting",
+		name: "Anomaly Detection Alerting",
+		aka: [
+			"dynamic thresholds",
+			"seasonality-aware alerting",
+			"baseline deviation"
+		],
+		origin: "Statistical process control applied to monitoring",
+		domains: ["engineering", "data"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Alert on deviation from expected behaviour rather than a fixed threshold — useful where load varies wildly, treacherous where the baseline drifts wrong.",
+		useWhen: [
+			"traffic varies so much that any fixed threshold is wrong",
+			"the seasonal pattern means our alert fires every weekend",
+			"we want to catch a drop in orders that is not zero but is clearly wrong",
+			"a slow degradation never crosses the threshold we set"
+		],
+		prompt: "Assess dynamic thresholds for this metric. Characterise the signal first: daily and weekly seasonality, trend, known scheduled events, and how noisy it is at the resolution we alert on — because a signal this method cannot model will produce alerts nobody can interpret. Then choose the approach, from a simple comparison against the same period last week through to a fitted model, and prefer the simplest that works. Define behaviour around the known failure cases: holidays and marketing pushes, a gradual regression that the baseline learns as normal, and the cold start after a deploy changes the pattern legitimately.",
+		why: "The baseline-learns-the-regression failure is the fundamental weakness of these methods, and naming it forces a static floor alongside the dynamic one.",
+		watchOut: "An anomaly alert nobody can explain gets ignored faster than a noisy threshold. If the responder cannot see why it fired, it will not be acted on.",
+		related: [
+			"symptom-based-alerting",
+			"burn-rate-alerting",
+			"alert-fatigue",
+			"metric-cardinality"
+		],
+		tags: [
+			"reliability",
+			"alerting",
+			"statistics",
+			"monitoring"
+		]
+	},
+	{
+		id: "runbook-writing",
+		name: "Runbook Writing",
+		aka: [
+			"playbook",
+			"operational procedure",
+			"alert response guide"
+		],
+		origin: "Operations practice; formalised in SRE and ITIL traditions",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "plan"],
+		oneLiner: "Write the procedure for a known failure so that a tired responder who has never seen it can act correctly without waking the expert.",
+		useWhen: [
+			"the same person gets called every time because only they know the fix",
+			"the alert fires and the responder does not know what to do next",
+			"our documentation describes the system but not what to do when it breaks",
+			"the runbook exists and is three years out of date"
+		],
+		prompt: "Write the response procedure for this alert. Lead with what the alert means in user terms and how to confirm the impact is real, since misdiagnosis wastes the first ten minutes. Then give numbered steps with the exact commands or links, expected output for each, and a decision point after each step. Include the parts that are usually missing: how to tell that the mitigation worked, how to undo it, when to escalate and to whom by role, and what to do if the obvious fix does not work. Finish with the freshness mechanism — how this document is reviewed, and how a responder flags a step that has gone stale.",
+		why: "Runbooks describe systems instead of prescribing actions, and they rot. Demanding expected output per step and an explicit staleness path is what keeps them usable.",
+		watchOut: "A runbook for a fully understood failure is a candidate for automation instead. If the steps never require judgement, write a script.",
+		related: [
+			"symptom-based-alerting",
+			"incident-command",
+			"toil-reduction",
+			"alert-fatigue"
+		],
+		tags: [
+			"reliability",
+			"documentation",
+			"incident response",
+			"on-call"
+		]
+	},
+	{
+		id: "incident-command",
+		name: "Incident Command System",
+		aka: [
+			"incident commander",
+			"ICS",
+			"incident roles"
+		],
+		origin: "US wildfire response, 1970s; adapted for technology by PagerDuty and Google",
+		domains: ["engineering"],
+		intents: ["plan", "communicate"],
+		oneLiner: "Assign explicit roles during an incident — command, operations, communications, scribe — so coordination stops competing with the actual fixing.",
+		useWhen: [
+			"during the outage six people were doing the same investigation",
+			"the person fixing it kept getting interrupted for status updates",
+			"nobody knew who was making decisions",
+			"the incident channel had ninety messages and no decisions"
+		],
+		prompt: "Define incident roles for our team at our size. Specify each role's responsibility and, importantly, what each role must not do — the commander does not debug, which is the rule everyone breaks. Include the declaration trigger, so someone assumes command early rather than after an hour of drifting, and the handover procedure for long incidents including what gets transferred. Define the communication cadence and who owns the external message. Then adapt honestly to our scale: if we have three people awake, say which roles combine and which must stay separate.",
+		why: "Roles copied from large organisations do not fit small teams and get abandoned. Specifying the prohibitions and the small-team collapse is what makes it adoptable.",
+		watchOut: "Formal command on a small incident is overhead that slows the fix. Define a severity threshold below which one person just handles it.",
+		related: [
+			"incident-severity-levels",
+			"escalation-policy",
+			"status-page-communication",
+			"blameless-postmortem"
+		],
+		tags: [
+			"reliability",
+			"incident response",
+			"roles",
+			"coordination"
+		]
+	},
+	{
+		id: "incident-severity-levels",
+		name: "Incident Severity Levels",
+		aka: [
+			"sev levels",
+			"incident classification",
+			"priority matrix"
+		],
+		origin: "Operations practice; conventions from ITIL and modern SRE",
+		domains: ["engineering"],
+		intents: ["decide", "communicate"],
+		oneLiner: "A short ladder of severities with observable criteria, so the response, the people woken and the communication follow automatically from the classification.",
+		useWhen: [
+			"we debate how serious this is while the outage continues",
+			"everything gets declared critical and then nothing does",
+			"people are unsure whether to wake anyone up",
+			"the same kind of problem gets treated differently each time"
+		],
+		prompt: "Define a severity ladder for us with no more than four levels. For each, give observable criteria in terms of user impact and scope rather than internal component state, and pair it with the automatic consequences: who is paged, whether a commander is appointed, communication cadence, and whether a postmortem is required. Then include the two rules that stop this from being argued mid-incident — start high and downgrade rather than the reverse, and anyone may declare while only the commander may downgrade. Test the ladder against our last five incidents and show what each would have been classified as.",
+		why: "Testing against real past incidents exposes ladders that everyone would classify differently, which is the failure that turns severity into a debate during an outage.",
+		watchOut: "Severity is not the same as urgency of the fix. A slow-burning data corruption may be the most serious thing you have while nothing looks down.",
+		related: [
+			"incident-command",
+			"defect-triage-matrix",
+			"escalation-policy",
+			"blameless-postmortem"
+		],
+		tags: [
+			"reliability",
+			"incident response",
+			"classification",
+			"process"
+		]
+	},
+	{
+		id: "escalation-policy",
+		name: "Escalation Policy",
+		aka: [
+			"escalation path",
+			"paging chain",
+			"when to wake someone"
+		],
+		origin: "On-call operations practice",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Pre-decide who gets involved, after how long, and on what trigger — so escalating is a routine step rather than a social judgement made at 3am.",
+		useWhen: [
+			"the on-call engineer struggled alone for two hours before asking for help",
+			"people are reluctant to wake a senior colleague",
+			"the alert went unacknowledged and nobody noticed",
+			"we escalated to a manager who could not help"
+		],
+		prompt: "Design our escalation policy. Specify the automatic layer first — unacknowledged alerts escalating after a fixed interval — then the human triggers, phrased as permissions rather than judgements: escalate after fifteen minutes without a working hypothesis, escalate immediately for anything touching data integrity or security, escalate when the mitigation would be irreversible. State explicitly that escalating is never criticised, because the social cost is the real blocker. Then define the escalation targets by capability rather than seniority, and separately define who is informed rather than engaged, since those are different lists.",
+		why: "Escalation fails for social reasons, not technical ones. Framing triggers as permissions and separating engage-from-inform is what actually shortens time to help.",
+		watchOut: "A policy that escalates to a manager for technical help wastes both people. Route to capability, and inform leadership on a separate track.",
+		related: [
+			"incident-command",
+			"on-call-health",
+			"incident-severity-levels",
+			"runbook-writing"
+		],
+		tags: [
+			"reliability",
+			"on-call",
+			"incident response",
+			"process"
+		]
+	},
+	{
+		id: "on-call-health",
+		name: "On-Call Health",
+		aka: [
+			"sustainable on-call",
+			"pager load",
+			"rotation design"
+		],
+		origin: "Google SRE practice; widely adopted operational norms",
+		domains: ["engineering", "career"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Treat pager load as a measured, capped quantity with compensating rest, because an exhausted rotation produces slower incidents and departures.",
+		useWhen: [
+			"our best engineers are burning out from being on call",
+			"the rotation is three people and one is on holiday",
+			"people work a full day after being up all night",
+			"nobody has fixed the recurring alert because they are too tired"
+		],
+		prompt: "Assess the health of this rotation with numbers rather than impressions: pages per shift, proportion outside working hours, sleep interruptions per week, and the share of pages that were actionable. Compare against a sustainable ceiling and say how far off we are. Then propose the interventions in order of effect — reducing alert noise almost always beats adding people — and specify the recovery norms: time off after a bad night, and who covers. Also handle rotation size, since fewer than a certain number of people makes the schedule fragile and personally unsustainable no matter how quiet it is.",
+		why: "On-call problems get treated as staffing when they are usually alert quality. Measuring actionable-page ratio first orders the interventions correctly.",
+		watchOut: "Adding people to a noisy rotation spreads the damage rather than reducing it, and it removes the pressure that would have fixed the noise.",
+		related: [
+			"alert-fatigue",
+			"escalation-policy",
+			"toil-reduction",
+			"corrective-action-tracking"
+		],
+		tags: [
+			"reliability",
+			"on-call",
+			"team health",
+			"operations"
+		]
+	},
+	{
+		id: "status-page-communication",
+		name: "Incident Communication",
+		aka: [
+			"status page",
+			"customer updates during outage",
+			"external comms"
+		],
+		origin: "Operational and customer support practice",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "plan"],
+		oneLiner: "Tell affected users what is broken, what to do meanwhile, and when you will next update — early and in their language, not in yours.",
+		useWhen: [
+			"customers found out about the outage from social media",
+			"our status page said all systems operational during the incident",
+			"the update said we are investigating for three hours straight",
+			"support was flooded because nobody knew what was happening"
+		],
+		prompt: "Write the communication plan for this incident. Give the template for the first update, publishable within minutes and containing impact in user terms, what is unaffected, any workaround, and the time of the next update — deliberately not a cause, since early causes are usually wrong and get quoted back. Then define the cadence, the person who owns publishing, and the criteria for updating the severity publicly. Cover the awkward cases: an incident affecting only some customers, one caused by a third party, and one involving data exposure where legal review is required before anything is said.",
+		why: "The next-update-time commitment is what stops the support flood, and avoiding early causes prevents the retraction that damages trust further. Both are usually missing.",
+		watchOut: "A status page updated manually during a bad incident will be forgotten. Assign the role explicitly or automate the trigger.",
+		related: [
+			"incident-command",
+			"incident-severity-levels",
+			"blameless-postmortem",
+			"bluf"
+		],
+		tags: [
+			"reliability",
+			"communication",
+			"incident response",
+			"customers"
+		]
+	},
+	{
+		id: "mttr-decomposition",
+		name: "Time-to-Recovery Decomposition",
+		aka: [
+			"MTTR breakdown",
+			"detect diagnose mitigate",
+			"incident phase analysis"
+		],
+		origin: "Incident analysis practice; common in SRE and DORA discussions",
+		domains: ["engineering"],
+		intents: ["diagnose", "prioritize"],
+		oneLiner: "Split recovery time into detect, engage, diagnose, mitigate and verify, because the phase that dominates tells you what to invest in.",
+		useWhen: [
+			"incidents take too long and we do not know where the time goes",
+			"we keep buying monitoring but recovery is not getting faster",
+			"we always find the cause quickly and still take hours to fix",
+			"someone wants a target for incident duration and I need a plan"
+		],
+		prompt: "Decompose our recent incidents into phases: time to detect, time to engage the right person, time to diagnose, time to mitigate, and time to verify recovery. Use the actual timestamps from the incident records rather than estimates. Then identify the dominant phase across incidents and match it to the intervention that addresses it specifically — detection means alerting and indicators, engagement means escalation and on-call, diagnosis means observability, mitigation means rollback capability and feature flags, verification means health signals. Recommend the single investment with the largest expected effect and estimate that effect from the data.",
+		why: "Reliability investment is usually spread evenly across all phases. Measuring which phase dominates redirects spending to where it changes the number.",
+		watchOut: "Averages across dissimilar incidents mislead. Segment by cause class before drawing conclusions, since a configuration error and a capacity failure have different profiles.",
+		related: [
+			"blameless-postmortem",
+			"observability-triage",
+			"corrective-action-tracking",
+			"deployment-rollback-plan"
+		],
+		tags: [
+			"reliability",
+			"incident analysis",
+			"metrics",
+			"improvement"
+		]
+	},
+	{
+		id: "corrective-action-tracking",
+		name: "Corrective Action Tracking",
+		aka: ["postmortem action items", "remediation follow-through"],
+		origin: "Safety engineering practice; standard in mature incident processes",
+		domains: ["engineering"],
+		intents: ["plan", "prioritize"],
+		oneLiner: "The value of a postmortem is entirely in the actions that get completed, so track them like committed work with owners, dates and a visible completion rate.",
+		useWhen: [
+			"we write good postmortems and nothing changes",
+			"the same incident happened again six months later",
+			"action items are logged and never prioritised against feature work",
+			"nobody knows how many of last quarter's actions were done"
+		],
+		prompt: "Turn these postmortem findings into trackable actions. For each, state the specific failure it prevents and classify it as prevention, detection or mitigation — a set with only prevention items is a warning sign, since you cannot prevent everything and faster detection often pays better. Give each an owner who has capacity, a date, and a size estimate, and explicitly cut the ones we will not do rather than leaving them to rot in a backlog. Then define the review mechanism: completion rate reported where leadership sees it, and a rule for what happens when an action from a repeat incident was never done.",
+		why: "Action lists that are all prevention and no owner are the standard failure. Forcing the prevention-detection-mitigation split and explicit cuts is what makes the list real.",
+		watchOut: "Too many actions per incident guarantees none get done. Three that ship beat fifteen that are catalogued.",
+		related: [
+			"blameless-postmortem",
+			"near-miss-reporting",
+			"error-budget-policy",
+			"mttr-decomposition"
+		],
+		tags: [
+			"reliability",
+			"follow-through",
+			"postmortem",
+			"improvement"
+		]
+	},
+	{
+		id: "near-miss-reporting",
+		name: "Near-Miss Reporting",
+		aka: ["close call analysis", "incidents that almost happened"],
+		origin: "Aviation and industrial safety practice; Heinrich's accident pyramid lineage",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "Investigate the events that nearly caused harm but did not, because they are far more common than incidents and carry the same information at lower cost.",
+		useWhen: [
+			"we only learn from things that actually broke",
+			"someone caught a bad deploy by luck and we moved on",
+			"the safeguard worked but only just and nobody looked into why",
+			"we would like to be proactive but only have incident data"
+		],
+		prompt: "Set up near-miss capture for our team. Define what qualifies with concrete examples — a change reverted before customers noticed, an alert that fired because a safeguard held, a manual check that caught an error, an outage avoided because traffic happened to be low. Then design the reporting path to be lighter than an incident review, since friction is what kills these programmes: a short form, no blame, and a quick triage. Specify the triage rule that decides which get investigated, favouring those where the thing that saved us was luck or vigilance rather than a designed control.",
+		why: "The luck-versus-control distinction is what makes near-miss data actionable: a save by an engineer noticing something is a control that will fail eventually.",
+		watchOut: "Any hint that reporting leads to blame ends the flow of reports immediately and permanently. The confidentiality rules matter more than the form design.",
+		related: [
+			"blameless-postmortem",
+			"corrective-action-tracking",
+			"chaos-engineering",
+			"pre-mortem"
+		],
+		tags: [
+			"reliability",
+			"safety",
+			"learning",
+			"prevention"
+		]
+	},
+	{
+		id: "toil-reduction",
+		name: "Toil Reduction",
+		aka: [
+			"operational toil",
+			"manual work budget",
+			"automation prioritisation"
+		],
+		origin: "Google Site Reliability Engineering, 2016",
+		domains: ["engineering"],
+		intents: ["prioritize", "plan"],
+		oneLiner: "Toil is manual, repetitive, automatable work that scales with the system rather than adding value — measure it, cap it, and automate the largest sources.",
+		useWhen: [
+			"the team spends every day on the same manual tasks",
+			"growth means proportionally more operational work",
+			"we never get to the improvement work because of the daily grind",
+			"onboarding a new customer takes four hours of manual steps"
+		],
+		prompt: "Inventory the operational work this team does and classify each item against the toil criteria: manual, repetitive, automatable, tactical, devoid of lasting value, and growing with scale. Measure hours per week for each rather than estimating impressions. Then rank automation candidates by hours saved against implementation cost, and apply the two filters that stop bad automation: tasks that are rare enough that automating costs more than it saves, and tasks where the manual step is actually a deliberate human checkpoint. For the top candidates, say whether the right fix is automation or eliminating the need entirely.",
+		why: "Eliminating the need usually beats automating the task, and that option gets skipped when automation is the assumed answer. Measuring hours first also stops the loudest annoyance from winning.",
+		watchOut: "Automation is itself a system that fails and needs maintenance. Automating a fragile process produces fast, confident, repeated errors.",
+		related: [
+			"on-call-health",
+			"runbook-writing",
+			"theory-of-constraints",
+			"operational-readiness-review"
+		],
+		tags: [
+			"reliability",
+			"automation",
+			"operations",
+			"prioritisation"
+		]
+	},
+	{
+		id: "chaos-engineering",
+		name: "Chaos Engineering",
+		aka: [
+			"fault injection",
+			"chaos monkey",
+			"resilience experiments"
+		],
+		origin: "Netflix, Chaos Monkey 2011; Principles of Chaos Engineering, 2015",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Run controlled experiments that inject real failures into a system to test whether your beliefs about its resilience are true, before reality tests them for you.",
+		useWhen: [
+			"we think we would survive losing a node but have never checked",
+			"the failover has never actually been exercised",
+			"our resilience is a design document rather than a demonstrated property",
+			"every incident reveals a dependency we did not know was critical"
+		],
+		prompt: "Design a resilience experiment for this system. Structure it as a hypothesis with a measurable steady state — state what metric stays within what range if we are right — then the injected fault, the blast radius limit, and the abort condition with who can trigger it. Start with the smallest meaningful fault in the least critical environment, and say what would have to be true before we would run it in production. The important part is the prediction: write down what we expect to happen before running, because the value comes from the gap between prediction and result, and a run without a prediction teaches nothing.",
+		why: "Written predictions are what turn fault injection into an experiment rather than a stunt, and blast radius plus abort criteria are what make it survivable.",
+		watchOut: "Injecting failures into a system with poor observability produces an outage you cannot explain. Fix the ability to observe first.",
+		related: [
+			"game-day-exercise",
+			"dependency-failure-matrix",
+			"graceful-degradation",
+			"multi-region-failover"
+		],
+		tags: [
+			"reliability",
+			"experiments",
+			"resilience",
+			"failure injection"
+		]
+	},
+	{
+		id: "game-day-exercise",
+		name: "Game Day",
+		aka: [
+			"disaster recovery drill",
+			"incident simulation",
+			"fire drill"
+		],
+		origin: "Amazon and Google operational practice",
+		domains: ["engineering", "learning"],
+		intents: ["plan", "critique"],
+		oneLiner: "Rehearse a realistic failure with the actual people, tools and procedures, to find the gaps in the human system rather than only in the software.",
+		useWhen: [
+			"our runbooks have never been used by anyone but their author",
+			"half the team has never handled a serious incident",
+			"we do not know whether our recovery procedure still works",
+			"the only person who knows the failover process is leaving"
+		],
+		prompt: "Design a rehearsal for this failure scenario. Specify the scenario, the participants and — critically — who is deliberately unavailable, since exercises where the expert is present prove nothing about the ordinary case. Define what is simulated versus really broken, the safety controls, and the observers whose job is to record friction rather than help. The findings we want are about the human system: access somebody lacked, a runbook step that no longer works, a tool nobody could find, a decision nobody felt authorised to make. Finish with the debrief structure and how findings become tracked actions.",
+		why: "Excluding the expert is the single change that turns a demonstration into a test, and recording friction rather than outcome is what produces useful findings.",
+		watchOut: "A game day that everyone passes was probably too easy or too well telegraphed. If nothing surprising happens, the scenario was not realistic.",
+		related: [
+			"chaos-engineering",
+			"runbook-writing",
+			"multi-region-failover",
+			"near-miss-reporting"
+		],
+		tags: [
+			"reliability",
+			"practice",
+			"incident response",
+			"training"
+		]
+	},
+	{
+		id: "dependency-failure-matrix",
+		name: "Dependency Failure Matrix",
+		aka: ["what breaks if this breaks", "dependency impact analysis"],
+		origin: "Operational risk analysis; related to FMEA practice",
+		domains: ["engineering"],
+		intents: ["critique", "plan"],
+		oneLiner: "For every dependency, write down what happens to your service when it is slow, when it is down, and when it returns wrong answers — three different failures, usually only one is handled.",
+		useWhen: [
+			"we handle the dependency being down but not being slow",
+			"a third party returned garbage and we passed it straight through",
+			"nobody has listed what we actually depend on",
+			"an outage in something we considered optional took us down"
+		],
+		prompt: "Build the failure matrix for our dependencies. List every external thing in the request path including the ones people forget — identity providers, DNS, certificate validation, feature flag services, telemetry, package registries at build time. For each, fill three columns: behaviour when slow, when unavailable, and when returning incorrect or unexpected data. The slow column is where most systems are weakest, so be specific about timeout, retry and thread consumption. Mark each dependency as hard (we fail with it) or soft (we degrade), then flag every dependency we believed was soft but the matrix shows is hard.",
+		why: "Slow and wrong are the unhandled cases, and the soft-turns-out-hard finding is the one that predicts real outages. The three-column structure forces both.",
+		watchOut: "Transitive dependencies matter too. Your soft dependency may have a hard dependency on the same thing you do, which removes the independence you assumed.",
+		related: [
+			"single-point-of-failure-audit",
+			"circuit-breaker",
+			"graceful-degradation",
+			"availability-math"
+		],
+		tags: [
+			"reliability",
+			"dependencies",
+			"risk",
+			"failure modes"
+		]
+	},
+	{
+		id: "single-point-of-failure-audit",
+		name: "Single Point of Failure Audit",
+		aka: [
+			"SPOF analysis",
+			"bus factor for systems",
+			"critical path review"
+		],
+		origin: "Reliability engineering practice",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Systematically find every component whose loss stops the system, including the non-software ones — a certificate, a domain registration, a single person, one account.",
+		useWhen: [
+			"we have redundancy everywhere and still had a total outage",
+			"an expired certificate took down everything",
+			"only one person can deploy and they are on holiday",
+			"the redundant instances all failed at the same time"
+		],
+		prompt: "Audit this system for single points of failure across four categories, since only the first is usually examined: infrastructure components, data stores and their backups, control planes such as deployment and DNS and secrets, and non-technical points including certificates and domain renewals, a single cloud account, a single vendor relationship, and knowledge held by one person. For each candidate, state what fails when it is lost and how long recovery takes. Then check the apparent redundancies for correlation — shared power, shared configuration, shared credentials, shared deployment — since correlated redundancy is the failure that surprises people.",
+		why: "The category list is what makes this exhaustive: certificate expiry and one-person knowledge cause real outages and never appear on an infrastructure diagram.",
+		watchOut: "Removing every single point of failure is not affordable. Rank by likelihood times recovery cost and accept the rest explicitly rather than implicitly.",
+		related: [
+			"dependency-failure-matrix",
+			"availability-math",
+			"bus-factor",
+			"backup-restore-testing"
+		],
+		tags: [
+			"reliability",
+			"risk",
+			"redundancy",
+			"audit"
+		]
+	},
+	{
+		id: "capacity-planning",
+		name: "Capacity Planning",
+		aka: [
+			"headroom planning",
+			"demand forecasting",
+			"load projection"
+		],
+		origin: "Systems performance practice; standard in SRE and infrastructure planning",
+		domains: ["engineering"],
+		intents: ["estimate", "plan"],
+		oneLiner: "Project demand against measured capacity per unit, and know how long it takes to add more — the lead time is what determines how much headroom you need.",
+		useWhen: [
+			"we ran out of capacity during the campaign and could not add it fast enough",
+			"nobody knows how much traffic we can actually handle",
+			"we over-provision massively because we are scared",
+			"the sales team promised a large customer and I do not know if we can serve them"
+		],
+		prompt: "Produce a capacity plan for this service. Establish the unit of capacity from a load test rather than an estimate — requests per instance at our latency objective, not at saturation — then project demand from organic growth plus known events, with a range rather than a point. The critical parameter is provisioning lead time: how long from deciding to add capacity to serving traffic, including any quota approvals, and headroom must cover demand growth across that window plus the largest single failure we must absorb. Finish with the leading indicators that trigger action and the specific thing that runs out first.",
+		why: "Headroom derived from lead time and failure absorption is defensible; a percentage buffer chosen by feel is not. The what-runs-out-first question also prevents scaling the wrong resource.",
+		watchOut: "Autoscaling is not capacity planning. It hides the problem until you hit an account quota, a database connection ceiling, or a downstream limit that does not scale with you.",
+		related: [
+			"saturation-monitoring",
+			"load-testing-strategy",
+			"cloud-cost-attribution",
+			"availability-math"
+		],
+		tags: [
+			"reliability",
+			"capacity",
+			"forecasting",
+			"scaling"
+		]
+	},
+	{
+		id: "synthetic-monitoring",
+		name: "Synthetic Monitoring",
+		aka: [
+			"active probing",
+			"synthetic transactions",
+			"uptime checks"
+		],
+		origin: "Web operations practice; standard in APM tooling",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Run scripted user journeys from outside your system on a schedule, so you detect breakage during quiet periods and see the path users actually traverse.",
+		useWhen: [
+			"the outage happened overnight and we found out from a customer",
+			"our monitoring is all internal and misses network and DNS problems",
+			"the login flow broke and no server error was logged",
+			"we cannot tell whether the problem is us or the customer's network"
+		],
+		prompt: "Design synthetic checks for this service. Choose journeys by business criticality rather than by ease of scripting — login, checkout, the primary read path — and run them from the locations our users are in, since running from the same cloud region as the service tests almost nothing about the path users take. Specify the test account strategy and how synthetic traffic is excluded from business metrics and rate limits, which is the detail that causes trouble later. Then set alerting so a single failed probe does not page, and say how a probe failure is distinguished from a probe infrastructure failure.",
+		why: "The excluded-from-metrics and probe-versus-service distinction are the operational details that make synthetics trustworthy, and both are usually discovered after a false page.",
+		watchOut: "Synthetic journeys drift out of date as the product changes and then silently test nothing. They need the same maintenance as any test suite.",
+		related: [
+			"real-user-monitoring",
+			"smoke-test-suite",
+			"health-check-design",
+			"testing-in-production"
+		],
+		tags: [
+			"reliability",
+			"monitoring",
+			"availability",
+			"user journeys"
+		]
+	},
+	{
+		id: "real-user-monitoring",
+		name: "Real User Monitoring",
+		aka: [
+			"RUM",
+			"field data",
+			"client-side telemetry"
+		],
+		origin: "Web performance practice; standardised through browser performance APIs",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "estimate"],
+		oneLiner: "Measure the experience of actual users on their own devices and networks, because lab measurements systematically flatter you.",
+		useWhen: [
+			"our synthetic tests are fast and users say the site is slow",
+			"we optimised for our own laptops and nothing improved for customers",
+			"we do not know how bad it is on mobile networks",
+			"the average is fine and some segment is clearly suffering"
+		],
+		prompt: "Design field measurement for this application. Specify the metrics that correspond to user perception rather than to technical milestones, and require them to be reported as distributions with high percentiles plus the segments that matter — device class, connection type, geography, and application version — since the aggregate always hides the suffering segment. Then handle the collection problems: the sample bias where users who abandon never report, the privacy constraints on what may be collected, and the volume. Finish with how field data is compared against lab measurements and what a persistent gap between them would mean.",
+		why: "Survivorship bias in field data is real — the worst experiences are underreported because those users leave — and naming it changes how the numbers are read.",
+		watchOut: "Client-side collection is subject to blockers, consent and sampling. Treat the population as approximate and never as a complete census.",
+		related: [
+			"synthetic-monitoring",
+			"core-web-vitals",
+			"sli-selection",
+			"percentile-latency"
+		],
+		tags: [
+			"observability",
+			"performance",
+			"frontend",
+			"user experience"
+		]
+	},
+	{
+		id: "health-check-design",
+		name: "Health Check Design",
+		aka: ["liveness and readiness probes", "health endpoints"],
+		origin: "Container orchestration practice; Kubernetes probe semantics",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Separate am-I-alive from am-I-ready-for-traffic from are-my-dependencies-healthy, because conflating them causes restarts and outages rather than preventing them.",
+		useWhen: [
+			"the orchestrator kept restarting a healthy service",
+			"traffic went to instances that were still starting up",
+			"a dependency blip caused every instance to be marked unhealthy at once",
+			"our health endpoint returns ok no matter what"
+		],
+		prompt: "Design the health endpoints for this service with three distinct semantics. Liveness must only fail when a restart would help — deadlock, unrecoverable state — and must never check dependencies, because a shared dependency failure would otherwise restart the entire fleet simultaneously, which is the classic self-inflicted outage. Readiness reflects whether this instance can serve now, including warm-up and connection pools, and may consider dependencies with care. Add a separate deep diagnostic endpoint for humans that is not wired to any automation. Then specify timeouts, thresholds and startup grace so a slow start is not read as failure.",
+		why: "Liveness probes that check dependencies are a well-known way to convert a small outage into a total one, and the three-endpoint separation is the fix that most teams have not made.",
+		watchOut: "A health check that only confirms the process is listening will report healthy while every request fails. It must exercise something meaningful.",
+		related: [
+			"graceful-shutdown",
+			"service-discovery",
+			"synthetic-monitoring",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"reliability",
+			"containers",
+			"operations",
+			"availability"
+		]
+	},
+	{
+		id: "graceful-shutdown",
+		name: "Graceful Shutdown",
+		aka: [
+			"connection draining",
+			"SIGTERM handling",
+			"clean termination"
+		],
+		origin: "Unix signal conventions; formalised in container lifecycle practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "On a termination signal, stop accepting new work, finish or hand back what is in flight, then exit — otherwise every deploy drops requests.",
+		useWhen: [
+			"we see a burst of errors during every deployment",
+			"in-flight requests are killed when a pod is replaced",
+			"a background job was terminated halfway and left bad state",
+			"scaling down causes customer-visible failures"
+		],
+		prompt: "Implement clean termination for this service. Give the exact sequence and the timing: on the signal, fail readiness first and wait long enough for load balancers and service discovery to stop sending traffic — that wait is the step everyone omits, and it is why draining alone does not work. Then stop accepting new work, finish in-flight requests up to a deadline shorter than the platform's kill timeout, close pools and flush telemetry. Cover the harder cases: long-running requests that cannot finish in time, queue consumers that must return unacknowledged messages, and streaming connections that need a close frame.",
+		why: "The pre-drain wait for load balancer propagation is the non-obvious step that turns a good-looking shutdown handler into one that actually stops the error spike.",
+		watchOut: "If your shutdown takes longer than the platform grace period, you get killed mid-drain anyway. The two timeouts must be set together.",
+		related: [
+			"health-check-design",
+			"zero-downtime-deployment",
+			"service-discovery",
+			"backpressure"
+		],
+		tags: [
+			"reliability",
+			"deployment",
+			"lifecycle",
+			"errors"
+		]
+	},
+	{
+		id: "operational-readiness-review",
+		name: "Production Readiness Review",
+		aka: [
+			"launch checklist",
+			"operational readiness",
+			"go-live review"
+		],
+		origin: "Google SRE production readiness reviews; common launch governance practice",
+		domains: ["engineering"],
+		intents: ["critique", "plan"],
+		oneLiner: "A structured check before a service takes real traffic, covering the operational properties that are painful to add afterwards.",
+		useWhen: [
+			"we launched a service with no alerting and found out the hard way",
+			"the new system went live and nobody knew who owned it",
+			"every launch surfaces the same set of missing basics",
+			"we are about to take on a large customer and I want to know we are ready"
+		],
+		prompt: "Review this service for production readiness. Cover ownership and on-call coverage, indicators and objectives, alerting with runbooks, dashboards, logging and tracing, capacity evidence from a load test, dependency failure behaviour, rollback capability, backup and restore verified by an actual restore, secrets handling, and data retention. For each, record the state as present, partial or absent with evidence rather than assertion. Then classify gaps as launch-blocking or accepted-with-a-date, and be strict that the blocking list is short and genuinely blocking — a checklist where everything is mandatory gets bypassed entirely.",
+		why: "Requiring evidence rather than a tick, and forcing a short genuinely-blocking subset, is what keeps launch reviews from becoming a formality people route around.",
+		watchOut: "A heavy review applied to a small internal tool is bureaucracy. Scale the checklist to the blast radius of the service.",
+		related: [
+			"toil-reduction",
+			"runbook-writing",
+			"health-check-design",
+			"definition-of-done"
+		],
+		tags: [
+			"reliability",
+			"launch",
+			"checklist",
+			"governance"
+		]
+	},
+	{
+		id: "observability-cost-control",
+		name: "Observability Cost Control",
+		aka: [
+			"telemetry spend",
+			"monitoring bill",
+			"data retention tiers"
+		],
+		origin: "Operational practice as observability vendors became a major cost line",
+		domains: ["engineering"],
+		intents: ["prioritize", "decide"],
+		oneLiner: "Telemetry volume grows faster than traffic, so decide deliberately what is kept, at what resolution, for how long, and what question each tier answers.",
+		useWhen: [
+			"our monitoring costs more than the systems it monitors",
+			"we are being asked to cut telemetry and do not know what is safe to drop",
+			"retention was set to the default and never revisited",
+			"one team's debug logging doubled the bill"
+		],
+		prompt: "Build a tiered retention plan for our telemetry. For each signal type — metrics, logs, traces, events, profiles — state what question it answers, over what time horizon that question is asked, and therefore what resolution and retention it needs, since high resolution for a week plus downsampled for a year usually beats a single flat policy. Then attribute current spend by service and signal so the largest producers are visible, and identify pure waste: debug logging left on, duplicate signals collected by two systems, metrics with no dashboard or alert referencing them. Finish with a guardrail preventing a single change from multiplying volume.",
+		why: "Attributing spend and finding metrics nothing references produces immediate savings without losing capability, which is what makes the cut defensible.",
+		watchOut: "Cuts made in a hurry always remove the thing needed in the next incident. Tie each reduction to the questions it makes unanswerable.",
+		related: [
+			"log-sampling",
+			"metric-cardinality",
+			"cloud-cost-attribution",
+			"observability-instrumentation"
+		],
+		tags: [
+			"observability",
+			"cost",
+			"retention",
+			"operations"
+		]
+	},
+	{
+		id: "audit-logging",
+		name: "Audit Logging",
+		aka: [
+			"audit trail",
+			"tamper-evident log",
+			"accountability record"
+		],
+		origin: "Security and compliance practice; required by many regulatory regimes",
+		domains: ["engineering", "security"],
+		intents: ["structure", "plan"],
+		oneLiner: "A separate, append-only record of who did what to which resource and when, designed for accountability rather than for debugging.",
+		useWhen: [
+			"we cannot answer who changed this record",
+			"the auditor asked for access history and we only have application logs",
+			"an administrator action was disputed and we had no evidence",
+			"our logs are rotated after a week and compliance wants a year"
+		],
+		prompt: "Design the audit trail for this system. Define the events that must be recorded — authentication, authorisation decisions including denials, privileged actions, data access for sensitive records, configuration and permission changes — and the fields each carries: actor including on whose behalf if impersonating, action, resource, timestamp with timezone, source, and outcome. Then address the properties that distinguish this from ordinary logging: append-only storage, separate access control so the people being audited cannot alter it, retention driven by the regulation rather than by operations, and tamper evidence. Finish with how it is queried and by whom.",
+		why: "Audit records get mixed into operational logs and are then deleted by retention policy or edited by the very administrators they track. Separating storage and access control is the point.",
+		watchOut: "Audit logs concentrate sensitive information and are themselves a target. They need stricter access control than the systems they describe, not looser.",
+		related: [
+			"structured-logging",
+			"separation-of-duties",
+			"data-retention-policy",
+			"least-privilege"
+		],
+		tags: [
+			"security",
+			"compliance",
+			"logging",
+			"accountability"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/performance.ts
+var performance = [
+	{
+		id: "profiling-before-optimizing",
+		name: "Measure Before Optimising",
+		aka: [
+			"profile first",
+			"premature optimisation",
+			"guess-free tuning"
+		],
+		origin: "Donald Knuth, 1974; Rob Pike's rules of programming",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "Find where the time actually goes before changing anything, because intuition about bottlenecks is wrong far more often than it is right.",
+		useWhen: [
+			"the app is slow and I have a theory about why",
+			"we rewrote the algorithm and it made no difference",
+			"everyone has a different opinion about what is slow",
+			"I optimised the function that looked worst and nothing changed"
+		],
+		prompt: "Set up measurement before we change anything here. Define the workload to profile, and make it representative — production-shaped data volumes and distribution, warm caches or cold as appropriate, and concurrency, since a single-request profile of a system that queues tells you nothing. Then choose the tool by bottleneck class: a sampling CPU profiler, a wall-clock profiler for blocked time, allocation profiling, or query-level tracing, and say which we need given the symptom. Establish a baseline with variance across repeated runs, since without variance we cannot tell a real improvement from noise. Finally state the target and the point at which we stop.",
+		why: "The unrepresentative workload and the missing variance baseline are why measured optimisations so often fail to show up in production. Both need fixing before any tuning.",
+		watchOut: "CPU profilers show where time is spent running, not where it is spent waiting. If the system is I/O or lock bound, that profile will look flat and mislead you.",
+		related: [
+			"hot-path-identification",
+			"flame-graph-reading",
+			"benchmark-methodology",
+			"cpu-vs-io-bound"
+		],
+		tags: [
+			"performance",
+			"profiling",
+			"measurement",
+			"optimisation"
+		]
+	},
+	{
+		id: "hot-path-identification",
+		name: "Hot Path Identification",
+		aka: ["critical path in code", "the eighty twenty of latency"],
+		origin: "Performance engineering practice; Pareto analysis applied to code",
+		domains: ["engineering"],
+		intents: ["prioritize", "diagnose"],
+		oneLiner: "Find the small fraction of code that accounts for most of the time or cost, and confine optimisation effort — and complexity — to it.",
+		useWhen: [
+			"the whole codebase is slow and I do not know where to start",
+			"we micro-optimised code that runs once a day",
+			"I want to know which endpoint is worth the effort",
+			"the profile is flat and nothing obviously dominates"
+		],
+		prompt: "Rank this system by where time and cost actually accumulate, weighting each code path by its call frequency in production rather than by how slow a single call is — a five millisecond function called ten thousand times per request beats a two second function called hourly. Produce a ranked list with the share of total time each accounts for. Then, for the top few, state the theoretical best case if that path took zero time, so we know the ceiling on the improvement before investing. If the profile is genuinely flat, say so and recommend the architectural change instead, since flat profiles do not respond to local optimisation.",
+		why: "Weighting by production frequency and computing the zero-time ceiling are what prevent effort going into work that cannot pay off, which flat-profile systems invite.",
+		watchOut: "Hot paths shift when you fix one. Re-profile after each change instead of working through the original list.",
+		related: [
+			"profiling-before-optimizing",
+			"amdahls-law",
+			"flame-graph-reading",
+			"theory-of-constraints"
+		],
+		tags: [
+			"performance",
+			"prioritisation",
+			"profiling",
+			"optimisation"
+		]
+	},
+	{
+		id: "flame-graph-reading",
+		name: "Flame Graph Reading",
+		aka: [
+			"stack sampling visualisation",
+			"icicle graph",
+			"differential flame graph"
+		],
+		origin: "Brendan Gregg, 2011",
+		domains: ["engineering"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "Aggregate sampled stacks into a picture where width is time and depth is call nesting, so the expensive paths stand out without reading numbers.",
+		useWhen: [
+			"I have a profile and cannot interpret it",
+			"the top functions are all framework internals and mean nothing to me",
+			"I need to compare performance before and after a change",
+			"the profiler output is thousands of lines of stacks"
+		],
+		prompt: "Interpret this profile as a flame graph. Explain how to read it — width is total samples not call count, and depth is nesting rather than significance — and identify the widest frames that represent our own code rather than the runtime beneath it. Distinguish frames that are wide because they are slow themselves from frames that are wide because their children are, since that determines whether to optimise here or below. Then recommend the differential view against a baseline, which is what shows a regression clearly, and name the common misreadings: inlined frames that vanish, and time spent blocked which a CPU profile does not show at all.",
+		why: "Self-time versus total-time and the invisibility of blocked time are the two misreadings that send people optimising the wrong frame, and both are invisible in the picture itself.",
+		watchOut: "Sampling profilers miss short-lived spikes and can be biased by safepoint placement in managed runtimes. A flat graph is not proof that nothing is slow.",
+		related: [
+			"profiling-before-optimizing",
+			"continuous-profiling",
+			"cpu-vs-io-bound",
+			"hot-path-identification"
+		],
+		tags: [
+			"performance",
+			"profiling",
+			"visualisation",
+			"diagnosis"
+		]
+	},
+	{
+		id: "continuous-profiling",
+		name: "Continuous Profiling",
+		aka: [
+			"always-on profiling",
+			"production profiling",
+			"profile in situ"
+		],
+		origin: "Google-Wide Profiling paper, 2010; commercial tools since",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Sample profiles continuously in production at low overhead, so you can answer why yesterday was slow instead of trying to reproduce it.",
+		useWhen: [
+			"the slowness only happens in production under real load",
+			"by the time we attach a profiler the problem is gone",
+			"we cannot reproduce the memory growth locally",
+			"we want to know what changed between last week and this week"
+		],
+		prompt: "Plan continuous profiling for this service. Specify the profile types worth collecting — CPU, allocation, and blocked or wall-clock time — and the sampling rate against measured overhead, since the overhead budget determines what is feasible. Then define the labels attached to each profile: version, region, instance, endpoint and tenant class, because the ability to compare profiles across those dimensions is where the value is. Show the two workflows this enables: differential comparison across deploys to catch regressions, and drilling into a specific slow period. Finish with the retention and cost, plus the privacy consideration of stack data.",
+		why: "Labelled profiles that support differential comparison are what make this useful; unlabelled always-on profiling just adds cost. Naming the two workflows drives the label design.",
+		watchOut: "Profiling overhead is not uniform — allocation profiling in particular can be expensive in allocation-heavy code. Measure it on your own workload before enabling fleet-wide.",
+		related: [
+			"flame-graph-reading",
+			"regression-benchmarking",
+			"observability-cost-control",
+			"profiling-before-optimizing"
+		],
+		tags: [
+			"performance",
+			"profiling",
+			"production",
+			"observability"
+		]
+	},
+	{
+		id: "benchmark-methodology",
+		name: "Benchmark Methodology",
+		aka: [
+			"microbenchmark pitfalls",
+			"fair measurement",
+			"benchmarking hygiene"
+		],
+		origin: "Performance engineering practice; JMH documentation is a standard reference",
+		domains: ["engineering", "data"],
+		intents: ["critique", "estimate"],
+		oneLiner: "A benchmark that ignores warm-up, dead code elimination, caching and variance produces confident numbers that mean nothing.",
+		useWhen: [
+			"our benchmark says this is a hundred times faster and I do not believe it",
+			"two people measured the same thing and got different answers",
+			"the improvement disappeared in production",
+			"the numbers change every time I run it"
+		],
+		prompt: "Review this benchmark for validity. Check the standard invalidators one by one: has the compiler or runtime eliminated the work because the result is unused, has the measurement included warm-up and compilation, does the input fit entirely in cache in a way production data would not, is there measurement overhead comparable to the thing measured, and is the system otherwise idle in a way it will not be in production. Then require statistics rather than a single number — repeated runs, a distribution, and a stated confidence that the difference is real. Finish with what this benchmark can and cannot support as a claim.",
+		why: "Dead code elimination and cache-resident inputs are the two failures that produce the impossible speedups, and neither is visible in the result. Enumerating invalidators catches them.",
+		watchOut: "Microbenchmarks measure a component in isolation and routinely disagree with end-to-end results. Confirm any decision at the system level before adopting it.",
+		related: [
+			"regression-benchmarking",
+			"profiling-before-optimizing",
+			"load-testing-strategy",
+			"sensitivity-analysis"
+		],
+		tags: [
+			"performance",
+			"benchmarking",
+			"measurement",
+			"statistics"
+		]
+	},
+	{
+		id: "regression-benchmarking",
+		name: "Performance Regression Testing",
+		aka: [
+			"perf CI",
+			"benchmark gating",
+			"continuous performance testing"
+		],
+		origin: "Continuous integration practice extended to performance",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Run performance checks in the pipeline against a stable baseline so a regression is attributed to one change instead of discovered a quarter later.",
+		useWhen: [
+			"the system got slower over six months and nobody knows which change did it",
+			"we only find performance problems after release",
+			"our benchmark results are too noisy to gate on",
+			"a dependency upgrade quietly doubled our latency"
+		],
+		prompt: "Design performance regression detection for our pipeline. Noise is the whole problem, so start there: specify the isolation measures — dedicated hardware or pinned instances, repeated runs, comparing against a baseline run in the same session rather than a stored number — and give the detection rule as a statistical test with an acceptable false alarm rate rather than a fixed percentage threshold. Then decide the response: block the merge, or record and alert on a trend, since blocking on a noisy signal will be disabled within a month. Finish with which few benchmarks are worth gating on and what the rest are for.",
+		why: "These systems are almost always abandoned because of false alarms. Making noise control and the statistical rule the centre of the design is what keeps them alive.",
+		watchOut: "Gating on microbenchmarks encourages optimising the benchmark. Include at least one end-to-end scenario that matches how the system is really used.",
+		related: [
+			"benchmark-methodology",
+			"continuous-profiling",
+			"performance-budget",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"performance",
+			"ci",
+			"regression",
+			"testing"
+		]
+	},
+	{
+		id: "performance-budget",
+		name: "Performance Budget",
+		aka: [
+			"latency budget",
+			"page weight budget",
+			"speed target"
+		],
+		origin: "Web performance practice; Tim Kadlec and Alex Russell popularised the term",
+		domains: ["engineering", "product"],
+		intents: ["decide", "prioritize"],
+		oneLiner: "Agree a numeric ceiling on latency, size or resource use per feature, so performance is a constraint on new work rather than a cleanup project later.",
+		useWhen: [
+			"every feature adds a little and now the page takes eight seconds",
+			"performance work only happens when someone complains",
+			"we have no basis for saying no to another script tag",
+			"the app got slower with every release and nobody noticed at the time"
+		],
+		prompt: "Set performance budgets for this product. Derive the top-level number from user behaviour or business evidence rather than convention — the point where abandonment rises for our audience and device profile — then allocate it across the contributors: server time, network, payload, rendering, third-party scripts. Specify the enforcement point and the consequence when a change would exceed a budget, including who may approve an exception and what they must trade in return, since a budget with no trade is a wish. Finish with the measurement location, which must be the field rather than a developer machine.",
+		why: "Budgets fail when there is no defined exception path, because the first legitimate overrun kills the whole scheme. Making the trade explicit is what keeps it enforceable.",
+		watchOut: "A single global budget hides which team consumed it. Allocate per feature or per team, or the shared budget becomes a tragedy of the commons.",
+		related: [
+			"core-web-vitals",
+			"payload-size-reduction",
+			"regression-benchmarking",
+			"percentile-latency"
+		],
+		tags: [
+			"performance",
+			"budgets",
+			"governance",
+			"frontend"
+		]
+	},
+	{
+		id: "load-testing-strategy",
+		name: "Load Testing Strategy",
+		aka: [
+			"stress testing",
+			"soak testing",
+			"spike testing"
+		],
+		origin: "Performance engineering practice",
+		domains: ["engineering"],
+		intents: ["plan", "estimate"],
+		oneLiner: "Distinguish the four questions — what capacity do we have, what breaks first, what happens under a spike, what degrades over hours — and design a different test for each.",
+		useWhen: [
+			"we ran a load test and it passed and we still fell over in production",
+			"nobody knows how much traffic we can take",
+			"the memory grew slowly over two days and then it crashed",
+			"the sale traffic spike broke things the load test never showed"
+		],
+		prompt: "Design load testing for this service, one test per question. For capacity, ramp until the latency objective is violated and report the throughput at that point rather than at failure. For stress, continue past it and report what breaks first and whether the system recovers when load is removed — recovery behaviour is the most valuable and least tested property. For spike, apply a step change with no ramp to test autoscaling and cold caches. For soak, run for hours to expose leaks and fragmentation. For each, specify the realistic workload mix, data volume, and think time, and name what a test on synthetic uniform traffic would fail to reveal.",
+		why: "Most teams run one ramp test and call it load testing. Separating the four questions, especially recovery after overload, is what makes the results predictive.",
+		watchOut: "Load generated from one machine against a warmed cache with identical requests tests almost nothing. Data diversity matters as much as request rate.",
+		related: [
+			"capacity-planning",
+			"saturation-monitoring",
+			"benchmark-methodology",
+			"load-shedding"
+		],
+		tags: [
+			"performance",
+			"testing",
+			"capacity",
+			"reliability"
+		]
+	},
+	{
+		id: "percentile-latency",
+		name: "Percentile Latency",
+		aka: [
+			"p99",
+			"why averages lie",
+			"latency distribution"
+		],
+		origin: "Performance measurement practice; Gil Tene's coordinated omission work",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "Report latency as a distribution with high percentiles, because the mean describes an experience almost nobody has and hides the failures.",
+		useWhen: [
+			"the average response time is fine and users complain constantly",
+			"someone asked for our p99 and I only have an average",
+			"the graph is smooth and the complaints are not",
+			"our numbers look better after we added a fast health check endpoint"
+		],
+		prompt: "Fix how we measure and report latency here. Explain why the mean is misleading for a right-skewed distribution and what the high percentiles represent in terms of affected users per hour, given our request volume — that translation is what makes the number land. Then check for the two measurement errors that make percentiles optimistic: averaging percentiles across instances or time buckets, which is mathematically meaningless, and coordinated omission, where a load generator stops sending during a stall and never records the worst latencies. Finish with what to report: percentiles per endpoint, plus the maximum, plus the count of requests exceeding the objective.",
+		why: "Averaged percentiles and coordinated omission both produce numbers that look rigorous and are wrong, and neither is widely known outside performance specialists.",
+		watchOut: "A user session involves many requests, so per-request percentiles understate how many users hit at least one slow one. Session-level measurement is harsher and more honest.",
+		related: [
+			"tail-latency",
+			"real-user-monitoring",
+			"sli-selection",
+			"load-testing-strategy"
+		],
+		tags: [
+			"performance",
+			"metrics",
+			"latency",
+			"statistics"
+		]
+	},
+	{
+		id: "tail-latency",
+		name: "Tail Latency Amplification",
+		aka: [
+			"the tail at scale",
+			"p99 amplification",
+			"slow tail"
+		],
+		origin: "Jeff Dean and Luiz Barroso, The Tail at Scale, 2013",
+		domains: ["engineering"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "When a request depends on many services, the rare slow response becomes common — a one percent tail across a hundred calls means most requests hit one.",
+		useWhen: [
+			"each service is fast and the overall request is slow",
+			"our page depends on many backends and is unpredictably slow",
+			"the slow requests seem random with no pattern",
+			"we improved the average everywhere and the worst case did not move"
+		],
+		prompt: "Analyse tail amplification along this request path. Compute the probability that a request encounters at least one slow dependency given the fan-out and each dependency's tail, and show how quickly that grows with the number of calls. Then attack the causes of individual tails rather than only the symptom: garbage collection pauses, cold caches, queueing behind a large request, background maintenance tasks, contended locks, and noisy neighbours on shared hardware. For each, say how to detect it in our telemetry. Finish with the mitigations — hedged requests, reduced fan-out, and prioritising small requests ahead of large ones.",
+		why: "The multiplication is counterintuitive and explains why per-service optimisation does not fix end-to-end tails. Listing detectable causes turns it into an investigation plan.",
+		watchOut: "Mitigations like hedging hide the tail rather than remove it, and cost capacity. Find the cause first where you can.",
+		related: [
+			"hedged-requests",
+			"percentile-latency",
+			"fan-out-fan-in",
+			"garbage-collection-tuning"
+		],
+		tags: [
+			"performance",
+			"latency",
+			"distributed systems",
+			"diagnosis"
+		]
+	},
+	{
+		id: "throughput-vs-latency",
+		name: "Throughput versus Latency",
+		aka: ["bandwidth versus response time", "batching trade-off"],
+		origin: "Systems performance fundamentals",
+		domains: ["engineering"],
+		intents: ["decide", "explain"],
+		oneLiner: "Optimisations that raise total work per second — batching, queueing, buffering — usually raise individual response time, and the right answer depends on which the user feels.",
+		useWhen: [
+			"we batched the writes and now the UI feels laggy",
+			"someone says the system is faster and someone else says slower",
+			"we increased concurrency and throughput went up but users complained",
+			"I do not know whether to optimise for requests per second or response time"
+		],
+		prompt: "Clarify which measure matters for each workload in this system and show the trade explicitly. For each path, state whether a human is waiting, and therefore which quantity is the constraint. Then examine our current tuning — batch sizes, buffer sizes, worker counts, connection limits — and say which direction each currently favours and whether that matches the requirement. Show the specific arithmetic for one batching decision: how much throughput a larger batch buys and how much latency it adds at our arrival rate. Finish with the settings that should differ between interactive and background paths, since one setting for both is usually wrong.",
+		why: "Systems are frequently tuned with one set of parameters for both interactive and batch work. Separating them by whether a human waits is the decision that resolves it.",
+		watchOut: "Under load these stop being a trade-off and become the same thing: insufficient throughput causes queueing, which destroys latency. Below saturation they trade, above it they align.",
+		related: [
+			"queueing-theory-basics",
+			"batching-amortization",
+			"backpressure",
+			"percentile-latency"
+		],
+		tags: [
+			"performance",
+			"trade-offs",
+			"throughput",
+			"latency"
+		]
+	},
+	{
+		id: "queueing-theory-basics",
+		name: "Queueing Theory Basics",
+		aka: [
+			"Little's law",
+			"utilisation knee",
+			"M/M/1 intuition"
+		],
+		origin: "Agner Erlang, 1909; John Little's law, 1961",
+		domains: ["engineering", "data"],
+		intents: ["estimate", "explain"],
+		oneLiner: "Two results carry most of the practical value: items in system equals arrival rate times time in system, and waiting time explodes as utilisation approaches one.",
+		useWhen: [
+			"latency went up sharply with only a small traffic increase",
+			"we want to know how many workers we need",
+			"the queue depth is growing and I do not know what that implies",
+			"someone wants to run the system at ninety percent utilisation"
+		],
+		prompt: "Apply queueing relationships to this system. Use the concurrency relationship to derive the missing quantity from the two we can measure — arrival rate, concurrency in flight, and time in system — and show the arithmetic, including what it implies for pool and worker sizing. Then show how waiting time behaves as utilisation rises toward capacity, and identify the utilisation at which our latency objective breaks, which is the real operating limit. Finish with the assumptions being violated in our case — bursty arrivals, variable service times, priority effects — and say in which direction each makes the real behaviour worse than the model.",
+		why: "The relationships are simple and rarely applied to actual numbers. Naming the violated assumptions keeps the estimate honest rather than falsely precise.",
+		watchOut: "These models assume steady state. During a spike or a recovery, transient behaviour is far worse than the equilibrium calculation suggests.",
+		related: [
+			"saturation-monitoring",
+			"throughput-vs-latency",
+			"capacity-planning",
+			"backpressure"
+		],
+		tags: [
+			"performance",
+			"queueing",
+			"estimation",
+			"capacity"
+		]
+	},
+	{
+		id: "amdahls-law",
+		name: "Amdahl's Law",
+		aka: [
+			"speedup limit",
+			"serial fraction",
+			"parallelisation ceiling"
+		],
+		origin: "Gene Amdahl, 1967",
+		domains: ["engineering"],
+		intents: ["estimate", "decide"],
+		oneLiner: "The maximum speedup from optimising or parallelising part of a system is capped by the part you did not touch — often far lower than intuition suggests.",
+		useWhen: [
+			"we doubled the workers and it got barely faster",
+			"is it worth parallelising this or not",
+			"we optimised the slow function and gained ten percent",
+			"someone wants to add more machines to fix the response time"
+		],
+		prompt: "Compute the achievable speedup here before we invest. Establish the fraction of total time spent in the part we would improve, and calculate the best case if that part became instantaneous — that ceiling usually settles the question. Then apply it to the parallelisation decision specifically: with our measured serial fraction, show the speedup at two, four, eight and sixteen times the workers, and where adding more stops mattering. Finally, identify what the serial fraction actually consists of in our code — startup, coordination, a lock, a shared counter, final aggregation — since shrinking that is the only way to raise the ceiling.",
+		why: "Computing the ceiling first prevents whole projects that could not have succeeded, and decomposing the serial fraction points at the work that would actually help.",
+		watchOut: "This assumes a fixed problem size. When the workload grows with resources, the scaling picture is more optimistic than this law suggests.",
+		related: [
+			"universal-scalability-law",
+			"hot-path-identification",
+			"theory-of-constraints",
+			"parallelism-vs-concurrency"
+		],
+		tags: [
+			"performance",
+			"scaling",
+			"parallelism",
+			"estimation"
+		]
+	},
+	{
+		id: "universal-scalability-law",
+		name: "Universal Scalability Law",
+		aka: [
+			"USL",
+			"coherency penalty",
+			"negative returns to scale"
+		],
+		origin: "Neil Gunther, 1993",
+		domains: ["engineering"],
+		intents: ["estimate", "diagnose"],
+		oneLiner: "Adding capacity is limited not only by serialisation but by the cost of keeping components consistent, which eventually makes throughput fall as you add more.",
+		useWhen: [
+			"adding servers made the system slower rather than faster",
+			"throughput peaked at eight nodes and then declined",
+			"more database connections made everything worse",
+			"we scaled out and the coordination overhead ate the gains"
+		],
+		prompt: "Model the scaling behaviour of this system with both penalties: contention for shared resources and the crosstalk cost of keeping state coherent. Fit the shape to our measured throughput at several concurrency levels and identify the peak — the point beyond which more capacity reduces throughput — since operating past it is a common and expensive mistake. Then attribute the coherency cost to specific mechanisms in our system: cache invalidation between nodes, distributed locks, replication acknowledgements, session synchronisation, or a shared counter. Recommend the change that removes the largest term rather than adding more capacity.",
+		why: "The retrograde region is real and surprises people who expect flat returns at worst. Attributing the coherency term to concrete mechanisms turns the model into an action.",
+		watchOut: "Fitting the curve needs measurements across a real range of concurrency. Two data points will fit anything and predict nothing.",
+		related: [
+			"amdahls-law",
+			"queueing-theory-basics",
+			"capacity-planning",
+			"lock-contention"
+		],
+		tags: [
+			"performance",
+			"scaling",
+			"concurrency",
+			"modelling"
+		]
+	},
+	{
+		id: "latency-numbers",
+		name: "Latency Numbers Everyone Should Know",
+		aka: ["orders of magnitude", "back-of-envelope system estimates"],
+		origin: "Jeff Dean, Google; widely circulated table",
+		domains: ["engineering"],
+		intents: ["estimate", "explain"],
+		oneLiner: "Keep the rough costs in mind — cache reference, memory access, disk seek, network round trip, cross-continent hop — so design choices are sanity-checked before implementation.",
+		useWhen: [
+			"is this design even feasible at the latency we promised",
+			"we did not realise that call crosses an ocean",
+			"someone proposed reading a million rows per request",
+			"I need to sanity check a design without building it"
+		],
+		prompt: "Estimate the latency and cost of this design from first principles using order-of-magnitude figures. Walk the request path and attribute time to each class of operation: in-memory work, cache lookups, local disk, same-datacentre network calls, cross-region calls, and any serialisation of large payloads. Multiply by the number of each per request, including the ones hidden inside loops and ORM calls. Compare the resulting floor against our target and say whether the design can possibly meet it. Where it cannot, name which term dominates and what structural change — batching, caching, colocation, precomputation — would remove it.",
+		why: "A floor computed before implementation kills infeasible designs cheaply, and the dominating-term analysis points directly at the structural fix rather than at micro-optimisation.",
+		watchOut: "The published figures date quickly and vary by an order of magnitude between environments. Use them for ratios and feasibility, not for precise prediction.",
+		related: [
+			"fermi-estimation",
+			"queueing-theory-basics",
+			"n-plus-one-queries",
+			"cache-hierarchy-locality"
+		],
+		tags: [
+			"performance",
+			"estimation",
+			"design",
+			"system design"
+		]
+	},
+	{
+		id: "cpu-vs-io-bound",
+		name: "CPU-Bound versus I/O-Bound",
+		aka: ["what is it waiting on", "bottleneck classification"],
+		origin: "Systems performance fundamentals",
+		domains: ["engineering"],
+		intents: ["diagnose", "reframe"],
+		oneLiner: "Determine whether the work is limited by computation or by waiting, because the two respond to completely opposite remedies.",
+		useWhen: [
+			"we added more threads and nothing improved",
+			"the CPU is idle and everything is slow",
+			"we bought bigger machines and the throughput did not change",
+			"I do not know whether to optimise the code or the queries"
+		],
+		prompt: "Classify the bottleneck in this workload from evidence. Compare CPU time consumed against wall-clock time elapsed for a representative unit of work — a large gap means waiting, and the next question is waiting on what: disk, network, a lock, or a downstream service. Give the specific measurement for each of those. Then state the remedy class implied, noting that adding concurrency helps a waiting workload and mostly hurts a compute-bound one already using all cores. Finally check for the mixed case where different phases have different characters, since a single classification for a pipeline with both is what makes tuning ineffective.",
+		why: "The CPU-time-versus-wall-time comparison is a decisive, easily obtained measurement that most people never make, and it immediately rules out half the possible remedies.",
+		watchOut: "Managed runtimes attribute garbage collection time in confusing ways, and can look compute-bound when they are really allocation-bound. Check allocation rate too.",
+		related: [
+			"use-method",
+			"profiling-before-optimizing",
+			"async-io-model",
+			"allocation-reduction"
+		],
+		tags: [
+			"performance",
+			"diagnosis",
+			"bottlenecks",
+			"concurrency"
+		]
+	},
+	{
+		id: "data-structure-selection",
+		name: "Data Structure Selection",
+		aka: ["choosing the right container", "access pattern fit"],
+		origin: "Core computer science practice; Sedgewick and Knuth lineage",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose the container from the operation mix and the size, not from habit — the right structure often removes the performance problem entirely.",
+		useWhen: [
+			"we scan a list to find things and it is called constantly",
+			"the code checks membership by looping over an array",
+			"insertion in the middle is killing us",
+			"this map lookup is in the hot path and I wonder if it can be faster"
+		],
+		prompt: "Choose the right structure for this usage. Start from the operation mix with actual frequencies — lookups by key, iteration in order, membership tests, insertions, deletions, range queries — and the expected size, because at small sizes a linear scan over contiguous memory beats a hash table despite the complexity class. Give the shortlist with the cost of each operation and the memory overhead. Then include the factors that complexity notation hides: cache locality, allocation per element, pointer chasing, and resizing behaviour. Recommend one and state the size at which the answer would change.",
+		why: "Asymptotic reasoning alone gives the wrong answer at small sizes and ignores locality, which frequently dominates. Requiring the crossover size makes the recommendation concrete.",
+		watchOut: "Swapping a structure changes iteration order and equality semantics, which code elsewhere may silently depend on. Check for that before changing it.",
+		related: [
+			"big-o-vs-constants",
+			"cache-hierarchy-locality",
+			"allocation-reduction",
+			"hot-path-identification"
+		],
+		tags: [
+			"performance",
+			"data structures",
+			"algorithms",
+			"design"
+		]
+	},
+	{
+		id: "big-o-vs-constants",
+		name: "Complexity versus Constants",
+		aka: ["asymptotic analysis limits", "n is small"],
+		origin: "Algorithm analysis practice; the constant-factor critique is longstanding",
+		domains: ["engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Complexity class decides what happens as input grows; constants decide what happens at the size you actually have, and most systems live at small sizes.",
+		useWhen: [
+			"we replaced the loop with a clever algorithm and it got slower",
+			"someone is objecting to a nested loop over ten items",
+			"the theoretically better structure performs worse in practice",
+			"the code is optimised for a scale we will never reach"
+		],
+		prompt: "Analyse this code for both scaling and constants. State the complexity, then the realistic input size distribution from production data rather than from the worst case anyone can imagine. Compute where the crossover lies between the simple approach and the sophisticated one, and say which side of it we are on. Then account for the constants that the notation discards — allocation, indirection, branch prediction, cache misses — and whether they favour the simpler version at our size. Recommend accordingly, and state the input size at which we should revisit, so the decision has a documented expiry rather than being permanent.",
+		why: "A documented revisit threshold is what makes choosing the simple option safe, and it is the piece that turns this from an argument into a decision.",
+		watchOut: "Adversarial or accidental worst cases matter even when typical size is small. A quadratic path reachable by user-supplied input is a denial-of-service risk regardless of averages.",
+		related: [
+			"data-structure-selection",
+			"yagni",
+			"latency-numbers",
+			"cache-hierarchy-locality"
+		],
+		tags: [
+			"performance",
+			"algorithms",
+			"complexity",
+			"trade-offs"
+		]
+	},
+	{
+		id: "cache-hierarchy-locality",
+		name: "Cache Locality",
+		aka: [
+			"mechanical sympathy",
+			"data-oriented design",
+			"cache lines"
+		],
+		origin: "Computer architecture fundamentals; Martin Thompson's mechanical sympathy writing",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Memory access cost depends overwhelmingly on whether the data is already in cache, so layout and traversal order often matter more than instruction count.",
+		useWhen: [
+			"the loop does very little work per item and is still slow",
+			"iterating this structure is much slower than the same number of operations elsewhere",
+			"we halved the instructions and gained nothing",
+			"performance falls off a cliff when the data set gets slightly larger"
+		],
+		prompt: "Analyse the memory access pattern in this hot loop. Identify whether we traverse contiguous memory or chase pointers, how many cache lines are touched per element, and how much of each fetched line we actually use — a structure where we read one field out of a large object wastes most of every line fetched. Then propose the layout change: grouping the fields actually used together, using arrays of values rather than arrays of references, and ordering traversal to match layout. Estimate the improvement from the reduction in lines touched, and say what readability or flexibility we give up, since this style has a real maintenance cost.",
+		why: "Counting cache lines touched per element gives a concrete predicted improvement, which is what distinguishes this from vague advice about being cache-friendly.",
+		watchOut: "These techniques trade clarity for speed and only pay in genuinely hot loops. Applied broadly they make a codebase harder to change for no measurable gain.",
+		related: [
+			"data-structure-selection",
+			"allocation-reduction",
+			"big-o-vs-constants",
+			"false-sharing"
+		],
+		tags: [
+			"performance",
+			"memory",
+			"hardware",
+			"optimisation"
+		]
+	},
+	{
+		id: "allocation-reduction",
+		name: "Allocation Reduction",
+		aka: [
+			"garbage reduction",
+			"object pooling",
+			"zero-allocation paths"
+		],
+		origin: "Managed runtime performance practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "In a garbage-collected runtime, the cheapest object is the one never created — allocation rate drives collection frequency and therefore pause frequency.",
+		useWhen: [
+			"the service pauses regularly and the pauses correlate with load",
+			"garbage collection is using a third of our CPU",
+			"memory churn is enormous even though usage is stable",
+			"latency spikes every few seconds with no external cause"
+		],
+		prompt: "Profile allocation in this hot path and reduce it. Rank allocation sites by bytes and by object count, since many small short-lived objects and a few large ones cause different problems. Then apply the reductions in order of safety: avoiding boxing and unnecessary string building, reusing buffers with clear ownership, using value types or stack allocation where the language allows, and pooling only as a last resort. Be explicit about pooling's hazards — objects returned while still referenced, and pools that keep memory permanently high. Finish by predicting the change in collection frequency from the reduced allocation rate.",
+		why: "Ordering the techniques by safety keeps people away from pooling, which is where correctness bugs come from, and connecting allocation rate to collection frequency makes the payoff predictable.",
+		watchOut: "Modern collectors handle short-lived objects extremely cheaply. Reducing allocations that never survive a young collection may cost readability for no gain.",
+		related: [
+			"garbage-collection-tuning",
+			"cache-hierarchy-locality",
+			"memory-leak-diagnosis",
+			"profiling-before-optimizing"
+		],
+		tags: [
+			"performance",
+			"memory",
+			"garbage collection",
+			"optimisation"
+		]
+	},
+	{
+		id: "garbage-collection-tuning",
+		name: "Garbage Collection Tuning",
+		aka: [
+			"GC pauses",
+			"collector selection",
+			"heap sizing"
+		],
+		origin: "Managed runtime operations practice; JVM and .NET tuning literature",
+		domains: ["engineering"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "Choose the collector and heap settings from your latency and throughput requirements, then verify against pause distribution rather than average overhead.",
+		useWhen: [
+			"we get multi-second pauses at the worst possible moments",
+			"the p99 latency spikes and the application code is idle",
+			"someone increased the heap and the pauses got longer",
+			"the service is fine for hours and then stalls"
+		],
+		prompt: "Diagnose our collection behaviour before changing any flag. Establish from logs the frequency and duration distribution of pauses, the proportion of objects surviving young collection, and whether pauses correlate with allocation rate or with heap occupancy — those point at different fixes. Then choose settings by requirement: a low-pause collector trades throughput for predictability, a larger heap reduces frequency and can increase duration. Change one thing at a time and state the expected effect first. Also cover the non-flag fixes that usually matter more: reducing allocation, avoiding a large long-lived cache in the heap, and shrinking object lifetimes.",
+		why: "Flag tuning without the survival-rate and correlation evidence is guesswork, and the real fix is usually application-level. Requiring a predicted effect per change keeps it disciplined.",
+		watchOut: "Container memory limits interact badly with heap settings — the runtime may size itself from the host rather than the limit and get killed. Check that first.",
+		related: [
+			"allocation-reduction",
+			"memory-leak-diagnosis",
+			"tail-latency",
+			"container-resource-limits"
+		],
+		tags: [
+			"performance",
+			"garbage collection",
+			"latency",
+			"tuning"
+		]
+	},
+	{
+		id: "memory-leak-diagnosis",
+		name: "Memory Leak Diagnosis",
+		aka: ["heap growth investigation", "retention path analysis"],
+		origin: "Debugging practice; heap dump analysis tooling",
+		domains: ["engineering"],
+		intents: ["diagnose"],
+		oneLiner: "Find what is still referencing objects that should be dead, by comparing heap snapshots over time and following the retention path back to a root.",
+		useWhen: [
+			"memory grows steadily until the process is killed",
+			"we restart the service nightly to keep it healthy",
+			"usage climbs after every deploy and never comes back down",
+			"the leak only appears in production after several days"
+		],
+		prompt: "Give me a procedure for this growth. Start by distinguishing a genuine leak from expected growth — caches without bounds, buffers sized to peak load, and fragmentation all look like leaks and are fixed differently. Then take snapshots at intervals under steady load, compare by object type and by retained size rather than shallow size, and follow the retention path from the largest growing set back to the root that holds it. Name the usual culprits to check against that path: unbounded caches, listeners never removed, thread-local storage on pooled threads, static collections, and closures capturing more than intended.",
+		why: "Retained size and the retention path are the two things that identify the holder, and the leak-versus-unbounded-cache distinction changes the fix entirely.",
+		watchOut: "Native memory used by libraries, buffers and thread stacks will not appear in a managed heap dump at all. If the heap looks stable and the process still grows, look outside it.",
+		related: [
+			"allocation-reduction",
+			"garbage-collection-tuning",
+			"observability-triage",
+			"container-resource-limits"
+		],
+		tags: [
+			"performance",
+			"memory",
+			"debugging",
+			"diagnosis"
+		]
+	},
+	{
+		id: "jit-warmup",
+		name: "Warm-Up Effects",
+		aka: [
+			"JIT compilation",
+			"cold start",
+			"first-request latency"
+		],
+		origin: "Managed runtime and serverless performance practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "The first requests after a start are slow for reasons that vanish later — compilation, cold caches, lazy initialisation, empty connection pools — and they land on real users during every deploy.",
+		useWhen: [
+			"the first few requests after a deploy time out",
+			"our benchmark is fast and production is slow for the first minute",
+			"autoscaling adds an instance and users get errors",
+			"the serverless function is fast when warm and terrible when cold"
+		],
+		prompt: "Diagnose the warm-up profile of this service. Enumerate every cost paid only at the start: just-in-time compilation of hot methods, class or module loading, lazy singletons and configuration fetches, empty connection pools, cold local caches, and cold downstream caches. Measure how long each takes and when it is paid. Then choose the mitigations per cause — pre-warming with synthetic traffic before joining the load balancer, ahead-of-time compilation, eager initialisation at startup, and pool pre-filling — and specify how readiness is delayed until warm-up completes, so an instance never takes traffic it cannot serve.",
+		why: "Tying warm-up to the readiness signal is the fix that stops the deploy-time error spike, and it is a different intervention from making startup faster.",
+		watchOut: "Pre-warming with unrepresentative traffic compiles the wrong paths and fills caches with the wrong data. It needs to look like real usage.",
+		related: [
+			"graceful-shutdown",
+			"health-check-design",
+			"cold-start-optimization",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"performance",
+			"startup",
+			"deployment",
+			"latency"
+		]
+	},
+	{
+		id: "zero-copy-io",
+		name: "Zero-Copy I/O",
+		aka: [
+			"avoiding buffer copies",
+			"sendfile",
+			"memory-mapped transfer"
+		],
+		origin: "Operating systems practice; sendfile and splice system calls",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Move data between file, socket and memory without copying it through user space repeatedly, which matters once payloads are large.",
+		useWhen: [
+			"serving large files saturates the CPU before the network",
+			"we copy the same buffer four times on the way out",
+			"proxying data uses far more CPU than it should",
+			"throughput is limited by memory bandwidth rather than by the link"
+		],
+		prompt: "Trace this data path and count the copies and the user-kernel transitions per byte served, from source to socket. For each copy, say whether it exists because we transform the data, because of an API boundary, or by accident — the accidental ones are the target. Then propose the reduction: platform transfer calls, memory mapping, buffer slicing rather than concatenation, and streaming instead of materialising the whole payload. Be explicit about what we give up, since zero-copy paths usually preclude transformation, compression or encryption in our process. Estimate the CPU saving per gigabyte served.",
+		why: "Counting copies per byte turns a vague inefficiency into a number, and naming the transformation constraint prevents adopting a technique that our pipeline cannot actually use.",
+		watchOut: "These paths are platform specific and interact badly with TLS termination in-process. If you must encrypt, most of the benefit disappears unless the network stack offloads it.",
+		related: [
+			"streaming-vs-buffering",
+			"payload-size-reduction",
+			"compression-tradeoffs",
+			"cpu-vs-io-bound"
+		],
+		tags: [
+			"performance",
+			"io",
+			"networking",
+			"systems"
+		]
+	},
+	{
+		id: "batching-amortization",
+		name: "Batching and Amortisation",
+		aka: [
+			"bulk operations",
+			"group commit",
+			"chunking"
+		],
+		origin: "Systems performance practice; group commit from database engineering",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Spread a fixed per-operation cost across many items by grouping them, trading a bounded amount of latency for a large gain in throughput.",
+		useWhen: [
+			"we make one network call per item in a loop",
+			"the database round trip dominates and the query itself is trivial",
+			"writing one row at a time cannot keep up with the incoming rate",
+			"we pay the same setup cost thousands of times per second"
+		],
+		prompt: "Introduce batching on this path. Identify the fixed cost per operation and the variable cost per item, then derive the batch size where the fixed cost is adequately amortised without exceeding our latency budget — show that arithmetic rather than choosing a round number. Specify both triggers, size and time, since a size-only trigger stalls forever at low traffic. Then handle the consequences: partial failure within a batch and whether we retry the whole thing or isolate the failure, memory held by pending items, ordering, and what happens to buffered items on shutdown. Finish with the observability needed to tune it later.",
+		why: "Partial batch failure and the shutdown case are where batching implementations lose data, and the dual trigger is what keeps latency bounded at low volume.",
+		watchOut: "Batching couples the fate of unrelated items. One poison record can now fail hundreds of others unless the failure path isolates it.",
+		related: [
+			"n-plus-one-queries",
+			"throughput-vs-latency",
+			"graceful-shutdown",
+			"request-coalescing"
+		],
+		tags: [
+			"performance",
+			"throughput",
+			"batching",
+			"io"
+		]
+	},
+	{
+		id: "n-plus-one-queries",
+		name: "N+1 Query Problem",
+		aka: [
+			"select N plus 1",
+			"lazy loading in a loop",
+			"chatty data access"
+		],
+		origin: "Object-relational mapping practice; named in the Hibernate community",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Fetching a list and then fetching each item's relations one by one turns a single query into hundreds, usually invisibly through lazy loading.",
+		useWhen: [
+			"the page makes four hundred database queries to render a list",
+			"it is fast with ten records and unusable with a thousand",
+			"the query log shows the same statement repeated with different ids",
+			"adding a field to the response made everything slow"
+		],
+		prompt: "Find and fix the repeated-query patterns on this path. Detect them by counting queries per request rather than by reading code, since lazy loading hides the calls — say how to instrument that count and how to assert on it in tests, which is the durable fix. For each occurrence, give the remedy: eager loading with a join, a separate batched query keyed by the parent ids, or a data loader that coalesces within a request. Compare join-based fetching against two-query fetching on row multiplication, since a join across two collections can return far more rows than either approach alone. Finish with the guardrail that prevents recurrence.",
+		why: "A per-request query-count assertion in tests is the fix that survives, because the pattern reappears whenever someone adds a field. Detection-by-counting is more reliable than review.",
+		watchOut: "Eager loading everything creates the opposite problem: enormous result sets fetched for pages that use one field. The fix is per-use-case fetching, not a global setting.",
+		related: [
+			"batching-amortization",
+			"lazy-vs-eager-loading",
+			"query-plan-reading",
+			"fan-out-fan-in"
+		],
+		tags: [
+			"performance",
+			"database",
+			"orm",
+			"queries"
+		]
+	},
+	{
+		id: "lazy-vs-eager-loading",
+		name: "Lazy versus Eager Loading",
+		aka: [
+			"deferred initialisation",
+			"prefetching",
+			"load on demand"
+		],
+		origin: "Object-relational mapping and UI performance practice",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Decide per use case whether to fetch data when asked or in advance, trading unnecessary work against latency at the moment of need.",
+		useWhen: [
+			"we load everything up front and most of it is never used",
+			"the first interaction is slow because nothing was prepared",
+			"the object graph loads half the database when touched",
+			"startup takes ages because everything initialises eagerly"
+		],
+		prompt: "Decide the loading strategy for each of these resources using two measurements: the probability it is actually used in a given request, and the latency cost if it must be fetched at the moment of need. High probability or high fetch cost means load in advance; low probability and cheap fetch means defer. Present the table with our real usage rates. Then handle the hazards of each: deferred loading that escapes its transaction or session and fails at render time, and eager loading that pulls a graph far larger than expected. Recommend per use case rather than as a global default, since one setting for all callers is what causes both problems.",
+		why: "Framing it as probability times cost per use case, rather than as a global framework setting, is what resolves the argument and prevents both failure modes.",
+		watchOut: "Deferred loading inside a template or serialiser executes queries at render time, far from any error handling. That is where the mysterious production failures come from.",
+		related: [
+			"n-plus-one-queries",
+			"precomputation-materialization",
+			"batching-amortization",
+			"jit-warmup"
+		],
+		tags: [
+			"performance",
+			"data access",
+			"trade-offs",
+			"latency"
+		]
+	},
+	{
+		id: "precomputation-materialization",
+		name: "Precomputation",
+		aka: [
+			"materialised views",
+			"denormalised read models",
+			"write-time computation"
+		],
+		origin: "Database and data warehousing practice; central to CQRS read models",
+		domains: ["engineering", "data"],
+		intents: ["structure", "decide"],
+		oneLiner: "Move expensive work from read time to write time when reads outnumber writes, accepting staleness and extra storage in exchange for fast queries.",
+		useWhen: [
+			"the dashboard query aggregates millions of rows on every load",
+			"the same expensive calculation runs for every visitor",
+			"reads outnumber writes by a thousand to one and we compute on read",
+			"the report takes two minutes and everyone runs it every morning"
+		],
+		prompt: "Design precomputation for this expensive read. Establish the read-to-write ratio and the acceptable staleness first, because those two numbers determine both whether this is worth it and which refresh mechanism fits — recompute on write, incremental update, or scheduled rebuild. Then design the invalidation and refresh path, including what happens when the precomputed data is wrong or missing, since a stale derived value with no repair path becomes a permanent data quality problem. Specify how we detect divergence between derived and source data, and the reconciliation job that fixes it.",
+		why: "Divergence detection and repair are what make derived data trustworthy over years, and they are almost always omitted from the initial design.",
+		watchOut: "Every precomputed view is a second copy of the truth that can drift. The maintenance cost is ongoing, not a one-off build.",
+		related: [
+			"cqrs",
+			"cache-invalidation-strategy",
+			"reconciliation-jobs",
+			"lazy-vs-eager-loading"
+		],
+		tags: [
+			"performance",
+			"caching",
+			"data modelling",
+			"read optimisation"
+		]
+	},
+	{
+		id: "cache-invalidation-strategy",
+		name: "Cache Invalidation Strategy",
+		aka: [
+			"expiry versus invalidation",
+			"stale data control",
+			"TTL design"
+		],
+		origin: "Caching practice; the classic hard problem of computer science",
+		domains: ["engineering"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Decide how cached data becomes wrong and how it gets corrected — by expiry, by explicit invalidation, or by versioning the key — before you decide where to cache.",
+		useWhen: [
+			"users see old data after an update and we cannot tell for how long",
+			"we cleared the cache manually to fix a customer complaint",
+			"nobody knows which caches hold a copy of this record",
+			"the invalidation works locally and not across instances"
+		],
+		prompt: "Design invalidation for this cached data. First inventory every layer holding a copy — client, CDN, reverse proxy, application memory, shared cache, database buffer — because partial invalidation is the usual cause of mystifying staleness. Then choose the mechanism per layer: time-based expiry with a lifetime derived from tolerable staleness, event-driven invalidation on write, or key versioning where the key changes and old entries age out on their own. Recommend key versioning where possible since it avoids the distributed delete problem entirely. Finish with the behaviour on a miss storm and how we verify invalidation actually happened.",
+		why: "Key versioning sidesteps the hardest part of the problem and is routinely overlooked in favour of fragile explicit deletes across many nodes.",
+		watchOut: "Client and CDN caches you cannot reach make some staleness unavoidable. Set those lifetimes conservatively because you cannot recall them.",
+		related: [
+			"cache-key-design",
+			"caching-read-write-patterns",
+			"thundering-herd",
+			"cdn-edge-caching"
+		],
+		tags: [
+			"performance",
+			"caching",
+			"consistency",
+			"design"
+		]
+	},
+	{
+		id: "cache-key-design",
+		name: "Cache Key Design",
+		aka: [
+			"cache key hygiene",
+			"vary headers",
+			"key namespacing"
+		],
+		origin: "Web caching and application caching practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "critique"],
+		oneLiner: "The key must include every input that changes the value — omit one and different users share a cached answer, which is a correctness and sometimes a security failure.",
+		useWhen: [
+			"a customer saw another customer's data on a cached page",
+			"the cache returns the wrong variant for logged-in users",
+			"our hit rate is terrible because every key is unique",
+			"changing the response format did not invalidate anything"
+		],
+		prompt: "Audit the cache keys on this path. For each cached value, enumerate every input that can change it — identity, tenant, permissions, locale, currency, device class, feature flags, API version, and the serialisation format itself — and confirm each is either in the key or provably irrelevant. Any omission that mixes tenants is a security finding, so report those separately and first. Then look at the opposite failure: inputs in the key that do not affect the value, such as request ids or timestamps, which destroy the hit rate. Finish with a namespacing and versioning scheme so a format change invalidates cleanly.",
+		why: "Missing key components produce cross-tenant leaks that look like caching bugs, and the audit is the only reliable way to find them before a customer does.",
+		watchOut: "Caching anything downstream of an authorisation decision is dangerous by default. Prefer caching before authorisation, or key on the permission set itself.",
+		related: [
+			"cache-invalidation-strategy",
+			"cdn-edge-caching",
+			"trust-boundary",
+			"caching-read-write-patterns"
+		],
+		tags: [
+			"performance",
+			"caching",
+			"security",
+			"correctness"
+		]
+	},
+	{
+		id: "caching-read-write-patterns",
+		name: "Cache Read and Write Patterns",
+		aka: [
+			"cache-aside",
+			"read-through",
+			"write-through",
+			"write-behind"
+		],
+		origin: "Caching architecture practice; standard in distributed systems texts",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose who populates the cache and when writes reach the store — aside, through, or behind — since each has different consistency and failure behaviour.",
+		useWhen: [
+			"a write updated the database and the cache still has the old value",
+			"we cache in five places with five different conventions",
+			"the cache went down and took the application with it",
+			"a race between two writers left the cache permanently wrong"
+		],
+		prompt: "Choose a caching pattern for this data and specify its failure behaviour. Compare cache-aside, read-through, write-through and write-behind on four things: consistency after a write, what happens when the cache is unavailable, what happens when the store write fails after the cache write, and the race where a concurrent read repopulates a stale value between a delete and a write. That last race is the one that leaves caches permanently wrong, so show explicitly how the chosen pattern handles it. Then state whether the cache is an optimisation we can lose or a load-bearing component, because that determines the failure design.",
+		why: "The delete-then-repopulate race is the classic silent corruption, and the optional-versus-load-bearing question determines whether a cache outage is a slowdown or an outage.",
+		watchOut: "Write-behind can lose acknowledged writes if the cache dies before flushing. That is a data durability decision, not a performance tuning knob.",
+		related: [
+			"cache-invalidation-strategy",
+			"cache-key-design",
+			"thundering-herd",
+			"precomputation-materialization"
+		],
+		tags: [
+			"performance",
+			"caching",
+			"consistency",
+			"architecture"
+		]
+	},
+	{
+		id: "cdn-edge-caching",
+		name: "Edge Caching",
+		aka: [
+			"CDN strategy",
+			"cache-control headers",
+			"stale-while-revalidate"
+		],
+		origin: "Content delivery network practice; HTTP caching specifications",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Serve content from a location near the user and control it with explicit cache directives, so most requests never reach your origin at all.",
+		useWhen: [
+			"users far from our region have a much worse experience",
+			"our origin serves the same static response millions of times",
+			"we deployed and users kept getting the old JavaScript for days",
+			"nobody understands our cache-control headers"
+		],
+		prompt: "Design edge caching for these responses. For each, specify the directives explicitly — maximum age, whether shared caches may store it, revalidation requirements, and the variation dimensions — and justify each rather than copying a template. Use content-hashed filenames with long lifetimes for immutable assets and short lifetimes for the documents that reference them, which is the pattern that makes deploys propagate correctly. Then add resilience: serving stale content while revalidating and while the origin is erroring, so a brief origin outage is invisible. Finish with purge capability, its propagation delay, and what to do for anything user-specific that must never be cached at the edge.",
+		why: "The immutable-asset plus short-lived-document pairing is what makes deploys propagate correctly, and stale-if-error converts origin outages into non-events. Both are commonly missed.",
+		watchOut: "A misconfigured directive on a personalised response caches one user's page for everyone. Anything authenticated needs explicit no-store unless keyed carefully.",
+		related: [
+			"cache-key-design",
+			"cache-invalidation-strategy",
+			"payload-size-reduction",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"performance",
+			"caching",
+			"cdn",
+			"web"
+		]
+	},
+	{
+		id: "compression-tradeoffs",
+		name: "Compression Trade-offs",
+		aka: [
+			"gzip versus brotli",
+			"compression level tuning",
+			"CPU for bandwidth"
+		],
+		origin: "Network and storage engineering practice",
+		domains: ["engineering"],
+		intents: ["decide", "estimate"],
+		oneLiner: "Compression trades CPU for bytes, and the right level depends on whether the content is compressed once and served often or compressed on every response.",
+		useWhen: [
+			"our responses are large and the network is the bottleneck",
+			"we turned on maximum compression and the CPU went up sharply",
+			"we compress tiny responses and it makes them bigger",
+			"storage costs are dominated by repetitive data"
+		],
+		prompt: "Decide compression settings for this content. Separate the cases: static assets compressed once at build time deserve the highest level available, while dynamically generated responses compressed per request need a level chosen from the CPU cost per byte at our request rate — show that calculation. Set a minimum size threshold below which compression is skipped, since small payloads can grow. Then check the interactions: content already compressed such as images and video, and the security consideration of compressing responses that mix secret and attacker-influenced data. Finish with what to measure to confirm the setting is right.",
+		why: "The build-time versus request-time split is the decision that matters and is usually collapsed into one global setting, and the compression-with-secrets hazard is genuinely obscure.",
+		watchOut: "Compressing a response that contains both a secret and attacker-controlled input can leak the secret through size observation. Where that applies, disable it.",
+		related: [
+			"payload-size-reduction",
+			"cdn-edge-caching",
+			"zero-copy-io",
+			"cpu-vs-io-bound"
+		],
+		tags: [
+			"performance",
+			"compression",
+			"bandwidth",
+			"trade-offs"
+		]
+	},
+	{
+		id: "connection-pooling",
+		name: "Connection Pooling",
+		aka: [
+			"pool sizing",
+			"connection reuse",
+			"pool exhaustion"
+		],
+		origin: "Database and network client practice; sizing guidance from HikariCP and PgBouncer",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Reuse expensive connections from a bounded pool, and size the pool from downstream capacity rather than from application concurrency.",
+		useWhen: [
+			"the application hangs waiting for a database connection",
+			"we increased the pool size and the database got slower",
+			"the database hit its connection limit and refused everyone",
+			"each instance opens its own pool and we now have thousands of connections"
+		],
+		prompt: "Size and configure this pool. Start from the downstream limit and divide across all clients including background jobs and other services, then check that against what the database can actually serve concurrently — a pool larger than the downstream can handle converts a fast queue in your process into a slow queue in theirs, which is worse. Show the arithmetic and the resulting per-instance number given autoscaling maximums. Then set the behaviour on exhaustion: wait with a timeout short enough to fail fast, never wait forever. Finish with the leak detection for connections not returned, and the validation that avoids handing out a dead connection.",
+		why: "Pools are usually sized upward until the symptom moves, which pushes queueing into the database. Deriving from downstream capacity including autoscaled instance count is the correct direction.",
+		watchOut: "A connection held across an external API call is a connection not doing database work. Long-held connections make a correctly sized pool look too small.",
+		related: [
+			"queueing-theory-basics",
+			"backpressure",
+			"saturation-monitoring",
+			"timeout-budgets"
+		],
+		tags: [
+			"performance",
+			"database",
+			"resources",
+			"configuration"
+		]
+	},
+	{
+		id: "payload-size-reduction",
+		name: "Payload Size Reduction",
+		aka: [
+			"response trimming",
+			"over-fetching",
+			"field selection"
+		],
+		origin: "Web and mobile performance practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Send less: most responses contain fields nobody reads, duplicated structure, and precision no consumer needs.",
+		useWhen: [
+			"our API response is two megabytes for a list view",
+			"the mobile app is slow on poor networks",
+			"we return the whole object because it was easier",
+			"bandwidth costs are climbing faster than usage"
+		],
+		prompt: "Reduce the size of this response. Analyse the actual payload: which fields do known consumers read, what proportion of bytes is field names repeated per row, what precision are we sending that nobody uses, and what nested objects are included wholesale for one attribute. Propose the reductions in order of safety — removing unused fields, flattening repeated keys, reducing numeric and timestamp precision, and paginating or streaming large collections — and for each say how we verify no consumer depends on it, since that verification is what blocks these changes. Finish with the measured before and after, compressed and uncompressed.",
+		why: "The blocker on trimming responses is never technical, it is not knowing who consumes what. Making the verification method part of the task is what unblocks it.",
+		watchOut: "Removing a field is a breaking change even if you believe nobody uses it. Measure consumption from logs before removing, and version if uncertain.",
+		related: [
+			"compression-tradeoffs",
+			"api-pagination",
+			"over-fetching-graphql",
+			"performance-budget"
+		],
+		tags: [
+			"performance",
+			"api",
+			"bandwidth",
+			"mobile"
+		]
+	},
+	{
+		id: "streaming-vs-buffering",
+		name: "Streaming versus Buffering",
+		aka: [
+			"chunked responses",
+			"incremental processing",
+			"memory-bounded IO"
+		],
+		origin: "Systems and web engineering practice",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Process and emit data incrementally rather than materialising it all, which bounds memory and lets the consumer start work before you finish.",
+		useWhen: [
+			"exporting a large file uses gigabytes of memory",
+			"the user stares at a blank page until the whole response is ready",
+			"we load the entire result set to transform it",
+			"the process dies on the biggest customer's data"
+		],
+		prompt: "Convert this operation to incremental processing. Identify where the whole data set is currently materialised — a query result read fully, a document built in memory, a list mapped before writing — and show the streaming equivalent with bounded memory. Then handle the parts that make streaming harder and are usually discovered late: error handling after the response has already begun and headers are sent, resource cleanup on client disconnect, transactions or cursors held open for the duration, and back pressure when the consumer is slower than the producer. Finish with the memory ceiling the streaming version guarantees regardless of data size.",
+		why: "Errors after the first byte is sent is the problem that makes streaming implementations wrong, and holding a cursor open for a slow consumer is the one that hurts the database.",
+		watchOut: "Streaming makes retries and idempotency harder, since a partially delivered response may need to be regenerated from the start. Decide how the consumer resumes.",
+		related: [
+			"zero-copy-io",
+			"backpressure",
+			"api-pagination",
+			"batching-amortization"
+		],
+		tags: [
+			"performance",
+			"memory",
+			"io",
+			"api"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/data.ts
+var dataSystems = [
+	{
+		id: "schema-evolution",
+		name: "Schema Evolution",
+		aka: ["backward and forward compatibility", "message schema versioning"],
+		origin: "Data serialisation practice; Protocol Buffers and Avro compatibility rules",
+		domains: ["engineering", "data"],
+		intents: ["plan", "structure"],
+		oneLiner: "Change a data format so that old readers survive new writers and new readers survive old data, because in a distributed system both exist at once.",
+		useWhen: [
+			"adding a field broke every consumer that had not been updated",
+			"we cannot deploy the producer and consumers at the same moment",
+			"old messages sitting in the queue no longer parse",
+			"renaming a column meant a coordinated release across four teams"
+		],
+		prompt: "Plan this format change for compatibility in both directions. Classify the change: adding an optional field, adding a required field, removing, renaming, changing a type, or changing the meaning of an existing field — the last is the dangerous one because it is invisible to any compatibility checker. For each, state whether old readers can handle new data and new readers can handle old data, and give the safe multi-step sequence where it is not directly compatible. Then specify what enforces this going forward: a schema registry with a compatibility mode, and the rule for how long old versions must be readable given our message retention.",
+		why: "Semantic changes that keep the same field and type pass every automated check and break consumers silently. Naming that category explicitly is what catches it in review.",
+		watchOut: "Compatibility rules only cover the encoding. A field whose units or nullability convention changes is a breaking change no registry will catch.",
+		related: [
+			"expand-and-contract-migration",
+			"data-contracts",
+			"api-versioning-strategy",
+			"contract-testing"
+		],
+		tags: [
+			"data",
+			"schemas",
+			"compatibility",
+			"versioning"
+		]
+	},
+	{
+		id: "expand-and-contract-migration",
+		name: "Expand and Contract",
+		aka: [
+			"parallel change",
+			"four-phase migration",
+			"zero-downtime schema change"
+		],
+		origin: "Danilo Sato, parallel change pattern, 2014",
+		domains: ["engineering", "data"],
+		intents: ["plan", "structure"],
+		oneLiner: "Add the new shape alongside the old, migrate readers and writers across, then remove the old — so no single deploy has to be atomic.",
+		useWhen: [
+			"renaming this column would require downtime",
+			"the migration and the code deploy cannot happen at the same instant",
+			"we need to roll back a release after the schema already changed",
+			"old and new application versions run simultaneously during a rollout"
+		],
+		prompt: "Sequence this schema change as a series of independently deployable and reversible steps. Give the phases explicitly: add the new structure without removing the old, write to both, backfill historic rows, switch reads to the new, stop writing the old, then drop it. For each step, state whether it is safe to roll back and what happens if the application version and schema version are mismatched in either direction, since that mismatch exists during every rollout. Then flag the steps that are irreversible once taken and where the point of no return sits. Finish with how we verify the two representations agree before switching reads.",
+		why: "The safety of this pattern comes from the rollback analysis per step and the agreement check before switching reads, which is what catches a broken backfill before it becomes user-visible.",
+		watchOut: "The contract phase gets forgotten and systems accumulate dual-write code forever. Schedule the cleanup as committed work with a date.",
+		related: [
+			"backfill-strategy",
+			"schema-evolution",
+			"branch-by-abstraction",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"data",
+			"migration",
+			"deployment",
+			"schema"
+		]
+	},
+	{
+		id: "backfill-strategy",
+		name: "Backfill Strategy",
+		aka: [
+			"historic data migration",
+			"batched backfill",
+			"data catch-up"
+		],
+		origin: "Operational data engineering practice",
+		domains: ["engineering", "data"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Populate a new column, index or store for existing rows without locking the table, saturating the database, or losing track of where you got to.",
+		useWhen: [
+			"the migration script has been running for six hours and nobody knows how far it got",
+			"the backfill locked the table and took the site down",
+			"we need to update forty million rows without downtime",
+			"the backfill fell over halfway and we cannot tell what was done"
+		],
+		prompt: "Design the backfill for this change. Process in bounded batches with a durable cursor so it can stop and resume, and make each batch idempotent so re-running a batch is harmless — those two properties are what make the job survivable. Specify the throttle and the feedback signal it responds to, such as replication lag or database load, rather than a fixed sleep. Then handle the interaction with live traffic: rows written or deleted while the backfill runs, and how the new and old values are reconciled at the end. Finish with the progress reporting and the verification query that proves completeness before we depend on the new data.",
+		why: "Resumability, idempotence and a load-responsive throttle are the three properties that separate a backfill you can run on a busy system from one that causes an incident.",
+		watchOut: "A backfill that races with live writes can overwrite newer values with older ones. The write path must win, and that has to be enforced rather than assumed.",
+		related: [
+			"expand-and-contract-migration",
+			"idempotent-pipelines",
+			"bulk-load-strategy",
+			"reconciliation-jobs"
+		],
+		tags: [
+			"data",
+			"migration",
+			"operations",
+			"databases"
+		]
+	},
+	{
+		id: "index-selection",
+		name: "Index Selection",
+		aka: [
+			"covering index",
+			"composite index order",
+			"index tuning"
+		],
+		origin: "Database performance practice; Markus Winand's work on index design",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "Design indexes from the query predicates and ordering, remembering that column order in a composite index determines which queries it can serve.",
+		useWhen: [
+			"the query is slow and I do not know what index to add",
+			"we added an index and nothing improved",
+			"we have twenty indexes and writes have become slow",
+			"the query is fast in one direction and slow with a different filter"
+		],
+		prompt: "Recommend indexes for these queries. For each query, list the equality predicates, range predicates and sort order, then derive the composite column order using the rule that equality columns come first, then the range or sort column — and explain why a different order makes the index unusable for that query. Identify where adding the selected columns would make the index covering and remove the table lookup entirely. Then look at the cost side: list existing indexes that would become redundant, the write and storage overhead per index, and any index that no query uses. Recommend additions and deletions together.",
+		why: "Composite column ordering is the rule that decides whether an index is used at all, and pairing additions with deletions keeps write cost from creeping up unnoticed.",
+		watchOut: "Indexes on low-selectivity columns are usually ignored by the planner and cost writes for nothing. Check selectivity before adding.",
+		related: [
+			"query-plan-reading",
+			"n-plus-one-queries",
+			"partitioning-strategy",
+			"normalization-tradeoffs"
+		],
+		tags: [
+			"data",
+			"databases",
+			"performance",
+			"indexing"
+		]
+	},
+	{
+		id: "query-plan-reading",
+		name: "Query Plan Reading",
+		aka: [
+			"explain analyze",
+			"execution plan analysis",
+			"planner estimates"
+		],
+		origin: "Relational database practice",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "Read what the database actually did rather than guessing — and pay particular attention to where its row estimates diverge from reality.",
+		useWhen: [
+			"the query is slow and I do not know why",
+			"it was fast yesterday and slow today with the same data",
+			"the index exists and the database is not using it",
+			"the plan changed after we loaded more data"
+		],
+		prompt: "Analyse this execution plan. Walk it from the innermost nodes outward, and at each step compare the estimated rows against the actual rows — a large divergence is the root cause of most bad plans, and it points at stale statistics, a correlated predicate the planner cannot model, or an expression it cannot estimate through. Identify the node consuming the most time and whether it is a scan, a sort spilling to disk, or a nested loop over far more rows than expected. Then give the remedies in order: refresh statistics, rewrite the predicate to be estimable, add or reorder an index, or restructure the query. Say which we should try first and what evidence would confirm it worked.",
+		why: "Estimate-versus-actual divergence is the single most diagnostic thing in a plan and the thing least often looked at. Ordering remedies by cost prevents jumping straight to hints.",
+		watchOut: "Plans depend on data distribution and parameters, so a plan captured for one value may not be the plan used for another. Check the parameterised case too.",
+		related: [
+			"index-selection",
+			"n-plus-one-queries",
+			"partitioning-strategy",
+			"profiling-before-optimizing"
+		],
+		tags: [
+			"data",
+			"databases",
+			"performance",
+			"diagnosis"
+		]
+	},
+	{
+		id: "normalization-tradeoffs",
+		name: "Normalisation Trade-offs",
+		aka: [
+			"third normal form",
+			"denormalisation",
+			"redundancy versus joins"
+		],
+		origin: "Edgar Codd, relational model, 1970",
+		domains: ["engineering", "data"],
+		intents: ["decide", "structure"],
+		oneLiner: "Normalised schemas prevent contradictory data and cost joins; denormalised ones read fast and require you to keep copies in agreement.",
+		useWhen: [
+			"the same customer address is stored in four tables and they disagree",
+			"every read joins seven tables and it is slow",
+			"we copied the price into the order and now I am not sure that was wrong",
+			"someone wants to denormalise and I cannot articulate the risk"
+		],
+		prompt: "Evaluate the normalisation of this model. First separate genuine denormalisation from historical snapshotting, because they look identical and are opposites: copying a price into an order is correct since the order must record what was charged, while copying a customer name for convenience is a duplication risk. Classify each duplicated field into those two categories. For the convenience copies, state the update anomaly they permit and how it would be detected. Then, where denormalisation is justified by read performance, specify the mechanism that keeps copies in agreement and how divergence is monitored, since unmonitored derived data drifts.",
+		why: "The snapshot-versus-duplication distinction resolves most normalisation arguments, and it is invisible from the schema alone. Separating them makes the rest of the analysis straightforward.",
+		watchOut: "Normalising to the last degree produces schemas nobody can query and joins the planner handles badly. Model for the questions the data must answer.",
+		related: [
+			"precomputation-materialization",
+			"index-selection",
+			"temporal-data-modeling",
+			"dimensional-modeling"
+		],
+		tags: [
+			"data",
+			"modelling",
+			"databases",
+			"trade-offs"
+		]
+	},
+	{
+		id: "partitioning-strategy",
+		name: "Partitioning Strategy",
+		aka: [
+			"sharding key selection",
+			"table partitioning",
+			"horizontal split"
+		],
+		origin: "Database scaling practice",
+		domains: ["engineering", "data"],
+		intents: ["decide", "plan"],
+		oneLiner: "Split data across partitions by a key chosen so that common queries touch one partition and no single partition becomes disproportionately hot.",
+		useWhen: [
+			"the table has grown to a billion rows and everything is slow",
+			"one customer is a hundred times bigger than the rest",
+			"every query has to check every shard",
+			"deleting old data takes hours and locks everything"
+		],
+		prompt: "Choose a partition key for this data. Evaluate candidates against four criteria with our actual data: how evenly they distribute volume, whether the most frequent queries can be routed to a single partition, whether related records that must be updated together land together, and how the distribution changes as we grow. Explicitly model the largest tenant or hottest key, since skew is what breaks these schemes. Then cover operations: how a partition is split when it outgrows its host, how cross-partition queries and transactions behave, and how time-based partitioning could make deletion an instant drop rather than a mass delete.",
+		why: "Skew analysis against real data and the cross-partition query cost are what determine whether a key works, and both are usually skipped in favour of an intuitive-looking choice.",
+		watchOut: "Choosing a partition key is close to irreversible — repartitioning a large live data set is a project. Model the growth case before committing.",
+		related: [
+			"consistent-hashing",
+			"index-selection",
+			"multi-tenancy-data-isolation",
+			"read-replica-strategy"
+		],
+		tags: [
+			"data",
+			"sharding",
+			"scaling",
+			"databases"
+		]
+	},
+	{
+		id: "read-replica-strategy",
+		name: "Read Replica Strategy",
+		aka: [
+			"read scaling",
+			"replica routing",
+			"replication lag management"
+		],
+		origin: "Database scaling practice",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Send reads to replicas to relieve the primary, and decide explicitly which reads can tolerate lag — because some cannot and will produce visible bugs.",
+		useWhen: [
+			"the primary database is at capacity and mostly serving reads",
+			"the user updated something and the next page showed old data",
+			"reporting queries are slowing down the transactional workload",
+			"we added replicas and now we get intermittent stale reads"
+		],
+		prompt: "Design replica routing for this application. Classify every read as must-be-current, tolerates-seconds, or tolerates-minutes, and route accordingly rather than choosing a single global default. For the must-be-current reads, specify the mechanism — primary routing for a bounded window after a write, or waiting for a replication position. Then handle the operational side: monitoring lag per replica with alerting, automatically removing a lagging replica from rotation, and what happens to routing during a failover. Finish with the reporting workload, which should probably have its own replica so a heavy query cannot lag the ones serving users.",
+		why: "Per-read classification is the decision that prevents stale-read bugs, and isolating analytics onto their own replica is what stops one report from degrading everything.",
+		watchOut: "Replication lag is not constant; it spikes during bulk operations and backfills. A routing rule tuned for normal lag will misbehave exactly when you are running a migration.",
+		related: [
+			"read-your-writes",
+			"partitioning-strategy",
+			"olap-oltp-separation",
+			"eventual-consistency"
+		],
+		tags: [
+			"data",
+			"replication",
+			"scaling",
+			"consistency"
+		]
+	},
+	{
+		id: "transaction-isolation-levels",
+		name: "Transaction Isolation Levels",
+		aka: [
+			"read committed",
+			"repeatable read",
+			"serializable",
+			"phantom reads"
+		],
+		origin: "ANSI SQL standard; refined by Berenson and colleagues, 1995",
+		domains: ["engineering", "data"],
+		intents: ["explain", "decide"],
+		oneLiner: "Each isolation level permits specific anomalies — knowing which ones your default allows is the difference between a correct system and an intermittently wrong one.",
+		useWhen: [
+			"two concurrent updates produced a total that is wrong",
+			"a check passed and then the condition it checked changed before the write",
+			"the same query inside one transaction returned different results",
+			"we assumed transactions made this safe and apparently they did not"
+		],
+		prompt: "Analyse this transaction for concurrency anomalies at our actual isolation level, which you should confirm rather than assume since defaults differ by database. Walk through the anomalies the level permits — dirty reads, non-repeatable reads, phantoms, lost updates and write skew — and for each, construct the concrete interleaving in our code that would produce a wrong result. Write skew deserves particular attention because it survives at levels people consider safe: two transactions each check a condition, both pass, and together they violate it. Then give the remedy per case: raising the level, explicit locking, a uniqueness constraint, or restructuring so the check and the write are one operation.",
+		why: "Write skew is invisible at the level most systems run at and is the mechanism behind whole classes of rare data bugs. Constructing the interleaving makes it undeniable.",
+		watchOut: "Serializable isolation makes anomalies impossible and transaction aborts common. The application must be able to retry, which is a code change, not a configuration one.",
+		related: [
+			"optimistic-concurrency",
+			"database-deadlocks",
+			"aggregate-root",
+			"race-condition-diagnosis"
+		],
+		tags: [
+			"data",
+			"transactions",
+			"concurrency",
+			"correctness"
+		]
+	},
+	{
+		id: "optimistic-concurrency",
+		name: "Optimistic Concurrency Control",
+		aka: [
+			"version column",
+			"compare and swap",
+			"lost update prevention"
+		],
+		origin: "Kung and Robinson, 1981; ubiquitous in ORMs and HTTP ETags",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Let concurrent edits proceed and detect the conflict at write time using a version, rather than locking the record while a user thinks.",
+		useWhen: [
+			"two users edited the same record and one change silently vanished",
+			"we hold a database lock while a form is open on someone's screen",
+			"the last save wins and users are losing work",
+			"the counter is wrong when two requests arrive together"
+		],
+		prompt: "Add conflict detection to this update path. Specify the version token, where it is carried through the user interaction, and the conditional write that fails if the version has moved — including that the check and the write must be one atomic statement, since checking then writing reintroduces the race. Then design the human side, which is the part that decides whether this works: what the user sees on conflict, whether we can merge non-overlapping field changes automatically, and how their unsaved work is preserved. Finish with the retry policy for machine-driven updates and how often we expect conflicts, since a high conflict rate means the record is modelled too coarsely.",
+		why: "Conflict rate as a signal that the aggregate is too coarse is a genuinely useful diagnostic, and the check-and-write atomicity is where naive implementations still lose updates.",
+		watchOut: "Under high contention, optimistic control degenerates into a retry storm that is slower than a lock. Measure the conflict rate before choosing it.",
+		related: [
+			"transaction-isolation-levels",
+			"distributed-locking-pitfalls",
+			"aggregate-root",
+			"logical-clocks"
+		],
+		tags: [
+			"data",
+			"concurrency",
+			"conflicts",
+			"transactions"
+		]
+	},
+	{
+		id: "database-deadlocks",
+		name: "Deadlock Diagnosis",
+		aka: [
+			"lock ordering",
+			"deadlock graph",
+			"lock wait analysis"
+		],
+		origin: "Database and operating systems concurrency practice",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Deadlocks come from transactions taking the same locks in different orders — the fix is almost always a consistent ordering, not a bigger timeout.",
+		useWhen: [
+			"we get deadlock errors under load and they seem random",
+			"two batch jobs deadlock against each other every night",
+			"the error rate spikes exactly when traffic does",
+			"we increased the lock timeout and it just failed more slowly"
+		],
+		prompt: "Diagnose these deadlocks from the database's own deadlock report rather than from theory. For each, identify the two transactions, the resources each held and wanted, and the statement that closed the cycle. Then find the ordering violation: two code paths that touch the same rows in different sequences, often because one iterates a collection in an unspecified order. Give the fixes in order of preference — deterministic ordering of lock acquisition, shortening transactions so the window is small, avoiding lock escalation by touching fewer rows, and only then retry logic. Also check whether an index is missing, since scans lock more rows than lookups do.",
+		why: "The missing-index cause is non-obvious and common: without an index the engine locks far more rows than the query logically touches, creating conflicts that vanish once the index exists.",
+		watchOut: "Retrying on deadlock is legitimate and necessary, but it hides the frequency. Track the retry rate or you will not notice it becoming a throughput problem.",
+		related: [
+			"transaction-isolation-levels",
+			"lock-contention",
+			"index-selection",
+			"optimistic-concurrency"
+		],
+		tags: [
+			"data",
+			"databases",
+			"concurrency",
+			"diagnosis"
+		]
+	},
+	{
+		id: "surrogate-vs-natural-keys",
+		name: "Surrogate versus Natural Keys",
+		aka: [
+			"primary key choice",
+			"business key",
+			"synthetic identifier"
+		],
+		origin: "Relational database design practice",
+		domains: ["engineering", "data"],
+		intents: ["decide", "structure"],
+		oneLiner: "Use a meaningless generated identifier as the primary key and enforce business identifiers as separate unique constraints, because business identity changes and duplicates.",
+		useWhen: [
+			"we keyed on email address and now someone wants to change theirs",
+			"the supplier reused a product code and our data broke",
+			"the natural key turned out not to be unique after all",
+			"changing an identifier means updating a dozen foreign keys"
+		],
+		prompt: "Decide the key structure for this entity. Test any proposed natural key against the four questions that break them: can it change, can it be reused by the source system, is it genuinely unique across all our sources, and is it available at the moment we need to create the row. Then recommend a generated primary key with the business identifier as a unique constraint, and be specific about where the business key should still be used — in external interfaces and for deduplication on import. Finally state how a change of business identifier is handled, including whether the old value must remain resolvable for existing links.",
+		why: "Testing candidate keys against change, reuse, cross-source uniqueness and availability-at-insert is what surfaces the failure before it is embedded in foreign keys everywhere.",
+		watchOut: "A surrogate key without a unique constraint on the business key lets duplicates in silently, which is a worse problem than the one you avoided.",
+		related: [
+			"identifier-generation",
+			"normalization-tradeoffs",
+			"data-quality-checks",
+			"idempotent-pipelines"
+		],
+		tags: [
+			"data",
+			"modelling",
+			"keys",
+			"databases"
+		]
+	},
+	{
+		id: "identifier-generation",
+		name: "Identifier Generation",
+		aka: [
+			"UUID versus auto-increment",
+			"ULID",
+			"Snowflake ids"
+		],
+		origin: "Distributed systems practice; Twitter Snowflake and ULID specifications",
+		domains: ["engineering", "data"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose identifiers by weighing index locality, sortability, guessability and the ability to generate them without a coordinator.",
+		useWhen: [
+			"our sequential ids let anyone guess how many customers we have",
+			"random identifiers made insert performance fall off a cliff",
+			"we need ids before the row is written and the database assigns them",
+			"merging data from two systems produced id collisions"
+		],
+		prompt: "Choose an identifier scheme for this entity. Compare the options against five criteria: whether it can be generated client-side without a round trip, index locality on insert since fully random values scatter writes across the index, sortability by creation time, information leakage from guessable sequences, and size in storage and in every foreign key referencing it. Time-ordered random identifiers usually win, so say specifically whether they fit here. Then separate internal from external identity: an efficient internal key with an opaque public identifier is often the right answer, and if so, define the mapping and where translation happens.",
+		why: "The internal-versus-external identifier split resolves the conflict between index performance and not leaking business volume, and it is rarely considered as an option.",
+		watchOut: "Fully random primary keys on a clustered index cause page splits and write amplification that only appear at scale. By then the choice is expensive to reverse.",
+		related: [
+			"surrogate-vs-natural-keys",
+			"index-selection",
+			"idempotency-keys",
+			"attack-surface-reduction"
+		],
+		tags: [
+			"data",
+			"identifiers",
+			"databases",
+			"design"
+		]
+	},
+	{
+		id: "soft-delete-tradeoffs",
+		name: "Soft Delete Trade-offs",
+		aka: [
+			"logical delete",
+			"deleted_at flag",
+			"tombstones"
+		],
+		origin: "Application database practice",
+		domains: ["engineering", "data"],
+		intents: ["decide", "critique"],
+		oneLiner: "Marking rows deleted instead of removing them preserves history and breaks uniqueness, foreign keys, queries and privacy obligations in ways that accumulate.",
+		useWhen: [
+			"a deleted record reappeared in a report",
+			"we cannot re-register an email address because the old row still holds it",
+			"every query needs a not-deleted filter and someone always forgets one",
+			"legal asked us to actually delete data and it is everywhere"
+		],
+		prompt: "Assess whether soft deletion is right for this entity and specify the consequences either way. Start with the requirement it is meant to serve — undo, audit, referential integrity, or accidental-deletion recovery — because each has a better dedicated solution. If we keep it, address the four standard breakages: unique constraints that must now be partial, foreign keys pointing at deleted parents, every query needing the filter and the enforcement that catches omissions, and the erasure obligation where a mark is not a deletion. Recommend the alternative where one fits better, such as an archive table or an event log.",
+		why: "Tying the pattern back to the requirement it serves usually reveals a cleaner mechanism, and the four breakages are the ones that show up months later in production data.",
+		watchOut: "Soft deletion does not satisfy a legal erasure request. If you are subject to one, you need real deletion or irreversible anonymisation regardless of the flag.",
+		related: [
+			"right-to-erasure-design",
+			"data-retention-policy",
+			"temporal-data-modeling",
+			"audit-logging"
+		],
+		tags: [
+			"data",
+			"modelling",
+			"deletion",
+			"privacy"
+		]
+	},
+	{
+		id: "temporal-data-modeling",
+		name: "Temporal Data Modelling",
+		aka: [
+			"bitemporal data",
+			"valid time and transaction time",
+			"as-of queries"
+		],
+		origin: "Richard Snodgrass, temporal database research; Martin Fowler's temporal patterns",
+		domains: ["engineering", "data"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Distinguish when something was true in the world from when the system learned it, so you can reproduce both what happened and what you believed at the time.",
+		useWhen: [
+			"we need to know what the price was on the date of that order",
+			"a correction arrived late and now historic reports have changed",
+			"the auditor asked what we knew at the time and we cannot answer",
+			"someone backdated a change and it silently rewrote history"
+		],
+		prompt: "Model the time dimensions for this data. Separate valid time — the period the fact was true in the real world — from transaction time, when we recorded it, and show why a single timestamp cannot answer both the what-was-true-then and the what-did-we-know-then questions. Design the table structure for the dimensions we actually need, since full bitemporal modelling is heavy and often only one dimension is required. Then specify the query patterns: as-of-a-date lookups, the current view, and reproducing a historic report exactly. Finish with the corrections workflow, since a late correction is precisely the case this modelling exists to handle.",
+		why: "Most schemas conflate the two time dimensions into one updated-at column, which makes historic reports irreproducible after any correction. Separating them is the whole insight.",
+		watchOut: "Bitemporal modelling makes every query harder and every index bigger. Apply it to the few entities where history genuinely matters, not to everything.",
+		related: [
+			"slowly-changing-dimensions",
+			"event-sourcing",
+			"soft-delete-tradeoffs",
+			"audit-logging"
+		],
+		tags: [
+			"data",
+			"modelling",
+			"history",
+			"auditing"
+		]
+	},
+	{
+		id: "slowly-changing-dimensions",
+		name: "Slowly Changing Dimensions",
+		aka: [
+			"SCD type 2",
+			"dimension history",
+			"warehouse history tracking"
+		],
+		origin: "Ralph Kimball, data warehouse toolkit",
+		domains: ["data", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Choose per attribute whether a change overwrites the old value, creates a new versioned row, or is kept alongside it — the choice determines which historic questions you can answer.",
+		useWhen: [
+			"the customer moved region and last year's regional report changed",
+			"we overwrote the sales rep on the account and lost attribution history",
+			"reports are inconsistent depending on when they were run",
+			"someone asked for revenue by the territory as it was at the time"
+		],
+		prompt: "Decide the history treatment per attribute in this dimension rather than for the table as a whole. For each, ask whether historical facts should be attributed to the old value or the new — that business question is the entire decision — and assign the appropriate type: overwrite where the old value is simply wrong, versioned rows where history must be preserved, or a parallel current-and-original pair where both views are needed. Then specify the surrogate key and how facts reference the correct version, the effective date columns, and how a late-arriving change is applied. Finish with the queries each choice makes possible or impossible.",
+		why: "Framing it as which value should own the historic fact converts a modelling debate into a business question with a definite answer, and it is decided per attribute rather than per table.",
+		watchOut: "Versioning every attribute inflates the dimension enormously and slows every join. Restrict it to attributes that reporting actually slices by.",
+		related: [
+			"dimensional-modeling",
+			"temporal-data-modeling",
+			"normalization-tradeoffs",
+			"data-lineage"
+		],
+		tags: [
+			"data",
+			"warehouse",
+			"history",
+			"modelling"
+		]
+	},
+	{
+		id: "dimensional-modeling",
+		name: "Dimensional Modelling",
+		aka: [
+			"star schema",
+			"facts and dimensions",
+			"Kimball modelling"
+		],
+		origin: "Ralph Kimball, The Data Warehouse Toolkit, 1996",
+		domains: ["data", "engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Organise analytic data as measurable events surrounded by the descriptive attributes you filter and group by, at one clearly stated level of detail.",
+		useWhen: [
+			"every analyst writes a different query and gets a different number",
+			"our reporting queries join fifteen normalised tables",
+			"nobody can explain what one row in this table means",
+			"the same metric has three definitions across the business"
+		],
+		prompt: "Design a dimensional model for this analytic area. Start by stating the grain — exactly what one row represents — in a single sentence, because an ambiguous grain is the root of double counting and disagreeing numbers. Then identify the measures that live at that grain and the descriptive attributes used to filter and group. Flag any measure that is not additive across all dimensions, such as a balance or a rate, and say how it must be aggregated instead. Finish with the conformed attributes shared across subject areas so that two reports can be compared, since inconsistent shared dimensions are what make numbers irreconcilable.",
+		why: "Stating the grain in one sentence and flagging non-additive measures are the two steps that prevent the double-counting bugs that make analytic systems untrusted.",
+		watchOut: "This shape suits analytic querying, not transactional writing. Applying it to an operational database produces update anomalies and poor write performance.",
+		related: [
+			"slowly-changing-dimensions",
+			"olap-oltp-separation",
+			"normalization-tradeoffs",
+			"data-contracts"
+		],
+		tags: [
+			"data",
+			"warehouse",
+			"analytics",
+			"modelling"
+		]
+	},
+	{
+		id: "olap-oltp-separation",
+		name: "Analytical and Transactional Separation",
+		aka: [
+			"OLTP versus OLAP",
+			"reporting off the primary",
+			"workload isolation"
+		],
+		origin: "Data warehousing practice; the distinction dates to the 1990s",
+		domains: ["data", "engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Transactional and analytical workloads want opposite storage layouts, indexes and isolation — running both on one system makes each worse.",
+		useWhen: [
+			"the monthly report query locks up the application database",
+			"analysts run heavy queries on production and everyone suffers",
+			"our indexes are tuned for reports and writes have slowed",
+			"someone wants a dashboard on live data and I am nervous"
+		],
+		prompt: "Assess separating these workloads. Characterise each concretely: transactional work is many small indexed reads and writes with strict consistency, analytical work is few queries scanning enormous ranges with tolerance for staleness. Show where they conflict in our system — competing for buffer cache, indexes that serve one and burden the other, long-running queries holding snapshots. Then choose the separation mechanism by required freshness and volume: a read replica, a change-data-capture pipeline into a columnar store, or scheduled extracts. Say what latency each gives and what operational burden each adds, and recommend one for our stated freshness requirement.",
+		why: "Driving the mechanism choice from a stated freshness requirement prevents building a streaming pipeline for a report that is read once a day.",
+		watchOut: "A replica shares the same storage layout and index design, so it relieves contention without fixing the fundamental mismatch. Heavy analytics still need a different engine.",
+		related: [
+			"read-replica-strategy",
+			"columnar-storage",
+			"change-data-capture",
+			"dimensional-modeling"
+		],
+		tags: [
+			"data",
+			"analytics",
+			"architecture",
+			"workloads"
+		]
+	},
+	{
+		id: "columnar-storage",
+		name: "Columnar Storage",
+		aka: [
+			"column-oriented format",
+			"Parquet",
+			"vectorised execution"
+		],
+		origin: "C-Store and MonetDB research; mainstream via Parquet and cloud warehouses",
+		domains: ["data", "engineering"],
+		intents: ["explain", "decide"],
+		oneLiner: "Storing values by column rather than by row lets a query read only the columns it needs and compress each one aggressively, which is why analytic engines are fast.",
+		useWhen: [
+			"the analytic query reads two columns out of two hundred and takes minutes",
+			"our data lake files are enormous and slow to scan",
+			"the same data is much faster in the warehouse than in our database",
+			"I do not know which file format to write these exports in"
+		],
+		prompt: "Explain the storage layout choice for this data and recommend one. Cover why reading a few columns from a columnar file touches a fraction of the bytes, and why per-column compression and encoding work so much better when values of the same type sit together. Then apply it to our access patterns: which queries benefit, and which — point lookups and row-at-a-time updates — get worse. Cover the practical file-layout decisions that determine whether it actually performs: row group sizing, sort order within files, partitioning by the common filter column, and column statistics that let a reader skip entire blocks.",
+		why: "The performance of these formats comes mostly from file layout choices — sorting and partitioning for predicate skipping — rather than from the format itself, which is where teams leave most of the gain unclaimed.",
+		watchOut: "Columnar formats are poor for frequent small updates and for retrieving whole rows. Mixed workloads usually need both representations.",
+		related: [
+			"olap-oltp-separation",
+			"compression-tradeoffs",
+			"partitioning-strategy",
+			"batch-vs-stream"
+		],
+		tags: [
+			"data",
+			"storage",
+			"analytics",
+			"formats"
+		]
+	},
+	{
+		id: "change-data-capture",
+		name: "Change Data Capture",
+		aka: [
+			"CDC",
+			"log-based replication",
+			"database streaming"
+		],
+		origin: "Database replication practice; popularised by Debezium and Kafka Connect",
+		domains: ["data", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Read the database transaction log to emit every insert, update and delete as a stream, so downstream systems stay current without polling or dual writes.",
+		useWhen: [
+			"we poll the database every minute and it is expensive and still late",
+			"the search index drifts out of sync with the database",
+			"we want events from a legacy application we cannot modify",
+			"the dual write to the queue sometimes fails and data diverges"
+		],
+		prompt: "Design a change stream from this database. Cover the parts that determine whether it works in practice: the initial snapshot and how it hands over to streaming without gaps or duplicates, delete handling including whether the log carries the old row values, schema changes flowing through mid-stream, and transaction boundaries if consumers need to see related changes together. Then address the operational risks specifically — the log retention window that bounds how long a consumer may be down, and the load the connector places on the primary. Finish with what downstream consumers must handle: at-least-once delivery and events describing rows rather than business intent.",
+		why: "Row-level change events lack business intent, and the log retention window is a silent time bomb for any consumer that goes down. Both shape the consumer design and are usually discovered late.",
+		watchOut: "A change stream couples consumers to your internal schema. Every column rename becomes a downstream breaking change unless you transform to a stable contract in between.",
+		related: [
+			"transactional-outbox",
+			"data-contracts",
+			"olap-oltp-separation",
+			"schema-evolution"
+		],
+		tags: [
+			"data",
+			"streaming",
+			"replication",
+			"integration"
+		]
+	},
+	{
+		id: "batch-vs-stream",
+		name: "Batch versus Stream Processing",
+		aka: [
+			"micro-batching",
+			"continuous processing",
+			"freshness requirement"
+		],
+		origin: "Data engineering practice; the lambda and kappa architecture debate",
+		domains: ["data", "engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Choose between periodic bulk processing and continuous processing based on the freshness the business actually needs, not on which is more modern.",
+		useWhen: [
+			"someone wants everything to be real time and I am not sure why",
+			"our nightly job is no longer fast enough",
+			"we built a streaming pipeline and it is much harder to operate",
+			"the dashboard updates hourly and stakeholders keep asking for live"
+		],
+		prompt: "Decide the processing model for this pipeline. Establish the freshness requirement by asking what decision is made from this data and how quickly acting on it changes the outcome — that usually reveals a requirement measured in hours rather than seconds. Then compare batch and streaming honestly on the operational dimensions: reprocessing after a bug, which is trivial in batch and hard in streaming; correctness with late-arriving data; cost at our volume; and the skills needed to run it at three in the morning. If streaming is warranted for part of the pipeline only, say which part and keep the rest batch.",
+		why: "Reprocessing after a logic bug is the operational reality that decides this, and it is almost never in the comparison. Deriving freshness from the decision being made deflates most real-time requests.",
+		watchOut: "Hybrid architectures that maintain the same logic in two engines drift apart. If you build both paths, they need shared code or shared tests.",
+		related: [
+			"stream-windowing",
+			"change-data-capture",
+			"idempotent-pipelines",
+			"precomputation-materialization"
+		],
+		tags: [
+			"data",
+			"pipelines",
+			"streaming",
+			"architecture"
+		]
+	},
+	{
+		id: "stream-windowing",
+		name: "Stream Windowing",
+		aka: [
+			"tumbling and sliding windows",
+			"session windows",
+			"event time processing"
+		],
+		origin: "Dataflow model, Akidau and colleagues, Google, 2015",
+		domains: ["data", "engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Aggregating an unbounded stream requires deciding what a window is, and whether it is bounded by when events happened or when you received them.",
+		useWhen: [
+			"our hourly counts do not match when we recompute them",
+			"events arrive late and land in the wrong bucket",
+			"the mobile app was offline and sent yesterday's events today",
+			"the same aggregation gives different answers on each run"
+		],
+		prompt: "Design the windowing for this aggregation. Choose event time or processing time explicitly and state the consequence — processing time is simple and gives irreproducible results, event time is reproducible and requires handling late arrivals. Then pick the window type from the business question: fixed intervals, overlapping windows for moving averages, or activity-bounded sessions with a gap parameter. Specify how long a window stays open for late data, what happens to data arriving after it closes, and whether results are emitted once when complete or updated as more arrives. Finish with the state size implied and how it is bounded.",
+		why: "The event-time versus processing-time choice determines whether recomputation reproduces the original numbers, and that reproducibility question is what makes the pipeline trustworthy.",
+		watchOut: "Long allowed lateness means keeping window state for that entire period, which can dominate memory. The correctness and cost knobs are the same knob.",
+		related: [
+			"late-data-watermarks",
+			"batch-vs-stream",
+			"idempotent-pipelines",
+			"logical-clocks"
+		],
+		tags: [
+			"data",
+			"streaming",
+			"aggregation",
+			"time"
+		]
+	},
+	{
+		id: "late-data-watermarks",
+		name: "Watermarks and Late Data",
+		aka: [
+			"completeness estimation",
+			"allowed lateness",
+			"out-of-order events"
+		],
+		origin: "Google Dataflow model; implemented in Beam and Flink",
+		domains: ["data", "engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "A watermark is the system's estimate that no more events older than a given time will arrive — a guess that trades result latency against completeness.",
+		useWhen: [
+			"yesterday's totals changed after we published them",
+			"we cannot tell whether a low count means low activity or missing data",
+			"one slow producer holds up every aggregation",
+			"events from one region arrive minutes behind the rest"
+		],
+		prompt: "Design completeness handling for this pipeline. Measure the actual distribution of the delay between event time and arrival time per source, since the tail of that distribution is what the lateness setting must accommodate — and one lagging source will otherwise hold back everything. Then set the trade explicitly: how long we wait before emitting a result, and what happens to data that arrives after that. Choose between discarding it, emitting a correction, or accumulating and restating, and say what each means for consumers who already saw the earlier number. Finish with the metric that tells us how much data we are dropping as late.",
+		why: "Measuring the real arrival delay distribution per source is what turns lateness settings from guesses into decisions, and the dropped-as-late metric is the safety net nobody builds.",
+		watchOut: "A single stalled partition can freeze the watermark and stall every downstream aggregation. That failure looks like nothing happening rather than an error.",
+		related: [
+			"stream-windowing",
+			"batch-vs-stream",
+			"data-quality-checks",
+			"message-ordering-guarantees"
+		],
+		tags: [
+			"data",
+			"streaming",
+			"completeness",
+			"correctness"
+		]
+	},
+	{
+		id: "data-contracts",
+		name: "Data Contracts",
+		aka: ["producer-consumer data agreement", "schema ownership"],
+		origin: "Data engineering practice, circa 2022; Chad Sanderson and others",
+		domains: ["data", "engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Make the interface between a data producer and its consumers explicit and owned, so an upstream refactor stops silently breaking analytics.",
+		useWhen: [
+			"a backend team renamed a column and every dashboard broke",
+			"analytics depends on tables nobody knows are being consumed",
+			"we discover schema changes when the pipeline fails at 4am",
+			"nobody owns the data quality of this table"
+		],
+		prompt: "Define a contract for this data interface. Specify what is guaranteed beyond field names and types: semantic definitions in business terms, nullability, value ranges and allowed enumerations, freshness, completeness expectations, and the deprecation notice period. Then specify what is deliberately not guaranteed, which is what keeps the contract affordable to the producer. Cover enforcement — validation at the producer boundary and monitoring at the consumer — and the change process including who must be notified. Finally, name the owner on both sides, since an unowned contract is a document rather than an agreement.",
+		why: "Semantics and freshness, not field types, are where data pipelines break. Requiring explicit non-guarantees is what makes producers willing to sign up.",
+		watchOut: "Contracts on internal tables that were never meant as interfaces just freeze someone's implementation. Publish a deliberate interface instead of promoting an accident.",
+		related: [
+			"schema-evolution",
+			"data-quality-checks",
+			"change-data-capture",
+			"contract-testing"
+		],
+		tags: [
+			"data",
+			"contracts",
+			"ownership",
+			"governance"
+		]
+	},
+	{
+		id: "data-quality-checks",
+		name: "Data Quality Checks",
+		aka: [
+			"pipeline assertions",
+			"data validation tests",
+			"freshness and volume checks"
+		],
+		origin: "Data engineering practice; Great Expectations and dbt tests popularised it",
+		domains: ["data", "engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Assert properties of the data itself — volume, freshness, uniqueness, distribution — because a pipeline that runs successfully on wrong data reports success.",
+		useWhen: [
+			"the job succeeded and the numbers were nonsense",
+			"we found out about the broken feed from a customer three weeks later",
+			"a source silently started sending nulls in a key field",
+			"the row count halved and nothing alerted"
+		],
+		prompt: "Design quality checks for this dataset across four families: freshness (the newest record is not older than expected), volume (row count within a range derived from history rather than a fixed number), schema and constraints (uniqueness, nullability, referential integrity, allowed values), and distribution (a numeric mean or category mix that has not shifted beyond a threshold). For each check, specify whether a failure should stop the pipeline or raise a warning, because blocking on distribution drift will produce false stops. Then name the checks that must run before publishing versus after, and where a failed batch is quarantined so downstream consumers see the last good data rather than bad data.",
+		why: "The block-versus-warn decision per check and the quarantine mechanism are what determine whether these checks help or become an ignored alert stream.",
+		watchOut: "Thresholds set from a quiet period will fire constantly during seasonal peaks. Derive expectations from a window that includes the variation you actually have.",
+		related: [
+			"data-contracts",
+			"reconciliation-jobs",
+			"anomaly-detection-alerting",
+			"data-lineage"
+		],
+		tags: [
+			"data",
+			"quality",
+			"monitoring",
+			"pipelines"
+		]
+	},
+	{
+		id: "data-lineage",
+		name: "Data Lineage",
+		aka: [
+			"provenance tracking",
+			"impact analysis",
+			"downstream dependency graph"
+		],
+		origin: "Data governance practice; column-level lineage tooling since the 2010s",
+		domains: ["data", "engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Track where each dataset and column comes from and who consumes it, so you can answer both what broke this number and what will break if I change this.",
+		useWhen: [
+			"this figure looks wrong and I cannot trace where it came from",
+			"we want to delete an unused table and cannot prove it is unused",
+			"a source outage happened and we do not know which reports are affected",
+			"nobody can say which dashboards depend on this column"
+		],
+		prompt: "Establish lineage for this data platform and state what each level of granularity buys. Table-level lineage answers impact questions coarsely; column-level answers them precisely and is what lets you retire a field safely. Then define the two workflows it must serve: downstream impact analysis before a change, and upstream root cause tracing when a number is wrong. Specify how lineage is captured — parsed from queries, emitted by the orchestrator, or declared — and how staleness is prevented, since manually maintained lineage is wrong within a month. Finish with the consumption side, including dashboards and exports, which is usually the missing half of the graph.",
+		why: "Lineage that stops at the warehouse boundary cannot answer the question people actually ask, which is about reports and consumers. Naming that gap is what makes the graph useful.",
+		watchOut: "Lineage shows structural dependency, not semantic dependency. A downstream metric can be broken by a change in meaning that leaves the graph untouched.",
+		related: [
+			"data-contracts",
+			"data-quality-checks",
+			"dimensional-modeling",
+			"right-to-erasure-design"
+		],
+		tags: [
+			"data",
+			"governance",
+			"dependencies",
+			"impact analysis"
+		]
+	},
+	{
+		id: "reconciliation-jobs",
+		name: "Reconciliation Jobs",
+		aka: [
+			"drift detection",
+			"consistency sweep",
+			"audit and repair"
+		],
+		origin: "Financial systems practice; standard in eventually consistent architectures",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Periodically compare two systems that should agree, report the differences, and repair them — because in any distributed system they will diverge.",
+		useWhen: [
+			"the search index and the database disagree and we only find out from users",
+			"our totals do not match the payment provider's",
+			"a failed event left two systems inconsistent and nobody noticed",
+			"we fix these discrepancies manually every month"
+		],
+		prompt: "Design a reconciliation process between these two systems. Define the comparison: which is authoritative for each field, the key used to match records, and the tolerance for legitimate timing differences so a record in flight is not reported as a discrepancy. Then split detection from repair, and be conservative about automatic repair — specify which discrepancy classes may be fixed automatically and which must be reviewed, since an automatic repair running the wrong direction destroys data at scale. Finish with the metric that matters: the count and age of unresolved discrepancies, alerting on trend rather than on any single one.",
+		why: "Separating detection from repair, and alerting on the trend in discrepancy count, is what turns reconciliation into an early warning system rather than a monthly chore.",
+		watchOut: "A reconciliation job that always finds a few discrepancies trains everyone to ignore it. Drive the steady-state count to zero or the signal is worthless.",
+		related: [
+			"partial-failure-handling",
+			"data-quality-checks",
+			"idempotent-pipelines",
+			"eventual-consistency"
+		],
+		tags: [
+			"data",
+			"consistency",
+			"operations",
+			"repair"
+		]
+	},
+	{
+		id: "idempotent-pipelines",
+		name: "Idempotent Pipelines",
+		aka: [
+			"rerunnable jobs",
+			"overwrite semantics",
+			"deterministic reprocessing"
+		],
+		origin: "Data engineering practice; central to Airflow-style orchestration",
+		domains: ["data", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "A job should produce the same result whether it runs once or five times, so recovery is simply re-running rather than a bespoke repair.",
+		useWhen: [
+			"rerunning the failed job double counted everything",
+			"we have to write manual cleanup scripts every time a pipeline fails",
+			"backfilling a week means being very careful about what already ran",
+			"the retry created duplicate rows"
+		],
+		prompt: "Make this pipeline safe to re-run. The key move is replacing append semantics with replace-partition semantics: each run should overwrite a deterministic slice of output keyed by the period it processes, rather than adding to whatever is there. Show that structure for our job. Then remove the sources of non-determinism that break it — reading the current time inside the job, depending on late-arriving data without a defined cut-off, and generating random identifiers rather than deriving them from input. Finish with the parameterisation that lets us reprocess an arbitrary historic period with one command, since that capability is the point of the whole exercise.",
+		why: "Replace-by-partition is the concrete structural change that makes re-running safe, and non-determinism from reading the clock inside the job is the usual thing that defeats it.",
+		watchOut: "Idempotence at the job level does not help if downstream consumers already read the earlier output. Reprocessing must account for what has already been published.",
+		related: [
+			"backfill-strategy",
+			"batch-vs-stream",
+			"idempotency-keys",
+			"reconciliation-jobs"
+		],
+		tags: [
+			"data",
+			"pipelines",
+			"recovery",
+			"determinism"
+		]
+	},
+	{
+		id: "bulk-load-strategy",
+		name: "Bulk Load Strategy",
+		aka: [
+			"mass insert",
+			"ETL loading",
+			"index rebuild during load"
+		],
+		origin: "Database administration practice",
+		domains: ["data", "engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Loading large volumes row by row through the normal write path is orders of magnitude slower than the bulk mechanisms every database provides.",
+		useWhen: [
+			"importing the customer file takes eleven hours",
+			"the nightly load is now overlapping with the morning traffic",
+			"we insert a million rows one statement at a time",
+			"the load competes with live traffic and slows everything down"
+		],
+		prompt: "Design a fast, safe bulk load for this data. Compare the mechanisms available to us — native bulk copy, multi-row inserts, staging table then merge, and partition swap — on speed, on locking impact against live traffic, and on whether they are transactional. Then cover the surrounding decisions that dominate total time: dropping and rebuilding secondary indexes versus maintaining them during load, constraint checking, and batch sizing against transaction log growth. Specify the atomicity requirement: whether readers may see a partially loaded state, and if not, use a staging table with an atomic swap. Finish with resumability after a mid-load failure.",
+		why: "Index maintenance and transaction log growth usually dominate load time, and the atomic swap is what lets a large load happen without exposing partial data to readers.",
+		watchOut: "Bulk paths often bypass triggers, constraints and change capture. Anything depending on those will silently miss the loaded rows.",
+		related: [
+			"backfill-strategy",
+			"index-selection",
+			"batching-amortization",
+			"change-data-capture"
+		],
+		tags: [
+			"data",
+			"databases",
+			"performance",
+			"etl"
+		]
+	},
+	{
+		id: "backup-restore-testing",
+		name: "Restore Testing",
+		aka: [
+			"backup verification",
+			"recovery drill",
+			"untested backups"
+		],
+		origin: "Operational practice; the maxim that you do not have backups until you have restored one",
+		domains: ["engineering", "data"],
+		intents: ["critique", "plan"],
+		oneLiner: "A backup is a hypothesis until you restore it — test the restore path, its duration, and whether the restored data is actually usable.",
+		useWhen: [
+			"we have backups but have never restored one",
+			"nobody knows how long a full restore would take",
+			"the backup job reports success and I do not know what it contains",
+			"we discovered the backup was missing a critical table during an incident"
+		],
+		prompt: "Design restore verification for our data. Specify the drill: restore to an isolated environment on a schedule, and verify not just that it completed but that the data is correct — row counts against source, referential integrity, a sample of records checked in detail, and the application starting successfully against it. Record the wall-clock duration, since that is the recovery time nobody knows until they need it. Then check coverage explicitly: every database, but also object storage, secrets, configuration, message queues and anything created by hand that is not in version control. Finish with the scenarios beyond total loss — restoring a single table, and recovering from a corruption discovered a week later.",
+		why: "The single-table restore and the week-old-corruption case are the ones that actually happen, and a backup strategy designed only for total loss handles neither well.",
+		watchOut: "Backups that share credentials, account or region with production can be destroyed by the same event or actor. Isolation is part of the design, not a refinement.",
+		related: [
+			"point-in-time-recovery",
+			"data-retention-policy",
+			"single-point-of-failure-audit",
+			"game-day-exercise"
+		],
+		tags: [
+			"data",
+			"backups",
+			"recovery",
+			"reliability"
+		]
+	},
+	{
+		id: "point-in-time-recovery",
+		name: "Point-in-Time Recovery",
+		aka: [
+			"PITR",
+			"transaction log replay",
+			"recovery window"
+		],
+		origin: "Database administration practice",
+		domains: ["engineering", "data"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Combine a base backup with continuous transaction logs so you can restore to any moment — specifically the moment before the bad migration ran.",
+		useWhen: [
+			"a bad script deleted rows and the nightly backup is twelve hours old",
+			"we need to recover to just before the deploy",
+			"someone dropped a table at 2pm and the backup is from midnight",
+			"we cannot afford to lose a day of transactions"
+		],
+		prompt: "Design recovery to an arbitrary moment for this database. State the achievable data-loss window from our log shipping interval, and how far back recovery is possible given retention — those two numbers are the actual guarantee, so verify them rather than assuming the defaults. Then walk the procedure for the common case, which is not total loss but a logical error: identifying the exact moment before the damage, restoring aside rather than in place, extracting only the affected records, and merging them back without discarding legitimate changes made since. Finish with how long the whole procedure takes and what is unavailable during it.",
+		why: "Restoring aside and merging is the procedure that fits real incidents, where good data has accumulated since the damage. Restoring in place would discard it, and that is the mistake made under pressure.",
+		watchOut: "Damage discovered late may already be replicated into every downstream system and analytic copy. The recovery plan has to include those, not just the primary.",
+		related: [
+			"backup-restore-testing",
+			"data-retention-policy",
+			"reconciliation-jobs",
+			"incident-command"
+		],
+		tags: [
+			"data",
+			"recovery",
+			"backups",
+			"operations"
+		]
+	},
+	{
+		id: "data-retention-policy",
+		name: "Data Retention Policy",
+		aka: [
+			"deletion schedule",
+			"storage lifecycle",
+			"keep-forever problem"
+		],
+		origin: "Records management and privacy compliance practice",
+		domains: ["data", "security"],
+		intents: ["decide", "plan"],
+		oneLiner: "Decide per data category how long it is kept and what happens at the end, because storing everything forever is both a cost line and a liability.",
+		useWhen: [
+			"we keep every log and every record forever because storage is cheap",
+			"the privacy assessment asked how long we retain this and nobody knew",
+			"our oldest data is from a product we discontinued",
+			"a breach would expose ten years of records we did not need"
+		],
+		prompt: "Write a retention policy for our data categories. For each, state the retention period and the justification — legal requirement, operational need, or analytic value — with the specific rule cited rather than a guess, and be clear that a legal minimum is not a maximum. Then define the end-of-life action per category: hard deletion, anonymisation, or archival to cold storage, and where derived copies live that must be handled too, since retention enforced only on the primary store is not enforced. Finish with the enforcement mechanism, its verification, and how a legal hold suspends deletion for specific records without disabling the whole process.",
+		why: "Derived copies and backups are where retention policies fail, and the legal hold exception is the one that has to be designed in rather than bolted on.",
+		watchOut: "Deletion from a system with backups is not complete until the backups age out. State that window explicitly rather than claiming immediate erasure.",
+		related: [
+			"right-to-erasure-design",
+			"data-classification",
+			"data-minimization",
+			"audit-logging"
+		],
+		tags: [
+			"data",
+			"privacy",
+			"compliance",
+			"storage"
+		]
+	},
+	{
+		id: "data-classification",
+		name: "Data Classification",
+		aka: [
+			"sensitivity tiers",
+			"PII inventory",
+			"data tagging"
+		],
+		origin: "Information security practice; required by most privacy regimes",
+		domains: ["security", "data"],
+		intents: ["structure", "plan"],
+		oneLiner: "Label data by sensitivity so that access rules, encryption, retention and logging follow automatically from the label rather than from case-by-case judgement.",
+		useWhen: [
+			"we do not actually know where personal data lives in our systems",
+			"every access decision is argued individually",
+			"the privacy review keeps discovering new stores of sensitive data",
+			"a developer copied production data into a test environment"
+		],
+		prompt: "Build a classification scheme for our data. Keep the tiers few and behaviourally distinct — each tier must imply different concrete controls for encryption, access approval, logging, retention, and whether it may exist outside production, or the tier is not earning its place. Then apply it at the field level for our main stores, flagging the categories people miss: free-text fields that will contain personal data regardless of intent, identifiers that are personal in combination, and derived or inferred attributes. Finish with how classification is kept current as schemas change, and how it is enforced in the pipeline that copies data to lower environments.",
+		why: "Tiers that do not imply different controls are decoration. Anchoring each tier to specific mechanical consequences is what makes classification change behaviour.",
+		watchOut: "Free-text fields defeat field-level classification because users paste anything into them. Treat them as sensitive by default rather than by inspection.",
+		related: [
+			"data-retention-policy",
+			"anonymization-techniques",
+			"data-minimization",
+			"row-level-security"
+		],
+		tags: [
+			"security",
+			"privacy",
+			"data governance",
+			"classification"
+		]
+	},
+	{
+		id: "anonymization-techniques",
+		name: "Anonymisation and Pseudonymisation",
+		aka: [
+			"de-identification",
+			"k-anonymity",
+			"masking test data"
+		],
+		origin: "Privacy engineering; Sweeney's k-anonymity work, 2002",
+		domains: ["security", "data"],
+		intents: ["decide", "structure"],
+		oneLiner: "Removing names does not anonymise data — re-identification usually comes from combinations of quasi-identifiers, and reversible pseudonymisation is not anonymisation at all.",
+		useWhen: [
+			"we want to use production data in testing safely",
+			"we removed the names so it is anonymous now",
+			"the analytics team wants access to customer records",
+			"someone asked whether this dataset still counts as personal data"
+		],
+		prompt: "Assess this dataset for re-identification risk and design the treatment. Identify direct identifiers and then the quasi-identifiers whose combination narrows to an individual — postcode, birth date, job title, timestamps of activity, device characteristics — since that combination is how re-identification actually happens. Distinguish pseudonymisation, which is reversible and remains personal data, from anonymisation, which must be irreversible. Then choose techniques per field: suppression, generalisation, aggregation with a minimum group size, or noise. Finish by testing the result: pick a plausible attacker with an auxiliary dataset and show whether they could single someone out.",
+		why: "Testing against a specific attacker with auxiliary data is what exposes weak de-identification, and the reversibility distinction determines the entire legal status of the result.",
+		watchOut: "Masked test data that preserves referential structure and rare values can still identify people. High-cardinality outliers are the ones that leak.",
+		related: [
+			"data-classification",
+			"data-minimization",
+			"right-to-erasure-design",
+			"synthetic-test-data"
+		],
+		tags: [
+			"security",
+			"privacy",
+			"data",
+			"compliance"
+		]
+	},
+	{
+		id: "right-to-erasure-design",
+		name: "Designing for Erasure",
+		aka: [
+			"right to be forgotten",
+			"deletion propagation",
+			"GDPR deletion"
+		],
+		origin: "Privacy regulation; GDPR Article 17 and equivalents",
+		domains: ["security", "data"],
+		intents: ["plan", "structure"],
+		oneLiner: "Being able to delete one person's data everywhere is an architectural property that has to be designed in, not a query you write when the first request arrives.",
+		useWhen: [
+			"we got a deletion request and cannot find all the copies",
+			"personal data is in logs, backups, analytics and three vendors",
+			"deleting the row breaks foreign keys and historic reports",
+			"we say we delete data within thirty days and I am not sure we do"
+		],
+		prompt: "Design the erasure capability for this system. Inventory every location personal data reaches — primary stores, replicas, caches, search indexes, logs, analytic warehouses, backups, and third-party processors — and give the deletion or expiry mechanism for each, noting where the honest answer is that data ages out rather than being deleted immediately. Then resolve the conflicts: records that must be retained for legal or financial reasons, and aggregates that would break. Anonymisation in place is usually the answer for those, so specify what is stripped and what remains. Finish with the tracking that proves each request was completed within the deadline.",
+		why: "Enumerating every location and admitting where deletion is really expiry is what makes the compliance claim truthful, and the retain-versus-erase conflict needs deciding before a request arrives.",
+		watchOut: "Deleting a user record while leaving their identifier in event logs and analytics does not satisfy the obligation. The identifier itself is personal data.",
+		related: [
+			"data-retention-policy",
+			"anonymization-techniques",
+			"data-lineage",
+			"data-minimization"
+		],
+		tags: [
+			"privacy",
+			"compliance",
+			"data",
+			"deletion"
+		]
+	},
+	{
+		id: "multi-tenancy-data-isolation",
+		name: "Tenant Data Isolation",
+		aka: [
+			"shared versus separate database",
+			"tenant boundary",
+			"silo versus pool"
+		],
+		origin: "Software-as-a-service architecture practice",
+		domains: ["engineering", "security"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose between a shared schema with a tenant column, a schema per tenant, and a database per tenant, trading isolation strength against operational cost.",
+		useWhen: [
+			"one customer saw another customer's data",
+			"an enterprise prospect is demanding their data be physically separate",
+			"a large tenant is degrading performance for everyone",
+			"migrating one tenant means touching a shared table with a billion rows"
+		],
+		prompt: "Choose an isolation model for this platform. Compare the three levels on six dimensions: the strength of the guarantee against a coding error leaking data, per-tenant restore and export, noisy neighbour containment, schema migration cost as tenant count grows, per-tenant cost, and what enterprise customers will accept contractually. Recommend one, and if it is a shared schema, specify the enforcement that does not depend on developers remembering the filter — row-level security in the database or a mandatory query layer — since a forgotten predicate is the leak that actually happens. Finish with how a tenant could later be promoted to stronger isolation.",
+		why: "The forgotten tenant predicate is the realistic failure mode, so pushing enforcement below the application is the decision that matters more than the storage layout.",
+		watchOut: "Database-per-tenant looks safest and makes schema migrations and cross-tenant reporting genuinely hard at scale. That cost arrives later than the decision.",
+		related: [
+			"row-level-security",
+			"partitioning-strategy",
+			"bulkhead-isolation",
+			"cell-based-architecture"
+		],
+		tags: [
+			"data",
+			"multi-tenancy",
+			"security",
+			"architecture"
+		]
+	},
+	{
+		id: "row-level-security",
+		name: "Row-Level Security",
+		aka: ["policy-based data access", "database-enforced authorisation"],
+		origin: "Database security features; Oracle VPD, PostgreSQL RLS",
+		domains: ["security", "data"],
+		intents: ["structure", "critique"],
+		oneLiner: "Enforce which rows a caller may see in the database itself, so an application bug or an ad hoc query cannot bypass the rule.",
+		useWhen: [
+			"every query has to remember to filter by tenant and one did not",
+			"a support tool queried the database directly and saw everything",
+			"authorisation logic is duplicated across services",
+			"we cannot prove that no code path can read another customer's rows"
+		],
+		prompt: "Design database-enforced row filtering for this schema. Specify how caller identity reaches the database given we use connection pooling, since pooled connections share a session and that is the detail that makes or breaks this. Write the policies for read and for write separately — a policy that filters reads but permits writing a row into another tenant is a common gap. Then address the operational consequences: how policies interact with the query planner and indexes, how administrative and migration access is handled, and how a bypass for legitimate cross-tenant reporting is granted and audited. Finish with the tests that prove a leak is impossible rather than unlikely.",
+		why: "Identity propagation through a connection pool and the write-side policy are the two implementation details that determine whether the control is real, and both are easy to get wrong invisibly.",
+		watchOut: "Policies that reference other tables can make the planner ignore indexes and turn fast queries slow. Measure before rolling it out broadly.",
+		related: [
+			"multi-tenancy-data-isolation",
+			"least-privilege",
+			"audit-logging",
+			"trust-boundary"
+		],
+		tags: [
+			"security",
+			"databases",
+			"authorisation",
+			"multi-tenancy"
+		]
+	},
+	{
+		id: "database-per-service",
+		name: "Database per Service",
+		aka: [
+			"private data ownership",
+			"no shared database",
+			"data autonomy"
+		],
+		origin: "Microservices practice; Chris Richardson's pattern catalogue",
+		domains: ["engineering", "data"],
+		intents: ["decide", "structure"],
+		oneLiner: "Each service owns its data privately and others must go through its interface, which buys independent evolution and costs you joins and transactions.",
+		useWhen: [
+			"three services write to the same table and nobody can change it",
+			"a schema change requires coordinating four teams",
+			"we split the services but they all still share one database",
+			"one service's query load is hurting another's writes"
+		],
+		prompt: "Assess private data ownership for these services. Identify the tables currently written by more than one service, since those are the boundary violations that block independent deployment, and propose which service should own each. Then confront what breaks: queries that currently join across the proposed boundary, and transactions that span it. For each, give the replacement — an interface call, a replicated read model kept current by events, or a redesign that moves the data to where it is used — with the consistency consequence stated. Finish with the migration sequence and how joins are handled in the intermediate state.",
+		why: "Identifying multi-writer tables gives an objective boundary map, and forcing a replacement for every cross-boundary join is where the real cost of the pattern becomes visible.",
+		watchOut: "Splitting the database without splitting ownership produces distributed coupling with none of the benefit. The organisational change is the harder half.",
+		related: [
+			"bounded-context",
+			"polyglot-persistence",
+			"saga-pattern",
+			"change-data-capture"
+		],
+		tags: [
+			"data",
+			"microservices",
+			"ownership",
+			"architecture"
+		]
+	},
+	{
+		id: "polyglot-persistence",
+		name: "Polyglot Persistence",
+		aka: ["right tool for the data", "multiple database types"],
+		origin: "Martin Fowler and Pramod Sadalage, NoSQL Distilled, 2012",
+		domains: ["engineering", "data"],
+		intents: ["decide", "critique"],
+		oneLiner: "Use different storage technologies for different access patterns — and count the operational cost of each additional one honestly before adopting it.",
+		useWhen: [
+			"someone wants to add a graph database for one feature",
+			"we are running six different data stores and cannot staff them",
+			"relational queries for this hierarchical data are horrible",
+			"full-text search on the primary database is slow and crude"
+		],
+		prompt: "Evaluate whether this workload justifies a different storage technology. First test whether our existing store can do it acceptably — modern relational databases handle documents, full text, queues and time series adequately, and the honest comparison is against a tuned version of what we already run, not the naive one. If a new store is still warranted, price the full cost: operational expertise, backup and restore, monitoring, security review, the synchronisation pipeline keeping it current, and the consistency gap that creates. Then state the exit plan, since data stores adopted for one feature are hard to remove later.",
+		why: "Comparing against a tuned incumbent rather than the naive implementation eliminates most proposals, and pricing the synchronisation pipeline exposes the real ongoing cost.",
+		watchOut: "Each additional store is another thing to secure, back up and be woken by. The marginal operational cost usually exceeds the estimate by a wide margin.",
+		related: [
+			"database-per-service",
+			"full-text-search-design",
+			"reconciliation-jobs",
+			"olap-oltp-separation"
+		],
+		tags: [
+			"data",
+			"architecture",
+			"databases",
+			"trade-offs"
+		]
+	},
+	{
+		id: "full-text-search-design",
+		name: "Full-Text Search Design",
+		aka: [
+			"relevance tuning",
+			"inverted index",
+			"analyzers and tokenisation"
+		],
+		origin: "Information retrieval practice; Lucene-family search engines",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Search quality comes from how text is analysed and how relevance is scored, not from the engine — and the failures are usually in tokenisation.",
+		useWhen: [
+			"searching for the exact product name does not return it",
+			"results are technically matching and obviously useless to users",
+			"search works in English and badly in every other language",
+			"nobody can explain why this result ranks first"
+		],
+		prompt: "Design search for this content. Start with analysis, since that is where most failures live: tokenisation for our content including identifiers and hyphenated terms, case and accent folding, stemming, stopwords, and synonyms — and show how a specific failing query is transformed at index time and at query time, because a mismatch between the two is the classic cause of a document that exists but cannot be found. Then design relevance: which fields are boosted, how recency and popularity are combined with text score, and how exact matches beat fuzzy ones. Finish with evaluation — a judged query set and a metric — so tuning is measurable rather than anecdotal.",
+		why: "Index-time versus query-time analysis mismatch explains most missing results, and without a judged query set every relevance change is an unfalsifiable opinion.",
+		watchOut: "Relevance tuning to satisfy one loud complaint usually degrades the aggregate. Measure against the judged set before and after every change.",
+		related: [
+			"polyglot-persistence",
+			"reconciliation-jobs",
+			"cache-invalidation-strategy",
+			"ranking-evaluation"
+		],
+		tags: [
+			"data",
+			"search",
+			"relevance",
+			"information retrieval"
+		]
+	},
+	{
+		id: "sql-injection-prevention",
+		name: "Parameterised Queries",
+		aka: [
+			"SQL injection prevention",
+			"prepared statements",
+			"query binding"
+		],
+		origin: "Application security practice; OWASP guidance",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Separate the query structure from the values so user input can never be parsed as part of the statement — escaping is a workaround, binding is the fix.",
+		useWhen: [
+			"we build queries by concatenating strings with user input",
+			"a penetration test found injection in a search filter",
+			"we escape quotes and I am told that is not sufficient",
+			"the dynamic sort parameter goes straight into the query"
+		],
+		prompt: "Audit database access here for injection. Trace every query construction and classify it: fully parameterised, escaped by hand, or concatenated. Then address the case that defeats binding, which is the one worth your attention: identifiers such as table and column names, sort fields and directions cannot be bound as parameters, so those must be validated against an allowlist of permitted values rather than escaped — find every dynamic identifier in our code and give the allowlist. Then check the surrounding controls: the database account's privileges, stored procedures that build dynamic statements internally, and any query built inside a reporting or admin tool. Finish with the detection we could add.",
+		why: "Dynamic identifiers are where parameterisation cannot help and where injection persists after the obvious cases are fixed, so the allowlist requirement is the finding that matters.",
+		watchOut: "Object-relational mappers protect the values they bind and not the raw fragments people pass into them. Any raw expression is back to the concatenation problem.",
+		related: [
+			"input-validation-boundary",
+			"least-privilege",
+			"row-level-security",
+			"xss-prevention"
+		],
+		tags: [
+			"security",
+			"databases",
+			"injection",
+			"validation"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/apis.ts
+var apis = [
+	{
+		id: "api-first-design",
+		name: "API-First Design",
+		aka: ["contract before code", "design-first API"],
+		origin: "Web API practice; formalised through OpenAPI-driven workflows",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Agree the interface with its consumers before building the implementation, so the shape serves callers rather than exposing whatever the code happened to produce.",
+		useWhen: [
+			"the endpoint mirrors our database tables and clients hate it",
+			"the client team is blocked waiting for us to finish the backend",
+			"we shipped it and immediately had to redesign for the second consumer",
+			"every client writes the same glue code to make our responses usable"
+		],
+		prompt: "Design this interface from the consumer inward. Start by writing the two or three call sequences a client will actually perform end to end, then derive the operations from those, since resources derived from our internal model are what force clients into glue code. Produce the interface definition first and identify what a client can build against it immediately with a mock. Then check it against the questions that reveal a leaky design: does the client need to know our internal states, must it make several calls to do one thing, and does anything in the response exist only because it was cheap for us to include.",
+		why: "Deriving operations from real client sequences rather than from the data model is the whole difference, and the mockability check makes the parallel-work benefit concrete.",
+		watchOut: "Designing an interface for consumers who do not exist yet invites speculative generality. Design against real known callers and keep it small.",
+		related: [
+			"openapi-contract-first",
+			"rest-resource-modeling",
+			"api-ergonomics",
+			"backend-for-frontend"
+		],
+		tags: [
+			"api",
+			"design",
+			"contracts",
+			"collaboration"
+		]
+	},
+	{
+		id: "openapi-contract-first",
+		name: "Contract-First with OpenAPI",
+		aka: [
+			"spec-driven development",
+			"schema-first API",
+			"generated stubs"
+		],
+		origin: "Swagger, 2011; now the OpenAPI Specification",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Write the machine-readable interface definition first and generate clients, validation and documentation from it, so they cannot drift from each other.",
+		useWhen: [
+			"the documentation says one thing and the API does another",
+			"each client team hand-writes their own request models",
+			"we cannot tell whether a change breaks anyone",
+			"the examples in the docs no longer work"
+		],
+		prompt: "Set up a definition-driven workflow for this API. Decide what is generated from the definition — server request validation, client libraries, documentation, mock servers — and, more importantly, what enforces that the running service matches it, since a definition nobody validates against is documentation with extra steps. Specify that check in the pipeline. Then handle the awkward parts honestly: expressing conditional requirements and polymorphic responses, keeping examples accurate, and whether the definition is hand-written or generated from code, with the trade-off in each direction stated for our situation.",
+		why: "The runtime conformance check is what stops drift, and it is the piece almost always missing from spec-driven setups that then rot within a quarter.",
+		watchOut: "Generating the definition from code means it always matches and always reflects implementation accidents. Generating code from the definition means the definition can lie until you verify it.",
+		related: [
+			"api-first-design",
+			"contract-testing",
+			"api-documentation-quality",
+			"schema-evolution"
+		],
+		tags: [
+			"api",
+			"contracts",
+			"tooling",
+			"documentation"
+		]
+	},
+	{
+		id: "rest-resource-modeling",
+		name: "Resource Modelling",
+		aka: [
+			"REST resource design",
+			"nouns not verbs",
+			"URI design"
+		],
+		origin: "Roy Fielding's dissertation, 2000; refined in web API practice",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Model the interface as a set of addressable things with uniform operations, and know when an action genuinely does not fit that shape.",
+		useWhen: [
+			"our endpoints are all verbs like doThing and processOrder",
+			"this operation is not a create or an update and I do not know how to express it",
+			"the resource hierarchy is five levels deep and unusable",
+			"the same data is available at four different paths"
+		],
+		prompt: "Model these operations as resources. Identify the nouns, their identity, and their relationships, then map each required operation onto the uniform methods. For the ones that do not fit — approve, cancel, retry, send — do not contort them: choose deliberately between modelling the action as a resource in its own right, such as a cancellation record, and exposing an explicit action endpoint, and give the rule for when each applies. Then check the hierarchy: nesting beyond one level usually signals a relationship better expressed as a filter, so flag those. Finish with the canonical path for each resource so one thing has one address.",
+		why: "Action-shaped operations are where resource modelling breaks down, and treating the action as a resource is the move that keeps the design honest without pretending everything is a noun.",
+		watchOut: "Strict resource purity for an interface that is really a set of procedures produces awkward names and unhappy clients. The shape should follow the domain.",
+		related: [
+			"api-naming-conventions",
+			"http-status-semantics",
+			"api-first-design",
+			"hypermedia-controls"
+		],
+		tags: [
+			"api",
+			"rest",
+			"design",
+			"modelling"
+		]
+	},
+	{
+		id: "http-status-semantics",
+		name: "HTTP Status Semantics",
+		aka: [
+			"status code selection",
+			"4xx versus 5xx",
+			"correct response codes"
+		],
+		origin: "HTTP specification; RFC 9110 and predecessors",
+		domains: ["engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Status codes are a contract with intermediaries and clients about whether to retry, cache, re-authenticate or give up — choosing them casually breaks all four.",
+		useWhen: [
+			"we return two hundred with an error object inside",
+			"clients retry on errors that will never succeed",
+			"our monitoring cannot distinguish client mistakes from our failures",
+			"a proxy cached an error response and served it for an hour"
+		],
+		prompt: "Audit the status codes on these endpoints. For each response, state what the code tells a client and an intermediary — is it retryable, is it cacheable, should credentials be refreshed, is the request itself invalid — and flag mismatches with the actual condition. Pay particular attention to the three that matter operationally: returning success for a failed operation, which hides errors from every monitoring system; returning a server error for invalid input, which makes clients retry pointlessly; and conflating unauthenticated with unauthorised, which sends clients into a re-login loop they cannot escape. Then give the corrected mapping with the response body shape for each.",
+		why: "The retry and monitoring consequences are what make status codes matter, and framing each code as an instruction to the client makes the right choice obvious.",
+		watchOut: "Some clients and gateways treat certain codes specially regardless of your intent. Check how your infrastructure handles the codes before adopting an unusual one.",
+		related: [
+			"error-response-design",
+			"idempotent-http-methods",
+			"retry-with-backoff",
+			"rest-resource-modeling"
+		],
+		tags: [
+			"api",
+			"http",
+			"errors",
+			"protocols"
+		]
+	},
+	{
+		id: "hypermedia-controls",
+		name: "Hypermedia Controls",
+		aka: [
+			"HATEOAS",
+			"links in responses",
+			"Richardson maturity model"
+		],
+		origin: "Roy Fielding, 2000; Leonard Richardson's maturity model, 2008",
+		domains: ["engineering"],
+		intents: ["decide", "explain"],
+		oneLiner: "Include links to the operations currently available on a resource so clients follow the server's state machine instead of hard-coding one of their own.",
+		useWhen: [
+			"clients hard-code which actions are allowed and get it wrong",
+			"we changed the workflow and every client had to be updated",
+			"the client duplicates our business rules to decide what to show",
+			"nobody can tell from the response what can be done next"
+		],
+		prompt: "Assess whether including available-action links helps this API, and be even-handed rather than doctrinaire. The concrete benefit is that the server owns which transitions are currently legal, so a client showing a cancel button does not need to reimplement our cancellation rules — say whether that duplication exists for us today. If it does, design the link representation, the naming of relationships, and how a client discovers what each means. If it does not, say plainly that the ceremony is not worth it here. Either way, identify the state-dependent actions clients currently guess at, since those are worth exposing regardless of the format.",
+		why: "The duplicated-business-rules test decides this concretely, and the state-dependent actions finding is valuable even for teams that reject the full approach.",
+		watchOut: "Very few clients actually navigate by links; most hard-code paths anyway. The benefit is usually the permission information, not the navigation.",
+		related: [
+			"rest-resource-modeling",
+			"api-versioning-strategy",
+			"state-pattern",
+			"api-ergonomics"
+		],
+		tags: [
+			"api",
+			"rest",
+			"hypermedia",
+			"coupling"
+		]
+	},
+	{
+		id: "api-ergonomics",
+		name: "API Ergonomics",
+		aka: [
+			"developer experience",
+			"usability of interfaces",
+			"pit of success"
+		],
+		origin: "API usability research; Joshua Bloch's API design talks",
+		domains: ["engineering", "design"],
+		intents: ["critique", "structure"],
+		oneLiner: "Judge an interface by how easily a competent stranger does the right thing first time — and by how hard it makes doing the wrong thing.",
+		useWhen: [
+			"everyone integrating with us asks the same three questions",
+			"the common case takes four calls and a lot of reading",
+			"people keep using this parameter incorrectly",
+			"our support load is dominated by integration mistakes"
+		],
+		prompt: "Evaluate this interface for usability using evidence rather than taste. Write the code a new integrator must produce for the most common task and count the decisions they have to make correctly with no guidance. Then apply the specific tests: is the simplest useful call actually simple, are dangerous operations harder to reach than safe ones, can a required parameter be omitted silently, are two parameters of the same type adjacent and swappable, and does the naming match the vocabulary of the domain rather than our internals. Rank the findings by the questions we currently get from real integrators.",
+		why: "Grounding the review in support questions and in the swappable-adjacent-parameters class of error turns a subjective critique into specific, defensible changes.",
+		watchOut: "Optimising for the first-time experience can hurt the daily user. Check the ergonomics of the tenth integration as well as the first.",
+		related: [
+			"principle-of-least-astonishment",
+			"api-naming-conventions",
+			"api-documentation-quality",
+			"client-sdk-design"
+		],
+		tags: [
+			"api",
+			"usability",
+			"developer experience",
+			"design"
+		]
+	},
+	{
+		id: "api-versioning-strategy",
+		name: "API Versioning Strategy",
+		aka: ["breaking change management", "version in path or header"],
+		origin: "Web API practice; long-running debate with several settled conventions",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Decide how a breaking change reaches clients — a new version, a compatibility layer, or never — knowing that every version you publish you must operate.",
+		useWhen: [
+			"we need to change a response shape and clients cannot all update at once",
+			"we are supporting four versions and it is crushing us",
+			"someone wants to add a version for a change that is not breaking",
+			"we do not know who is still on the old version"
+		],
+		prompt: "Design our versioning approach. First define breaking precisely for our contract, since the boundary is not obvious: adding an optional field is safe, adding an enum value may not be, tightening validation is breaking, and changing the meaning of a field is breaking while looking additive. Write that rule down. Then choose the mechanism — path, header, or content negotiation — with the practical consequences for caching, routing, logging and client experience. The important part is the operational commitment: how many versions we support at once, for how long, how usage per version is measured, and how a client is migrated off one.",
+		why: "Most versioning pain comes from publishing versions too readily and having no retirement path. Defining breaking precisely and committing to a support window is what limits the sprawl.",
+		watchOut: "Version-per-change produces an unmaintainable matrix. Prefer additive evolution within a version and reserve new versions for genuine incompatibility.",
+		related: [
+			"deprecation-policy",
+			"schema-evolution",
+			"contract-testing",
+			"plugin-architecture"
+		],
+		tags: [
+			"api",
+			"versioning",
+			"compatibility",
+			"lifecycle"
+		]
+	},
+	{
+		id: "deprecation-policy",
+		name: "Deprecation Policy",
+		aka: [
+			"sunset headers",
+			"end-of-life process",
+			"retiring an endpoint"
+		],
+		origin: "API lifecycle practice; the HTTP Sunset header, RFC 8594",
+		domains: ["engineering", "writing"],
+		intents: ["plan", "communicate"],
+		oneLiner: "Retiring an interface needs a defined notice period, machine-readable signals, usage measurement and a migration path — announcement alone changes nothing.",
+		useWhen: [
+			"we announced the deprecation a year ago and traffic has not dropped",
+			"we cannot remove this endpoint because we do not know who uses it",
+			"clients found out their integration broke when it broke",
+			"we have twelve deprecated things nobody has ever removed"
+		],
+		prompt: "Write the retirement plan for this interface. Include the four mechanisms that make deprecation actually complete: measurement of usage broken down by identifiable client so we know who must move, machine-readable signals in responses so integrations can detect it programmatically, direct notification to the specific consumers rather than a general announcement, and a documented migration with the replacement call shown side by side. Then define the endgame — brownout periods where the endpoint fails briefly on a schedule to surface unnoticed dependencies, the final date, and the exception process. Say what happens if a major customer has not migrated.",
+		why: "Brownouts and per-client usage measurement are what convert a deprecation from an announcement into a completed removal, and both are usually absent.",
+		watchOut: "A deprecation with no removal date will not be actioned by anyone. The date is the mechanism; the notice is only the courtesy.",
+		related: [
+			"api-versioning-strategy",
+			"api-usage-analytics",
+			"status-page-communication",
+			"schema-evolution"
+		],
+		tags: [
+			"api",
+			"lifecycle",
+			"communication",
+			"migration"
+		]
+	},
+	{
+		id: "api-pagination",
+		name: "Pagination Design",
+		aka: [
+			"cursor versus offset",
+			"keyset pagination",
+			"page tokens"
+		],
+		origin: "Web API practice; keyset pagination from database performance work",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Offset paging is simple, gets slower the deeper you go, and skips or duplicates rows when the data changes; cursor paging fixes both at the cost of arbitrary jumps.",
+		useWhen: [
+			"page fifty thousand takes twenty seconds",
+			"users report seeing the same record twice while scrolling",
+			"new records are inserted while someone pages through and some are missed",
+			"clients request ten thousand records at once and it falls over"
+		],
+		prompt: "Design pagination for this collection. Compare offset and cursor approaches on the two properties that matter: cost at depth, and stability when records are inserted or deleted mid-traversal — demonstrate the skip-and-duplicate problem concretely with our sort order. Recommend one, and if it is cursor-based, specify what the cursor encodes, that it must be opaque to clients, and that the sort must be on a unique or tie-broken key or the traversal will still skip. Then set the maximum and default page size, the response shape indicating more results, and whether a total count is provided given that counting is often the most expensive part.",
+		why: "The requirement for a unique tie-broken sort key is the detail that makes cursor pagination correct, and the total-count cost is the hidden expense in most list endpoints.",
+		watchOut: "Clients will page through everything to build their own copy. Rate limits and a bulk export path are cheaper than serving that through pagination.",
+		related: [
+			"filtering-sorting-conventions",
+			"index-selection",
+			"streaming-vs-buffering",
+			"api-quota-design"
+		],
+		tags: [
+			"api",
+			"pagination",
+			"performance",
+			"design"
+		]
+	},
+	{
+		id: "filtering-sorting-conventions",
+		name: "Filtering and Sorting Conventions",
+		aka: [
+			"query parameter design",
+			"search parameters",
+			"expression languages in URLs"
+		],
+		origin: "Web API practice; conventions from OData, JSON:API and similar",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Decide how much query power the interface exposes, because every filter you allow becomes a query the database must serve forever.",
+		useWhen: [
+			"clients ask for a new filter parameter every month",
+			"someone built a filter that does a full table scan",
+			"our query syntax is different on every endpoint",
+			"we exposed a flexible query language and now cannot change the schema"
+		],
+		prompt: "Define the filtering and sorting contract for these endpoints. Choose the expressiveness level deliberately — a fixed set of named filters, a constrained operator grammar, or a general query language — and justify from what clients actually need against what we can index. The essential constraint is that every allowed filter and sort must be servable within our latency objective, so state which fields are filterable and sortable based on indexes that exist, and reject the rest explicitly rather than serving them slowly. Then standardise the syntax across endpoints, define behaviour for unknown parameters, and specify how filters compose.",
+		why: "Tying allowed filters to existing indexes is the constraint that prevents a flexible query interface from becoming an unbounded performance liability.",
+		watchOut: "A general query language exposes your schema as a public contract. Every internal field name then becomes something you cannot rename.",
+		related: [
+			"api-pagination",
+			"index-selection",
+			"graphql-schema-design",
+			"api-quota-design"
+		],
+		tags: [
+			"api",
+			"queries",
+			"performance",
+			"conventions"
+		]
+	},
+	{
+		id: "partial-update-semantics",
+		name: "Partial Update Semantics",
+		aka: [
+			"PATCH versus PUT",
+			"merge patch",
+			"field masks"
+		],
+		origin: "HTTP specifications; JSON Merge Patch RFC 7386, JSON Patch RFC 6902",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Updating part of a resource requires deciding how the absence of a field is interpreted — unchanged or cleared — and saying so unambiguously.",
+		useWhen: [
+			"a client omitted a field and it got wiped",
+			"we cannot tell the difference between setting null and not sending the field",
+			"two clients updating different fields overwrite each other",
+			"nobody knows whether this endpoint replaces or merges"
+		],
+		prompt: "Specify partial update behaviour for this resource. State explicitly what an omitted field means and how a client clears a value versus leaves it alone, since conflating those two is the defect that silently deletes data. Compare merge-style patches, explicit operation lists, and an explicit list of fields being updated, and recommend one for our clients. Then handle the compound cases: updating an element within an array, updating nested objects, and concurrent updates to different fields of the same resource where a naive read-modify-write loses one. Finish with the validation applied to a partial update, since whole-object validation rules may not apply to a fragment.",
+		why: "The clear-versus-leave-alone ambiguity is a data loss bug, and the array element case is where every merge-based scheme breaks down. Both need deciding rather than discovering.",
+		watchOut: "Partial updates make request validation and audit logging harder, because the meaning of the request depends on current state. Log the resolved change, not just the request.",
+		related: [
+			"http-status-semantics",
+			"optimistic-concurrency",
+			"field-selection-expansion",
+			"input-validation-boundary"
+		],
+		tags: [
+			"api",
+			"http",
+			"updates",
+			"semantics"
+		]
+	},
+	{
+		id: "bulk-operations-api",
+		name: "Bulk Operations",
+		aka: [
+			"batch endpoints",
+			"multi-item requests",
+			"partial success"
+		],
+		origin: "Web API practice; common in enterprise integration interfaces",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Accepting many items in one request removes round trips and forces you to answer the hard question: what happens when some succeed and some fail.",
+		useWhen: [
+			"clients make ten thousand individual calls to import data",
+			"our batch endpoint fails the whole thing if one record is bad",
+			"the client cannot tell which items in the batch succeeded",
+			"a large import times out halfway through"
+		],
+		prompt: "Design a bulk operation for this resource. The central decision is failure semantics, so state it first and make it explicit in the contract: all-or-nothing, or best-effort with a per-item result. Best-effort is usually right, so design the response to report status per item keyed to the client's own identifiers rather than positional indexes, which break when clients retry a subset. Then specify the limits — maximum items, maximum payload — and what happens beyond them. Cover duplicate submission of the same batch, ordering guarantees within a batch, and whether the operation is synchronous or returns a job for large volumes.",
+		why: "Keying per-item results to client-supplied identifiers is what makes retrying the failed subset possible, and positional results quietly break that.",
+		watchOut: "A bulk endpoint with all-or-nothing semantics over a large batch will fail forever on one bad record. Clients cannot make progress without per-item results.",
+		related: [
+			"async-job-api",
+			"idempotency-keys",
+			"batching-amortization",
+			"error-response-design"
+		],
+		tags: [
+			"api",
+			"batch",
+			"error handling",
+			"design"
+		]
+	},
+	{
+		id: "async-job-api",
+		name: "Long-Running Operation API",
+		aka: [
+			"async job pattern",
+			"operation resource",
+			"polling for completion"
+		],
+		origin: "Web API practice; the operation resource pattern from cloud provider APIs",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "When work takes longer than a request should, accept it, return a handle to a job resource, and let the client track progress rather than holding a connection open.",
+		useWhen: [
+			"the export request times out at the gateway",
+			"clients hold a connection open for four minutes and it drops",
+			"we cannot tell a client that their job is still running",
+			"a retry after timeout started the whole job again"
+		],
+		prompt: "Design the asynchronous contract for this operation. Specify the acceptance response and the job resource: its states, progress representation, result location, and error detail on failure. Then cover the client-side questions that determine whether this is usable: the polling interval we recommend and how we communicate it, how long a completed job's result remains retrievable, whether a job can be cancelled and what cancellation guarantees, and how a client that submitted twice avoids duplicate work. Finally, compare polling against a completion callback for our consumers and say which we should offer, or both, and why.",
+		why: "Result retention, cancellation semantics and duplicate submission are the three things clients need and specifications usually omit, leaving each integrator to discover them.",
+		watchOut: "Job resources accumulate. Without a retention policy they become an unbounded table and a slow information leak of past activity.",
+		related: [
+			"bulk-operations-api",
+			"webhook-design",
+			"idempotency-keys",
+			"workflow-orchestration"
+		],
+		tags: [
+			"api",
+			"async",
+			"jobs",
+			"design"
+		]
+	},
+	{
+		id: "webhook-design",
+		name: "Webhook Design",
+		aka: [
+			"outbound callbacks",
+			"event delivery to customers",
+			"HTTP push"
+		],
+		origin: "Web integration practice; conventions established by payment and SaaS platforms",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Pushing events to customer endpoints means you own delivery reliability, security and the consequences of their downtime — design for all three.",
+		useWhen: [
+			"customers say they never received the event and we cannot prove otherwise",
+			"a customer endpoint went down and our queue backed up",
+			"someone forged a request to a customer pretending to be us",
+			"customers receive the same event several times and process it twice"
+		],
+		prompt: "Design our outbound event delivery. Cover the security first: request signing with a timestamp to prevent replay, and how customers rotate a signing secret — unauthenticated webhooks are a standing vulnerability for every consumer. Then delivery: the retry schedule, how long we keep retrying, at-least-once semantics and therefore the event identifier consumers deduplicate on, and ordering, which you should probably not promise. Then protect ourselves: per-endpoint circuit breaking and automatic disabling of persistently failing destinations with notification. Finish with the consumer's recovery path — a way to list or replay missed events without contacting support.",
+		why: "Signing plus replay protection and a self-service replay path are the two things that separate a professional webhook implementation from one that generates permanent support load.",
+		watchOut: "Sending full payloads to customer endpoints leaks data if a URL is misconfigured or later reassigned. Consider sending an identifier the consumer fetches with its own credentials.",
+		related: [
+			"delivery-semantics",
+			"retry-with-backoff",
+			"idempotency-keys",
+			"circuit-breaker"
+		],
+		tags: [
+			"api",
+			"webhooks",
+			"events",
+			"integration"
+		]
+	},
+	{
+		id: "realtime-transport-choice",
+		name: "Real-Time Transport Choice",
+		aka: ["websockets versus SSE versus polling", "push transport selection"],
+		origin: "Web platform practice",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose among polling, long polling, server-sent events and websockets by direction, message rate and the infrastructure you must pass through.",
+		useWhen: [
+			"we poll every second and it is most of our traffic",
+			"the websocket connection drops behind corporate proxies",
+			"updates take too long to reach the screen",
+			"someone wants real-time and I do not know what that requires"
+		],
+		prompt: "Choose a transport for this update flow. Characterise the requirement first — direction, message frequency, acceptable delay, concurrent client count, and payload size — then compare the options on those plus the practical constraints: proxy and load balancer compatibility, connection count limits per server, reconnection and missed-message recovery, and authentication of a long-lived connection including what happens when the token expires mid-connection. Recommend the simplest option that meets the requirement, since periodic polling is frequently adequate and vastly easier to operate. Finish with the resume semantics: how a client that was disconnected for thirty seconds catches up.",
+		why: "Missed-message recovery on reconnect and mid-connection token expiry are the two things that break real-time systems in production, and neither appears in a transport comparison table.",
+		watchOut: "Persistent connections change your scaling model: connection count rather than request rate becomes the limit, and deploys now disconnect everyone at once.",
+		related: [
+			"webhook-design",
+			"graceful-shutdown",
+			"backpressure",
+			"offline-first-sync"
+		],
+		tags: [
+			"api",
+			"realtime",
+			"websockets",
+			"transport"
+		]
+	},
+	{
+		id: "error-response-design",
+		name: "Error Response Design",
+		aka: [
+			"problem details",
+			"machine-readable errors",
+			"error codes"
+		],
+		origin: "API practice; RFC 9457 Problem Details for HTTP APIs",
+		domains: ["engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "An error response has two audiences — code that must branch on it and a human who must fix something — and it needs a stable identifier for the first and useful detail for the second.",
+		useWhen: [
+			"clients parse our error messages with string matching",
+			"we changed an error message and broke an integration",
+			"the error says invalid request and nothing else",
+			"support cannot correlate a customer error report with our logs"
+		],
+		prompt: "Design the error contract for this API. Every error carries a stable machine-readable code that is part of the contract and never changes wording, a human message that may change, the specific field or resource at fault, and a correlation identifier the client can quote to support that appears in our logs. For validation failures, return all the problems rather than the first. Then define the code taxonomy: enough codes that a client can branch usefully, few enough to document, and grouped so a client can handle a category it does not recognise. Finish with the rule for what must never appear in an error, such as internal identifiers, stack traces, or whether an account exists.",
+		why: "The stable code plus mutable message split is what lets you improve messages without breaking clients, and the correlation identifier is what makes support tractable.",
+		watchOut: "Detailed errors leak information. Distinguishing wrong password from unknown user is a helpful message and a user enumeration vulnerability.",
+		related: [
+			"http-status-semantics",
+			"error-message-design",
+			"input-validation-boundary",
+			"api-documentation-quality"
+		],
+		tags: [
+			"api",
+			"errors",
+			"contracts",
+			"support"
+		]
+	},
+	{
+		id: "input-validation-boundary",
+		name: "Validation at the Boundary",
+		aka: [
+			"input sanitisation point",
+			"edge validation",
+			"trusted core"
+		],
+		origin: "Secure design practice; related to parse-don't-validate",
+		domains: ["engineering", "security"],
+		intents: ["structure", "critique"],
+		oneLiner: "Validate untrusted input once, at the edge, into a shape the rest of the system can trust — and make sure there is exactly one edge.",
+		useWhen: [
+			"we validate in the controller and again in the service and again in the model",
+			"a new endpoint skipped validation because it was added elsewhere",
+			"background jobs process data that never passed the checks",
+			"the same field has different rules in two places"
+		],
+		prompt: "Map the trust boundary for this system and place validation on it. Enumerate every entry point where untrusted data arrives — HTTP handlers, queue consumers, scheduled jobs reading external files, webhook receivers, administrative tools, and database records written by an older version — because the ones that bypass the main path are where invalid data enters. For each, state what validates it today. Then define validation as a conversion into a trusted type rather than a check, so downstream code cannot receive unvalidated data. Finish with the rules that must still be checked deeper because they need database state, and why those are different.",
+		why: "Enumerating non-HTTP entry points is what finds the bypass, and separating format validation at the edge from state-dependent rules deeper down prevents the duplication that makes both rot.",
+		watchOut: "Edge validation cannot check business rules that depend on current state, and pretending otherwise pushes race conditions into the boundary layer.",
+		related: [
+			"parse-dont-validate",
+			"trust-boundary",
+			"error-response-design",
+			"defensive-programming-limits"
+		],
+		tags: [
+			"api",
+			"validation",
+			"security",
+			"boundaries"
+		]
+	},
+	{
+		id: "content-negotiation",
+		name: "Content Negotiation",
+		aka: [
+			"Accept headers",
+			"media types",
+			"representation selection"
+		],
+		origin: "HTTP specification",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Let a client state what representation it wants and what it is sending, so one resource can serve several formats and versions without separate endpoints.",
+		useWhen: [
+			"we need to return CSV as well as JSON from the same endpoint",
+			"the client sent form data and we assumed JSON",
+			"we added a format and had to duplicate every route",
+			"caches are serving the wrong representation to clients"
+		],
+		prompt: "Design representation selection for these resources. Specify the media types we accept and produce, the default when the client expresses no preference, and the response when we cannot satisfy the request rather than silently returning something else. Then address the parts that go wrong: the interaction with caching, where the varying header must be declared or intermediaries will serve one client's format to another, and whether we use custom media types to carry version information, with the trade-off against a path segment. Finish with the request side, since accepting several input formats multiplies the parsing and validation surface.",
+		why: "The caching interaction is the failure that produces genuinely baffling bugs, and it is invisible until an intermediary is in the path.",
+		watchOut: "Supporting many formats multiplies your test matrix and your attack surface. Add a format when a real consumer needs it, not for symmetry.",
+		related: [
+			"api-versioning-strategy",
+			"cache-key-design",
+			"cdn-edge-caching",
+			"http-status-semantics"
+		],
+		tags: [
+			"api",
+			"http",
+			"formats",
+			"caching"
+		]
+	},
+	{
+		id: "field-selection-expansion",
+		name: "Field Selection and Expansion",
+		aka: [
+			"sparse fieldsets",
+			"include parameter",
+			"sideloading relations"
+		],
+		origin: "Web API practice; conventions from JSON:API and cloud provider APIs",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Let clients ask for fewer fields or for related resources inline, so they neither download what they do not need nor make a call per relation.",
+		useWhen: [
+			"mobile clients download a huge response to show three fields",
+			"clients fetch a list and then call us once per item for details",
+			"we keep adding endpoints for slightly different response shapes",
+			"the response contains everything because different clients need different parts"
+		],
+		prompt: "Design field selection and relation inclusion for this API. Define the syntax for both, the default when neither is specified, and the maximum expansion depth — since unbounded nesting lets one request generate an arbitrary query load, which is the risk that makes this feature dangerous. Then map each expansion to the data access it triggers and confirm it can be served in bounded work, batching rather than looping. Cover authorisation carefully: an included relation must be checked against the caller's permissions independently, not inherited from the parent. Finish with caching implications, since the response now varies by parameter.",
+		why: "Per-relation authorisation and bounded expansion depth are the two controls that keep this from becoming both a performance and a security hole.",
+		watchOut: "Once clients depend on particular expansions, those relation paths become part of your contract and constrain the data model as much as the fields do.",
+		related: [
+			"payload-size-reduction",
+			"over-fetching-graphql",
+			"n-plus-one-queries",
+			"cache-key-design"
+		],
+		tags: [
+			"api",
+			"payloads",
+			"performance",
+			"design"
+		]
+	},
+	{
+		id: "graphql-schema-design",
+		name: "GraphQL Schema Design",
+		aka: [
+			"graph schema modelling",
+			"nullability in GraphQL",
+			"connections"
+		],
+		origin: "Facebook GraphQL, 2015; Relay connection conventions",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Model the graph around client use cases with deliberate nullability and pagination conventions, because the schema is a contract you cannot easily break later.",
+		useWhen: [
+			"our schema mirrors the database and clients traverse it awkwardly",
+			"one failing field makes the whole response null",
+			"every list field is unpaginated and someone requested a million items",
+			"we cannot tell which fields are actually used by anyone"
+		],
+		prompt: "Design this schema around client needs rather than storage. Treat nullability as the central decision: a non-null field makes the parent null if it errors, so specify which fields must be non-null for client sanity and which should be nullable so a partial failure degrades gracefully. Then apply pagination conventions to every list field without exception, since an unpaginated list is an unbounded query. Model mutations to return the modified entities plus a structured error payload rather than throwing. Finish with the naming and evolution rules, given that fields can be deprecated but the schema is otherwise additive-only in practice.",
+		why: "Nullability determines partial-failure behaviour, which is the single most consequential and least considered choice in a graph schema.",
+		watchOut: "A schema that mirrors your tables exposes your data model as a public contract and makes every rename a breaking change for someone.",
+		related: [
+			"over-fetching-graphql",
+			"persisted-queries",
+			"api-pagination",
+			"schema-evolution"
+		],
+		tags: [
+			"api",
+			"graphql",
+			"schema",
+			"design"
+		]
+	},
+	{
+		id: "over-fetching-graphql",
+		name: "Query Cost Control",
+		aka: [
+			"query depth limiting",
+			"complexity analysis",
+			"expensive query protection"
+		],
+		origin: "GraphQL operational practice; applies to any flexible query interface",
+		domains: ["engineering", "security"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "A flexible query interface lets one request ask for arbitrarily expensive work, so cost must be estimated and bounded before execution.",
+		useWhen: [
+			"one client query brought down the database",
+			"we cannot rate limit fairly because requests vary enormously in cost",
+			"a deeply nested query fanned out into thousands of lookups",
+			"we do not know which queries are expensive until they run"
+		],
+		prompt: "Design cost control for this query interface. Define a static complexity estimate computed before execution from depth, list multipliers and per-field weights derived from what each field actually costs to resolve — then set the limit per client class. Explain why request-count rate limiting is inadequate here and why cost-based budgets are needed instead. Add depth and breadth caps as a simple backstop. Then cover runtime protection for what static analysis cannot predict: execution timeouts, batching of repeated lookups within a request, and killing a query that exceeds its estimated cost. Finish with the telemetry that shows cost per client and per field.",
+		why: "Pre-execution cost estimation is the control that makes flexible queries safe, and per-field weights derived from real resolution cost are what make the estimate meaningful.",
+		watchOut: "Static complexity ignores data distribution: the same query is cheap for a small account and ruinous for the largest one. Runtime limits are still required.",
+		related: [
+			"graphql-schema-design",
+			"rate-limiting-algorithms",
+			"api-quota-design",
+			"n-plus-one-queries"
+		],
+		tags: [
+			"api",
+			"graphql",
+			"performance",
+			"protection"
+		]
+	},
+	{
+		id: "persisted-queries",
+		name: "Persisted Queries",
+		aka: [
+			"allowlisted operations",
+			"query registry",
+			"operation hashing"
+		],
+		origin: "GraphQL production practice; Apollo and Relay implementations",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Register the queries clients are allowed to send and let them reference each by identifier, converting an open query interface into a fixed set of known operations.",
+		useWhen: [
+			"we cannot let arbitrary queries reach our production database",
+			"request payloads are large because they carry the whole query",
+			"we have no idea which fields are safe to remove",
+			"someone can craft an expensive query and we cannot pre-approve it"
+		],
+		prompt: "Design a registered-operation workflow for this API. Specify how operations are extracted at client build time, registered, and referenced at runtime, and whether unregistered operations are rejected outright — rejection is what converts this from a bandwidth optimisation into a security control, so make that a deliberate decision. Then handle the operational consequences: how a new client version's operations are registered before deployment, how old versions keep working, how the registry is pruned, and how developers work locally without registration friction. Finish with the benefit that usually matters most, which is knowing exactly which fields are in use and therefore safely removable.",
+		why: "The removability benefit is the underrated one, and the deploy-ordering problem is what breaks these systems in practice. Both should drive the design.",
+		watchOut: "A registry that lags client deployment causes total client failure. The registration must be part of the release, not a manual step afterwards.",
+		related: [
+			"graphql-schema-design",
+			"over-fetching-graphql",
+			"api-usage-analytics",
+			"deprecation-policy"
+		],
+		tags: [
+			"api",
+			"graphql",
+			"security",
+			"operations"
+		]
+	},
+	{
+		id: "grpc-and-protobuf",
+		name: "Binary RPC and Protobuf",
+		aka: [
+			"gRPC",
+			"protocol buffers",
+			"schema-defined RPC"
+		],
+		origin: "Google; Protocol Buffers public in 2008, gRPC in 2015",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Schema-defined binary RPC gives efficient encoding, generated clients and streaming, at the cost of browser support and human-readable debugging.",
+		useWhen: [
+			"our internal service calls spend most of their time parsing JSON",
+			"we hand-write client code for every internal service",
+			"we need bidirectional streaming between services",
+			"someone proposed switching internal APIs and I need the trade-offs"
+		],
+		prompt: "Assess binary schema-defined RPC for this interface. Compare against JSON over HTTP on the dimensions that actually matter here: encoding cost at our message rate, generated versus hand-written clients, streaming support, and how a breaking change is detected. Then be specific about the costs: browser access requires a proxy layer, debugging needs tooling because payloads are not readable, and field numbering rules must be understood by everyone who edits a schema — reusing a retired field number silently corrupts data. Recommend where in our system it fits, which is usually service-to-service and not the public edge.",
+		why: "Field number reuse is a silent data corruption hazard specific to this encoding, and the debuggability cost is the thing teams underestimate before adopting.",
+		watchOut: "Generated clients tie every consumer to your schema version and build tooling. That coupling is fine internally and painful across organisational boundaries.",
+		related: [
+			"schema-evolution",
+			"api-versioning-strategy",
+			"service-mesh",
+			"contract-testing"
+		],
+		tags: [
+			"api",
+			"rpc",
+			"protocols",
+			"serialisation"
+		]
+	},
+	{
+		id: "api-gateway-pattern",
+		name: "API Gateway",
+		aka: [
+			"edge proxy",
+			"front door",
+			"cross-cutting edge concerns"
+		],
+		origin: "Microservices practice; commercial and open-source gateway products",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "A single entry point handling authentication, rate limiting, routing and observability for every service behind it — useful, and a single point of failure by construction.",
+		useWhen: [
+			"every service implements its own authentication slightly differently",
+			"we cannot enforce rate limits consistently across services",
+			"clients need to know which host serves which endpoint",
+			"someone wants to buy a gateway and I do not know what we need from it"
+		],
+		prompt: "Decide what belongs at the edge for our system. List candidate responsibilities — authentication, coarse authorisation, rate limiting, routing, request and response transformation, caching, telemetry — and for each say whether it belongs in the gateway, in the services, or both, using one criterion: does putting it here mean services can trust it, or must they verify anyway. Anything services must re-verify is duplicated work, and anything they wrongly trust is a security hole if the gateway is bypassed, so state how bypass is prevented. Then address it as a critical component: its availability, deployment risk, and configuration change process.",
+		why: "The trust-or-verify criterion resolves what goes at the edge, and the bypass question is what determines whether edge authentication is a real control or an assumption.",
+		watchOut: "Business logic and transformations accumulate in gateway configuration, where they are untested and invisible to developers. Keep it to cross-cutting concerns.",
+		related: [
+			"backend-for-frontend",
+			"service-mesh",
+			"rate-limiting-algorithms",
+			"api-authentication-choice"
+		],
+		tags: [
+			"api",
+			"infrastructure",
+			"edge",
+			"architecture"
+		]
+	},
+	{
+		id: "api-authentication-choice",
+		name: "API Authentication Choice",
+		aka: [
+			"API keys versus OAuth",
+			"bearer tokens",
+			"mutual TLS"
+		],
+		origin: "Web security practice; OAuth 2.0 and OpenID Connect specifications",
+		domains: ["engineering", "security"],
+		intents: ["decide", "structure"],
+		oneLiner: "Pick the authentication mechanism from who the caller is and what revocation you need — a long-lived key and a short-lived delegated token solve different problems.",
+		useWhen: [
+			"we issue API keys that never expire and cannot be scoped",
+			"a partner needs to act on behalf of our users and we do not know how",
+			"a leaked credential could not be revoked without breaking everything",
+			"we are about to invent our own token format"
+		],
+		prompt: "Choose authentication for these callers, treating each caller type separately: our own first-party clients, server-to-server partners, and third parties acting on behalf of a user. For each, compare the options on lifetime and revocation, scoping granularity, what happens when the credential leaks, and the implementation burden on the caller. Then specify the operational mechanics that determine real security: rotation without downtime, how a compromised credential is revoked immediately, whether tokens are self-contained and therefore unrevokable until expiry, and how credentials are issued and stored. Do not design a custom token format.",
+		why: "Self-contained tokens cannot be revoked before expiry, which is the property that determines your incident response capability, and it is rarely considered at design time.",
+		watchOut: "Long-lived API keys in configuration files leak through repositories, logs and screenshots. Assume any key with no expiry will eventually be exposed.",
+		related: [
+			"token-scope-design",
+			"secrets-management",
+			"api-gateway-pattern",
+			"least-privilege"
+		],
+		tags: [
+			"api",
+			"security",
+			"authentication",
+			"credentials"
+		]
+	},
+	{
+		id: "token-scope-design",
+		name: "Token Scope Design",
+		aka: [
+			"permission scopes",
+			"least privilege tokens",
+			"granular access"
+		],
+		origin: "OAuth 2.0 scope model; general authorisation practice",
+		domains: ["security", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Define permissions fine enough that an integration can request only what it needs, and coarse enough that users and developers can actually understand them.",
+		useWhen: [
+			"every integration asks for full access because that is the only option",
+			"our permission list has ninety entries and nobody understands them",
+			"a compromised integration token could do anything",
+			"users approve a consent screen they cannot possibly evaluate"
+		],
+		prompt: "Design the permission model for our API. Derive scopes from the operations real integrations perform, not from our resource list, and separate read from write for each area since read-only integration is the common case and should be safe to grant. Then test the design from the consent side: write the sentence a user sees for each scope and check whether it lets them make an informed decision — scopes that cannot be explained in one clear sentence are too coarse or too technical. Finish with the enforcement point, how scopes are checked consistently rather than per endpoint, and how new capabilities are added without silently widening existing tokens.",
+		why: "The one-sentence consent test is a practical filter on granularity, and the silent-widening problem is how permission models quietly become meaningless over time.",
+		watchOut: "Adding a capability to an existing scope grants it to every previously issued token. New capability, new scope, unless you are certain the meaning is unchanged.",
+		related: [
+			"api-authentication-choice",
+			"least-privilege",
+			"row-level-security",
+			"separation-of-duties"
+		],
+		tags: [
+			"api",
+			"security",
+			"authorisation",
+			"permissions"
+		]
+	},
+	{
+		id: "api-quota-design",
+		name: "API Quota Design",
+		aka: [
+			"usage limits",
+			"fair use policy",
+			"tiered limits"
+		],
+		origin: "Platform API practice",
+		domains: ["engineering", "product"],
+		intents: ["decide", "plan"],
+		oneLiner: "Quotas protect the service and shape customer behaviour, so they need a unit that reflects cost, a tier structure that matches value, and a client experience that is predictable.",
+		useWhen: [
+			"one integration consumes ninety percent of our capacity",
+			"our limits are per request and requests vary wildly in cost",
+			"customers hit limits with no warning and their integration breaks",
+			"we cannot say what a fair level of usage is"
+		],
+		prompt: "Design quotas for this API. Choose the unit first — requests, computed cost units, records processed, or data volume — based on what actually consumes our capacity, since a request-count limit on an API with hundred-fold cost variation is arbitrary. Then set the tiers and the window, preferring a rolling window over a calendar one so a customer cannot burn a month's quota in a minute. The client experience determines whether this works, so specify how remaining quota is communicated in every response, how a client is warned before exhaustion, what happens at the limit, and whether a brief burst above the limit is tolerated.",
+		why: "Choosing a cost-reflective unit is what makes quotas fair, and communicating remaining quota per response is what stops integrations breaking without warning.",
+		watchOut: "Quotas enforced without exposing current usage force customers to guess and over-provision. The visibility is part of the product, not an extra.",
+		related: [
+			"rate-limiting-algorithms",
+			"over-fetching-graphql",
+			"api-usage-analytics",
+			"load-shedding"
+		],
+		tags: [
+			"api",
+			"quotas",
+			"limits",
+			"product"
+		]
+	},
+	{
+		id: "cors-configuration",
+		name: "Cross-Origin Configuration",
+		aka: [
+			"CORS",
+			"preflight requests",
+			"origin allowlist"
+		],
+		origin: "Browser security model; the CORS specification",
+		domains: ["engineering", "security"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Cross-origin rules are a browser-enforced control on which sites may read your responses — misconfiguring them either blocks legitimate clients or exposes authenticated data.",
+		useWhen: [
+			"the browser blocks our request and the server logs show nothing",
+			"someone set the allowed origin to a wildcard to make it work",
+			"it works in one tool and fails in the browser",
+			"we need to allow credentials cross-origin and are not sure of the risk"
+		],
+		prompt: "Review our cross-origin configuration. Explain what the browser is actually enforcing and what it is not, so the boundary is clear: this restricts what a page can read, and offers no protection against a non-browser client. Then audit our settings for the dangerous combinations — reflecting any requesting origin, allowing credentials with a permissive origin, overly broad allowed headers and methods, and a long preflight cache that makes changes take effect slowly. For each, state the concrete attack it enables. Finish with the correct configuration per endpoint class and the mechanism keeping the allowlist current as new front ends are added.",
+		why: "Separating what this control does from what people assume it does prevents both the over-permissive fix and the mistaken belief that it protects the API from non-browser callers.",
+		watchOut: "This is not a substitute for authorisation, and it does not prevent cross-site request forgery on its own. Those need their own controls.",
+		related: [
+			"trust-boundary",
+			"api-gateway-pattern",
+			"attack-surface-reduction",
+			"api-authentication-choice"
+		],
+		tags: [
+			"api",
+			"security",
+			"browser",
+			"configuration"
+		]
+	},
+	{
+		id: "client-sdk-design",
+		name: "Client SDK Design",
+		aka: ["official client libraries", "generated versus hand-written SDKs"],
+		origin: "Platform API practice",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "A client library is where retries, pagination, authentication refresh and error handling should live once, instead of being reimplemented badly by every integrator.",
+		useWhen: [
+			"every customer implements pagination and retries differently and wrongly",
+			"integrators take days to make their first successful call",
+			"our support burden is all integration mechanics",
+			"we generate SDKs and they are unusable"
+		],
+		prompt: "Design our client library strategy. Decide generated versus hand-written per language, recognising that generated clients stay current automatically and usually feel foreign in the target language, while hand-written ones feel right and fall behind — a generated core with a hand-written ergonomic layer is often the answer. Then specify what the library owns beyond call mechanics: retries with backoff on the right errors, automatic pagination, credential refresh, idempotency keys, timeouts and connection reuse. Finish with the release and versioning policy tying library versions to API versions, and the deprecation path when an endpoint retires.",
+		why: "Putting retries, pagination and idempotency into the library is what makes integrations reliable across every consumer, and it is the part generated clients usually omit.",
+		watchOut: "A library that lags the API becomes the reason customers cannot use new features. Under-maintained official clients are worse than none.",
+		related: [
+			"api-ergonomics",
+			"retry-with-backoff",
+			"api-pagination",
+			"openapi-contract-first"
+		],
+		tags: [
+			"api",
+			"sdk",
+			"developer experience",
+			"libraries"
+		]
+	},
+	{
+		id: "api-documentation-quality",
+		name: "API Documentation Quality",
+		aka: [
+			"reference versus guides",
+			"runnable examples",
+			"docs as product"
+		],
+		origin: "Technical writing and developer relations practice; Diátaxis framework",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Reference material answers what exists; integrators need a guided path through the first successful call and the failure cases nobody documents.",
+		useWhen: [
+			"our docs list every field and nobody can get started",
+			"the examples do not run",
+			"support answers the same integration question weekly",
+			"the authentication section assumes you already know how it works"
+		],
+		prompt: "Assess these docs against the four distinct needs: a tutorial that gets someone to a first successful call, task-oriented guides for common integrations, complete reference, and conceptual explanation of the model. Identify which we have and which we lack — most APIs have reference and nothing else, and that is why integration is slow. Then check the content that support questions reveal as missing: error meanings and how to recover, rate limits and quota behaviour, pagination and idempotency semantics, sandbox and test data, and what changes when you go to production. Finish with how examples are kept executable so they cannot rot.",
+		why: "Using the support question log to drive documentation gaps is what makes this concrete, and the four-mode split explains why complete reference still leaves people stuck.",
+		watchOut: "Generated reference is complete and unhelpful on its own. The narrative material is the part that requires human effort and the part that gets skipped.",
+		related: [
+			"api-sandbox-and-fixtures",
+			"api-ergonomics",
+			"openapi-contract-first",
+			"progressive-disclosure"
+		],
+		tags: [
+			"api",
+			"documentation",
+			"developer experience",
+			"writing"
+		]
+	},
+	{
+		id: "api-sandbox-and-fixtures",
+		name: "Sandbox and Test Fixtures",
+		aka: [
+			"test mode",
+			"API playground",
+			"simulated scenarios"
+		],
+		origin: "Platform API practice; payment providers set the standard",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Give integrators a safe environment plus a way to trigger every outcome deliberately — including the failures they must handle and would never see otherwise.",
+		useWhen: [
+			"integrators only test the happy path because errors are hard to produce",
+			"customers test against production and create real records",
+			"a partner went live having never handled a declined transaction",
+			"our test environment does not behave like production"
+		],
+		prompt: "Design a test environment for our API. Specify how it is separated from production — credentials, data, and whether side effects such as emails and webhooks fire — and how obvious it is which mode a caller is in, since accidental production calls are the failure to prevent. Then design deterministic scenario triggers: specific input values that reliably produce each error, each edge case, and each asynchronous outcome, so integrators can build tests around them. List those triggers as documented contract. Finish with the fidelity question: state where the sandbox intentionally differs from production so nobody is surprised at launch.",
+		why: "Deterministic triggers for failure scenarios are what make integrators handle errors at all, and documenting where fidelity is lower prevents the launch-day surprise.",
+		watchOut: "A sandbox that drifts from production teaches integrators the wrong behaviour. It needs to be updated in the same release as the real service.",
+		related: [
+			"api-documentation-quality",
+			"contract-testing",
+			"testing-in-production",
+			"error-response-design"
+		],
+		tags: [
+			"api",
+			"testing",
+			"developer experience",
+			"integration"
+		]
+	},
+	{
+		id: "api-usage-analytics",
+		name: "API Usage Analytics",
+		aka: [
+			"endpoint usage telemetry",
+			"consumer analytics",
+			"field-level usage"
+		],
+		origin: "Platform operations practice",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "Know who calls what, how often, and which fields they read — otherwise every change is a guess and nothing can ever be removed.",
+		useWhen: [
+			"we cannot remove this field because nobody knows if it is used",
+			"we do not know which customers a change would break",
+			"an endpoint we thought was dead turned out to be critical to one client",
+			"we cannot tell whether the new version is being adopted"
+		],
+		prompt: "Design usage telemetry for our API. Record per call the consumer identity, operation, version, response status, latency and error class, and — for flexible query interfaces — the specific fields requested, since field-level usage is what makes deprecation safe. Then define the reports that decisions need: usage by consumer for deprecation planning, adoption of new versions, error rates per consumer which often reveal an integration problem before they report it, and the endpoints with no traffic at all. Finish with the privacy constraints on what may be recorded and the retention period that supports a deprecation cycle.",
+		why: "Field-level usage is the data that unblocks removals, and per-consumer error rates let you contact a customer before they notice their integration is broken.",
+		watchOut: "Usage data with no identifiable consumer cannot support deprecation. If most traffic is unattributable, fix identity before building reports.",
+		related: [
+			"deprecation-policy",
+			"persisted-queries",
+			"api-quota-design",
+			"observability-instrumentation"
+		],
+		tags: [
+			"api",
+			"analytics",
+			"lifecycle",
+			"telemetry"
+		]
+	},
+	{
+		id: "idempotent-http-methods",
+		name: "Method Safety and Idempotence",
+		aka: [
+			"safe methods",
+			"idempotent verbs",
+			"GET has no side effects"
+		],
+		origin: "HTTP specification semantics",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Infrastructure everywhere assumes reads are safe and certain writes are repeatable — violate that and prefetchers, retries and caches will corrupt your data.",
+		useWhen: [
+			"a link prefetcher deleted records by following links",
+			"a crawler triggered actions by visiting URLs",
+			"a retry created a duplicate because the method was not repeatable",
+			"someone implemented a state change behind a read request"
+		],
+		prompt: "Audit these endpoints against method semantics. For each, state whether it changes state and whether repeating it produces the same result, then compare against what the method used implies. Report every violation with its concrete consequence: state changes behind a read are triggered by crawlers, prefetchers, browser history and link scanners; non-repeatable operations behind a method infrastructure treats as repeatable will be duplicated by any automatic retry. Then give the fixes: the correct method, or where the operation genuinely cannot be repeatable, an idempotency key making it so. Finish with the caching implications of each correction.",
+		why: "Naming the specific agents that will exercise a state-changing read — prefetchers, crawlers, scanners — turns an abstract specification point into a demonstrable defect.",
+		watchOut: "A read that writes an audit record or updates a counter is technically unsafe but usually fine. Judge by whether repetition causes harm, not by strict purity.",
+		related: [
+			"idempotency-keys",
+			"http-status-semantics",
+			"retry-with-backoff",
+			"cdn-edge-caching"
+		],
+		tags: [
+			"api",
+			"http",
+			"semantics",
+			"correctness"
+		]
+	},
+	{
+		id: "api-naming-conventions",
+		name: "API Naming Conventions",
+		aka: [
+			"consistent vocabulary",
+			"casing conventions",
+			"field naming"
+		],
+		origin: "API design practice; internal style guides at large platforms",
+		domains: ["engineering", "writing"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Consistency in names lets a developer guess correctly — inconsistency means every field must be looked up, forever.",
+		useWhen: [
+			"one endpoint returns userId and another returns user_id",
+			"we have created_at, createdOn and dateCreated in the same API",
+			"the same concept has three names across our endpoints",
+			"developers constantly ask what the difference between these two fields is"
+		],
+		prompt: "Establish naming conventions for this API and audit against them. Cover casing, singular versus plural for collections, date and time field naming with the timezone convention stated, boolean naming that avoids negatives, identifier field naming, and enumeration value formatting. Then do the more valuable part: build the vocabulary list and find every concept with more than one name across our endpoints, and every name used for more than one concept — the second category is worse because it actively misleads. Recommend the corrections, marking which are breaking changes and grouping them so they can ship with the next version rather than one at a time.",
+		why: "The one-name-two-concepts finding is the one that causes real integration bugs, and grouping corrections into a version keeps consistency work from becoming a stream of small breaks.",
+		watchOut: "Consistency with your existing API beats consistency with a style guide. A single correctly-named field among ninety wrong ones is a trap.",
+		related: [
+			"ubiquitous-language",
+			"naming-as-design",
+			"api-ergonomics",
+			"api-versioning-strategy"
+		],
+		tags: [
+			"api",
+			"naming",
+			"consistency",
+			"conventions"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/concurrency.ts
+var concurrency = [
+	{
+		id: "parallelism-vs-concurrency",
+		name: "Concurrency versus Parallelism",
+		aka: ["dealing with many things at once", "doing many things at once"],
+		origin: "Rob Pike, Concurrency Is Not Parallelism, 2012",
+		domains: ["engineering"],
+		intents: ["explain", "reframe"],
+		oneLiner: "Concurrency is a way of structuring work so parts can progress independently; parallelism is executing them simultaneously — you can have either without the other.",
+		useWhen: [
+			"we added threads and it got slower",
+			"someone says make it concurrent and I do not know what they want",
+			"the work is all waiting on the network and we bought more cores",
+			"I cannot tell whether our bottleneck needs more workers or a different structure"
+		],
+		prompt: "Clarify what this workload actually needs. Determine whether the goal is throughput on compute, responsiveness while waiting, or independent progress of unrelated tasks, since those want different mechanisms — more cores, non-blocking waiting, and independent task structure respectively. Then examine our current design and say which we have. Be specific about where the limit sits: cores, blocked threads, a shared lock, or a downstream service that will not go faster no matter what we do locally. Finish with the restructuring that would help and the one that would not, with the reason each.",
+		why: "Adding threads to a workload limited by a downstream service or a lock makes it worse. Separating the three goals is what stops that reflex.",
+		watchOut: "Concurrency always adds a correctness burden. If the workload is neither latency-bound nor parallelisable, the simplest sequential version is the right answer.",
+		related: [
+			"async-io-model",
+			"thread-pool-sizing",
+			"amdahls-law",
+			"cpu-vs-io-bound"
+		],
+		tags: [
+			"concurrency",
+			"architecture",
+			"performance",
+			"fundamentals"
+		]
+	},
+	{
+		id: "race-condition-diagnosis",
+		name: "Race Condition Diagnosis",
+		aka: [
+			"check-then-act",
+			"time-of-check to time-of-use",
+			"interleaving bugs"
+		],
+		origin: "Concurrent programming fundamentals; TOCTOU from security literature",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "A logical race is a check followed by an action where the world can change in between — find them by looking for the gap, not by staring at threads.",
+		useWhen: [
+			"it works ninety-nine times and fails on the hundredth",
+			"we checked whether the record existed and then created it and got a duplicate",
+			"the bug only appears under load and never in testing",
+			"two requests at the same moment produced an impossible state"
+		],
+		prompt: "Find the check-then-act sequences in this code. For each, describe the window between the check and the action, what another actor could do in that window, and the resulting incorrect state — that concrete interleaving is the proof, and without it a suspected race is speculation. Look beyond obvious threads: separate processes, retries, background jobs, and the user's own second browser tab all count. Then give the fix per case in order of preference: make the operation atomic at the storage layer with a constraint or conditional write, hold a lock across the window, or restructure so the check is unnecessary. Finish with the test that would reproduce it.",
+		why: "Writing the specific interleaving distinguishes real races from paranoia, and preferring a database constraint over a lock produces fixes that survive multiple processes.",
+		watchOut: "A lock in application memory does not protect against a second instance of the application. Verify the scope of the protection matches the scope of the concurrency.",
+		related: [
+			"data-race-diagnosis",
+			"transaction-isolation-levels",
+			"optimistic-concurrency",
+			"idempotency-keys"
+		],
+		tags: [
+			"concurrency",
+			"debugging",
+			"correctness",
+			"races"
+		]
+	},
+	{
+		id: "data-race-diagnosis",
+		name: "Data Race Diagnosis",
+		aka: [
+			"unsynchronised access",
+			"race detector",
+			"torn reads"
+		],
+		origin: "Memory model literature; ThreadSanitizer and race detector tooling",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Two threads touching the same memory without synchronisation, at least one writing, is undefined behaviour — not merely a value that might be stale.",
+		useWhen: [
+			"the value is occasionally garbage rather than merely old",
+			"it works in debug builds and fails when optimised",
+			"a field is read by one thread and written by another with no lock",
+			"the crash makes no sense given the code as written"
+		],
+		prompt: "Audit this code for unsynchronised shared access. List every piece of mutable state reachable from more than one thread, and for each say what establishes ordering — a lock, an atomic, a channel handoff, or nothing. Then explain why unsynchronised access is worse than stale values: without ordering, the compiler and processor may reorder, cache, split or eliminate the access entirely, so the observed behaviour need not correspond to any interleaving of the source. Recommend the fix per case, preferring confinement to one thread or immutability over adding a lock. Finish with how to run a race detector against our tests and what workload will actually exercise these paths.",
+		why: "Treating this as a staleness problem leads to fixes that appear to work and remain undefined. Explaining reordering and elimination is what forces a real synchronisation decision.",
+		watchOut: "Race detectors only report races on paths that actually execute concurrently during the run. A clean report means your test did not exercise it, not that the code is safe.",
+		related: [
+			"memory-visibility",
+			"atomic-operations",
+			"immutability-by-default",
+			"concurrency-testing"
+		],
+		tags: [
+			"concurrency",
+			"memory model",
+			"debugging",
+			"correctness"
+		]
+	},
+	{
+		id: "memory-visibility",
+		name: "Memory Visibility",
+		aka: [
+			"happens-before",
+			"volatile semantics",
+			"memory barriers"
+		],
+		origin: "Java Memory Model, JSR-133, 2004; C++11 memory model",
+		domains: ["engineering"],
+		intents: ["explain", "structure"],
+		oneLiner: "A write by one thread is not guaranteed visible to another without an ordering relationship — locks and atomics provide it, ordinary variables do not.",
+		useWhen: [
+			"the flag was set and the other thread never noticed",
+			"the loop waiting on a boolean spins forever",
+			"we published an object and another thread saw it half-initialised",
+			"adding a print statement made the bug disappear"
+		],
+		prompt: "Explain the ordering guarantees this code relies on and whether it has them. For each cross-thread communication, identify the pair of operations that must establish ordering — the release on the writing side and the acquire on the reading side — and confirm the language construct used actually provides it. Pay attention to safe publication: an object whose fields are written before it is stored into a shared reference can still be observed partially constructed without a proper release. Then recommend the minimal correct construct rather than the strongest, and say which of our uses genuinely need ordering versus only atomicity.",
+		why: "Safe publication of a fully-constructed object is the subtle failure that produces impossible-looking states, and it is invisible when reading code sequentially.",
+		watchOut: "A variable marked for visibility gives ordering, not atomicity. Increment on such a variable is still a lost-update race.",
+		related: [
+			"data-race-diagnosis",
+			"atomic-operations",
+			"immutability-by-default",
+			"compare-and-swap"
+		],
+		tags: [
+			"concurrency",
+			"memory model",
+			"fundamentals",
+			"correctness"
+		]
+	},
+	{
+		id: "atomic-operations",
+		name: "Atomic Operations",
+		aka: [
+			"atomics",
+			"lock-free counters",
+			"fetch and add"
+		],
+		origin: "Hardware primitives; exposed in language standard libraries",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Single operations the hardware guarantees indivisible — useful for counters and flags, and a trap when several of them are combined and assumed atomic together.",
+		useWhen: [
+			"the counter is wrong under load even though each increment looks fine",
+			"we replaced a lock with atomics and now the state is inconsistent",
+			"we need a fast counter and a lock feels heavy",
+			"two atomic reads in a row gave a contradictory picture"
+		],
+		prompt: "Assess where atomic operations fit in this code. Identify the state that genuinely fits a single atomic word and the state that does not, and be explicit about the compositional trap: two atomic operations performed in sequence are not atomic together, so any invariant spanning two variables needs a lock or a single combined value. Then, for the cases that do fit, choose the operation and the ordering strength, defaulting to the strongest and relaxing only with a stated reason. Finish with contention: a single hot atomic counter across many cores can be slower than a lock plus batching, so recommend sharded or thread-local accumulation where the value is only read occasionally.",
+		why: "The two-atomics-are-not-atomic trap is the standard way lock-free code becomes subtly wrong, and hot-counter contention is why the fast option is sometimes slower.",
+		watchOut: "Relaxed memory orderings are extremely difficult to reason about and rarely justified outside hot paths measured to matter. Use the default unless proven.",
+		related: [
+			"memory-visibility",
+			"compare-and-swap",
+			"false-sharing",
+			"lock-contention"
+		],
+		tags: [
+			"concurrency",
+			"atomics",
+			"lock-free",
+			"performance"
+		]
+	},
+	{
+		id: "compare-and-swap",
+		name: "Compare-and-Swap Loops",
+		aka: [
+			"CAS",
+			"optimistic retry loop",
+			"lock-free update"
+		],
+		origin: "Hardware primitive; foundational to lock-free algorithms",
+		domains: ["engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Read a value, compute the new one, and swap it in only if nothing changed meanwhile — retrying on failure gives lock-free updates without blocking.",
+		useWhen: [
+			"a lock around this tiny update is dominating the profile",
+			"threads block on a shared counter under heavy contention",
+			"I want an update that never blocks other threads",
+			"the retry loop spins forever under load"
+		],
+		prompt: "Design this update as a compare-and-swap loop and be honest about when it is worth it. Show the read, compute, swap and retry structure, and specify what happens under sustained contention where a thread may retry many times — including whether progress is guaranteed for any individual thread, which lock-free structures do not promise. Then flag the classic hazard where a value changes from A to B and back to A between the read and the swap, so the comparison succeeds although the state moved; say whether our case is vulnerable and if so use a version-tagged value. Finish by comparing against a plain lock at our measured contention level.",
+		why: "The value-changed-and-changed-back hazard invalidates otherwise correct-looking lock-free code, and comparing against a plain lock at measured contention usually favours the lock.",
+		watchOut: "Lock-free is not wait-free. Under heavy contention an unlucky thread can retry indefinitely while others make progress.",
+		related: [
+			"atomic-operations",
+			"optimistic-concurrency",
+			"lock-contention",
+			"memory-visibility"
+		],
+		tags: [
+			"concurrency",
+			"lock-free",
+			"atomics",
+			"algorithms"
+		]
+	},
+	{
+		id: "lock-contention",
+		name: "Lock Contention",
+		aka: [
+			"mutex contention",
+			"lock convoy",
+			"critical section width"
+		],
+		origin: "Concurrent systems performance practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "When many threads want the same lock, throughput collapses to the width of the critical section — the fix is usually to shrink or split it, not to switch lock types.",
+		useWhen: [
+			"adding threads stopped helping and then started hurting",
+			"the profile shows everything waiting on one lock",
+			"CPU is idle and throughput is flat",
+			"one slow operation inside a lock blocks everyone else"
+		],
+		prompt: "Diagnose contention in this code. Measure hold time and wait time per lock rather than guessing which is hot. Then work through the remedies in order of effect: remove work from inside the critical section, especially any I/O or allocation, since a single blocking call inside a lock serialises the whole system; split one lock into several covering independent state; shard by key so different items use different locks; or eliminate sharing entirely with per-thread state and periodic merging. Only after those consider a different lock implementation. Finish with the expected throughput change derived from the reduced critical section width.",
+		why: "I/O inside a critical section is the single most common cause and the easiest fix, and it is invisible in a CPU profile because the threads are blocked rather than running.",
+		watchOut: "Splitting one lock into many introduces ordering requirements and therefore deadlock potential. Establish an acquisition order before you split.",
+		related: [
+			"database-deadlocks",
+			"universal-scalability-law",
+			"thread-pool-sizing",
+			"false-sharing"
+		],
+		tags: [
+			"concurrency",
+			"performance",
+			"locks",
+			"scaling"
+		]
+	},
+	{
+		id: "false-sharing",
+		name: "False Sharing",
+		aka: ["cache line ping-pong", "padding for contention"],
+		origin: "Computer architecture; widely discussed in mechanical sympathy practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Two threads writing to different variables that happen to share a cache line contend at the hardware level, even though the code shares nothing.",
+		useWhen: [
+			"per-thread counters scale terribly despite being independent",
+			"adding a core made a parallel loop slower",
+			"the profile blames a line of code that does almost nothing",
+			"padding a struct mysteriously fixed performance"
+		],
+		prompt: "Check this parallel code for hardware-level contention. Identify variables written by different threads that could sit within the same cache line — adjacent fields in a struct, adjacent elements of an array indexed by thread, and counters in a shared object are the usual cases. Then propose the fix: padding or alignment so each thread's written data occupies its own line, or restructuring to thread-local accumulation merged at the end, which is usually better because it also removes the coherence traffic entirely. Finish with how to confirm it, since this hypothesis needs measurement rather than reasoning — name the counter or experiment that would demonstrate it.",
+		why: "This is invisible in source code and produces scaling behaviour that looks inexplicable. Naming the confirmation experiment prevents padding things speculatively.",
+		watchOut: "Padding everything wastes memory and hurts locality elsewhere. Apply it to demonstrated hot spots only.",
+		related: [
+			"cache-hierarchy-locality",
+			"atomic-operations",
+			"lock-contention",
+			"universal-scalability-law"
+		],
+		tags: [
+			"concurrency",
+			"performance",
+			"hardware",
+			"scaling"
+		]
+	},
+	{
+		id: "read-write-locks",
+		name: "Read-Write Locks",
+		aka: [
+			"shared exclusive locks",
+			"reader preference",
+			"writer starvation"
+		],
+		origin: "Concurrent programming primitives",
+		domains: ["engineering"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Allowing many concurrent readers or one writer helps read-heavy workloads, and costs more than a plain lock when critical sections are short.",
+		useWhen: [
+			"reads massively outnumber writes and they block each other",
+			"we switched to a reader-writer lock and it got slower",
+			"the writer never gets a turn under constant read load",
+			"a reader tried to upgrade to a writer and deadlocked"
+		],
+		prompt: "Decide whether a shared-exclusive lock suits this data. It pays only when critical sections are long enough for concurrent reads to matter, since the bookkeeping costs more than a simple lock for very short sections — so measure the section length first. Then address the two failure modes: writer starvation under continuous reads, which requires a fairness policy, and upgrade deadlock where two readers both attempt to become writers. State our policy on both. Finally compare against the alternatives that avoid the problem entirely — an immutable snapshot readers use without locking, or copy-on-write — which are often better for read-dominated data.",
+		why: "Immutable snapshots frequently beat reader-writer locks outright for read-heavy data, and that alternative is skipped when the question is framed as which lock to use.",
+		watchOut: "Recursive acquisition and upgrade semantics differ by platform and are a common source of hangs. Check the exact behaviour of your implementation.",
+		related: [
+			"copy-on-write",
+			"lock-contention",
+			"immutability-by-default",
+			"livelock-and-starvation"
+		],
+		tags: [
+			"concurrency",
+			"locks",
+			"performance",
+			"design"
+		]
+	},
+	{
+		id: "livelock-and-starvation",
+		name: "Livelock and Starvation",
+		aka: [
+			"fairness",
+			"no progress despite activity",
+			"retry storms"
+		],
+		origin: "Concurrent systems theory",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "A system can be fully busy and making no progress — threads retrying against each other, or one participant never getting its turn.",
+		useWhen: [
+			"the CPU is pinned and nothing is completing",
+			"one worker never gets any work while the others are busy",
+			"transactions keep aborting and retrying forever",
+			"the system is active but the queue is not draining"
+		],
+		prompt: "Diagnose whether this is deadlock, livelock or starvation, since the symptoms differ and the fixes are unrelated. Deadlock means everyone is blocked; livelock means everyone is running and nobody progresses; starvation means the system progresses but some participant never does. Determine which from thread states and completion counts rather than from the CPU graph. Then apply the matching remedy: for livelock, randomised backoff so retrying actors stop synchronising; for starvation, an explicit fairness policy such as queueing or ageing so waiting participants gain priority. Finish with the metric that would detect recurrence — per-participant progress, not aggregate throughput.",
+		why: "Aggregate throughput hides starvation completely, and distinguishing the three states from thread state plus completion counts is what selects the right fix.",
+		watchOut: "Fairness costs throughput. A strictly fair queue is slower than an unfair one, and sometimes the unfairness is acceptable if bounded.",
+		related: [
+			"lock-contention",
+			"read-write-locks",
+			"retry-with-backoff",
+			"priority-inversion"
+		],
+		tags: [
+			"concurrency",
+			"fairness",
+			"diagnosis",
+			"liveness"
+		]
+	},
+	{
+		id: "priority-inversion",
+		name: "Priority Inversion",
+		aka: ["priority inheritance", "low priority holding a lock"],
+		origin: "Real-time systems; famously diagnosed on the Mars Pathfinder, 1997",
+		domains: ["engineering"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "A high-priority task blocked on a resource held by a low-priority one can be delayed indefinitely by medium-priority work that preempts the holder.",
+		useWhen: [
+			"the urgent request waits behind background work",
+			"our critical path is delayed by something that should never block it",
+			"the batch job starves the interactive traffic",
+			"latency spikes exactly when the maintenance job runs"
+		],
+		prompt: "Look for priority inversion in this system, including the distributed analogues that most systems have without using thread priorities at all: a background job holding a database lock that user requests need, a bulk export consuming the shared connection pool, or a low-value request occupying a worker while a paying customer queues. Identify every shared resource where work of different importance contends. Then apply the remedies: separate resource pools per class so they cannot block each other, priority-aware queueing, or bounding the time any low-priority holder may keep a shared resource. Say which of ours is the biggest exposure.",
+		why: "Framing this beyond thread priorities into shared pools and locks is what makes it applicable to ordinary services, where the same dynamic causes unexplained latency spikes.",
+		watchOut: "Simply raising the priority of the important work does not help if it still has to wait for the same lock. The resource must be separated or the holding time bounded.",
+		related: [
+			"bulkhead-isolation",
+			"livelock-and-starvation",
+			"lock-contention",
+			"load-shedding"
+		],
+		tags: [
+			"concurrency",
+			"scheduling",
+			"latency",
+			"diagnosis"
+		]
+	},
+	{
+		id: "thread-pool-sizing",
+		name: "Thread Pool Sizing",
+		aka: [
+			"worker count",
+			"pool tuning",
+			"unbounded pools"
+		],
+		origin: "Concurrent programming practice; Brian Goetz's guidance on pool sizing",
+		domains: ["engineering"],
+		intents: ["estimate", "structure"],
+		oneLiner: "Size a pool from the work it does — roughly core count for computation, much higher for waiting — and never leave it unbounded.",
+		useWhen: [
+			"we set the pool to two hundred threads because it seemed safer",
+			"the service runs out of memory under load",
+			"increasing workers made throughput worse",
+			"tasks queue up while threads sit idle waiting on the network"
+		],
+		prompt: "Size these pools from the workload. For compute-bound work, derive from available cores and show the arithmetic; for work that spends most of its time waiting, derive from the target throughput and the wait duration using the concurrency relationship, then check the result against the downstream capacity so we do not simply move the queue. Then insist on bounds: a bounded queue with a defined rejection policy, because an unbounded queue converts overload into memory exhaustion and unbounded latency. Finally recommend separate pools for work of different character, since mixing blocking and compute tasks in one pool makes both behave badly.",
+		why: "Deriving the waiting-work pool size from throughput and wait time gives a defensible number, and separating pools by task character prevents one slow dependency from consuming everything.",
+		watchOut: "A pool larger than the downstream service can handle just relocates the queue. The correct size depends on someone else's capacity, not only yours.",
+		related: [
+			"queueing-theory-basics",
+			"connection-pooling",
+			"bulkhead-isolation",
+			"backpressure"
+		],
+		tags: [
+			"concurrency",
+			"tuning",
+			"capacity",
+			"threads"
+		]
+	},
+	{
+		id: "semaphore-limiting",
+		name: "Concurrency Limiting",
+		aka: [
+			"semaphores",
+			"in-flight caps",
+			"admission limits"
+		],
+		origin: "Dijkstra's semaphores, 1965; modern use in client-side limiting",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Cap how many operations of a kind may be in flight at once, so one workload cannot consume all of a shared resource.",
+		useWhen: [
+			"a burst of parallel calls overwhelmed a downstream service",
+			"the batch job opened five hundred connections at once",
+			"we need to be a good citizen against a rate-limited third party",
+			"memory spikes because too many large operations run together"
+		],
+		prompt: "Add explicit in-flight limits to these operations. Identify each shared or external resource and set a cap derived from what that resource can serve rather than from what we can generate. Then specify the behaviour when the limit is reached — queue with a bounded wait, or reject immediately — and tie the wait timeout to the caller's remaining deadline so waiting does not consume the entire budget. Consider an adaptive limit that adjusts to observed latency and errors, since a static number is wrong whenever the downstream changes. Finish with the telemetry: time spent waiting for a permit is the signal that the limit is too tight or the dependency is degraded.",
+		why: "Wait-for-permit time is a uniquely diagnostic metric that distinguishes our own throttling from downstream slowness, and it is almost never instrumented.",
+		watchOut: "A limit that is too low silently caps throughput and looks like a slow dependency. Without the wait metric you will investigate the wrong system.",
+		related: [
+			"thread-pool-sizing",
+			"bulkhead-isolation",
+			"backpressure",
+			"rate-limiting-algorithms"
+		],
+		tags: [
+			"concurrency",
+			"limits",
+			"resilience",
+			"resources"
+		]
+	},
+	{
+		id: "producer-consumer-queue",
+		name: "Producer-Consumer Queues",
+		aka: [
+			"bounded buffer",
+			"work queue",
+			"in-process pipeline"
+		],
+		origin: "Classic concurrency pattern; Dijkstra-era origins",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Decouple producing work from consuming it through a bounded queue, which is also where backpressure, ordering and shutdown semantics have to be decided.",
+		useWhen: [
+			"the fast producer overwhelms the slow consumer",
+			"work is lost when the process shuts down",
+			"the in-memory queue grew until the process died",
+			"we need to process items in the background without blocking the request"
+		],
+		prompt: "Design this in-process pipeline. Specify the queue bound derived from acceptable latency and memory, and the producer's behaviour when it is full — block, drop, or reject — chosen deliberately rather than by default. Then handle the properties that determine correctness: whether ordering matters and therefore whether consumers may run in parallel, how a consumer failure is handled without losing the item, and shutdown, where in-flight and queued work must either drain within a deadline or be persisted. Be explicit that anything held only in memory is lost on crash, and say whether that is acceptable or whether this needs a durable queue instead.",
+		why: "The in-memory queue and crash-loss question is the one that decides whether this pattern is appropriate at all, and it is usually assumed rather than decided.",
+		watchOut: "An in-process queue makes a request look fast while the work has not happened. If the user believes it is done, a crash breaks a promise you made.",
+		related: [
+			"backpressure",
+			"graceful-shutdown",
+			"delivery-semantics",
+			"thread-pool-sizing"
+		],
+		tags: [
+			"concurrency",
+			"queues",
+			"pipelines",
+			"reliability"
+		]
+	},
+	{
+		id: "work-stealing",
+		name: "Work Stealing",
+		aka: ["fork-join scheduling", "load balancing between workers"],
+		origin: "Blumofe and Leiserson, Cilk, 1994",
+		domains: ["engineering"],
+		intents: ["explain", "structure"],
+		oneLiner: "Idle workers take tasks from busy workers' queues, which balances uneven workloads automatically without a central dispatcher.",
+		useWhen: [
+			"some workers finish early and sit idle while others are swamped",
+			"the tasks vary enormously in size and we cannot predict which",
+			"partitioning the work evenly up front is impossible",
+			"our parallel loop is limited by its slowest chunk"
+		],
+		prompt: "Assess whether a stealing scheduler suits this workload. It pays when task durations are unpredictable and tasks are independent, so state whether ours are. Explain the mechanism — per-worker queues with stealing from the opposite end to reduce contention — and what it implies for task granularity: too fine and scheduling overhead dominates, too coarse and stealing cannot balance anything, so recommend a granularity for our case. Then flag the constraints people violate: a blocking call inside a task starves its worker, and tasks that depend on thread-local state break when stolen. Identify where our code would violate either.",
+		why: "Blocking inside a task and reliance on thread-local state are the two things that silently defeat these schedulers, and both are common in code written for a plain pool.",
+		watchOut: "A stealing pool shared across the application means one workload's blocking tasks degrade everyone else's. Separate pools for blocking work.",
+		related: [
+			"thread-pool-sizing",
+			"parallelism-vs-concurrency",
+			"amdahls-law",
+			"event-loop-blocking"
+		],
+		tags: [
+			"concurrency",
+			"scheduling",
+			"parallelism",
+			"performance"
+		]
+	},
+	{
+		id: "copy-on-write",
+		name: "Copy-on-Write",
+		aka: [
+			"COW",
+			"persistent snapshots",
+			"immutable swap"
+		],
+		origin: "Operating systems memory management; adopted in concurrent collections",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Readers work on an immutable snapshot while a writer builds a new version and swaps it in, giving lock-free reads at the cost of copying on write.",
+		useWhen: [
+			"configuration is read constantly and updated rarely",
+			"readers block on a lock that writers hold for a moment a day",
+			"iterating this collection while it changes throws exceptions",
+			"we need a consistent view of shared state without stopping readers"
+		],
+		prompt: "Evaluate copy-on-write for this shared state. Confirm the read-to-write ratio makes copying affordable and state the copy cost at our data size. Then design the swap: readers hold a reference to an immutable version and are unaffected by the writer, and the new version becomes visible by a single reference assignment with the appropriate publication guarantee. Address the two consequences: readers that took a snapshot may act on data that is now stale, so say whether that is acceptable per use case, and concurrent writers must be serialised among themselves. Finish with memory behaviour, since old versions live until the last reader releases them.",
+		why: "The staleness acceptance per use case and the writer serialisation are the two decisions this pattern requires, and both are easy to skip because reads look effortless.",
+		watchOut: "Copying a large structure for a small change is wasteful. Persistent data structures with structural sharing give the same semantics without full copies.",
+		related: [
+			"immutability-by-default",
+			"read-write-locks",
+			"memory-visibility",
+			"crdt"
+		],
+		tags: [
+			"concurrency",
+			"immutability",
+			"snapshots",
+			"performance"
+		]
+	},
+	{
+		id: "shared-nothing-design",
+		name: "Shared-Nothing Design",
+		aka: [
+			"thread confinement",
+			"partition by key",
+			"no shared mutable state"
+		],
+		origin: "Database architecture term, Michael Stonebraker, 1986; applied broadly",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Eliminate concurrency problems by ensuring no two workers touch the same state — partition the data instead of protecting it.",
+		useWhen: [
+			"our locking is getting complicated and we keep finding races",
+			"every fix adds another lock",
+			"contention limits throughput no matter how we tune",
+			"the state is naturally per-customer but we share one structure"
+		],
+		prompt: "Restructure this to remove sharing rather than to synchronise it. Find the natural partition key in the domain — customer, session, document, region — and design so each partition is owned by exactly one worker at a time, making synchronisation within a partition unnecessary. Then confront what remains genuinely shared: global counters, caches, and cross-partition operations. For each, say whether it can be made eventually consistent through periodic merging, or whether it truly needs coordination. Finish with the rebalancing question: how ownership moves when a worker fails or the partition count changes, since that handover is where the sharing sneaks back in.",
+		why: "Ownership handover on failure or rescaling is where shared-nothing designs reintroduce races, and it needs designing at the start rather than discovering later.",
+		watchOut: "Partitioning by a skewed key concentrates work on one owner. The concurrency problem becomes a hot partition problem instead.",
+		related: [
+			"partitioning-strategy",
+			"actor-model",
+			"immutability-by-default",
+			"consistent-hashing"
+		],
+		tags: [
+			"concurrency",
+			"architecture",
+			"partitioning",
+			"scaling"
+		]
+	},
+	{
+		id: "actor-model",
+		name: "Actor Model",
+		aka: ["message-passing concurrency", "actors and mailboxes"],
+		origin: "Carl Hewitt, 1973; popularised by Erlang and Akka",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Independent entities with private state that communicate only by asynchronous messages, processing one at a time — concurrency without shared memory.",
+		useWhen: [
+			"we have thousands of independent stateful entities and locking is a nightmare",
+			"each connection or session has its own state and lifecycle",
+			"we want failures of one entity not to affect others",
+			"shared state between our components keeps causing races"
+		],
+		prompt: "Model this system as message-passing entities. Define the actors from the domain — one per independent stateful thing rather than one per component — the messages each accepts, and its private state. Then address the consequences that determine whether this works: everything becomes asynchronous so request-response requires correlation and timeouts, mailboxes are queues that need bounds, and a message accepted does not mean processed. Specify supervision: what happens when an actor fails, whether its state is recoverable, and who restarts it. Finish with the state durability question, since actor state held only in memory disappears on a crash.",
+		why: "Mailbox bounds and the accepted-versus-processed distinction are where actor systems fail operationally, and supervision is the part that makes failures survivable.",
+		watchOut: "Actors serialise per entity, so a single hot actor becomes a bottleneck no amount of parallelism fixes. Model granularity accordingly.",
+		related: [
+			"shared-nothing-design",
+			"csp-channels",
+			"producer-consumer-queue",
+			"graceful-degradation"
+		],
+		tags: [
+			"concurrency",
+			"architecture",
+			"message passing",
+			"state"
+		]
+	},
+	{
+		id: "csp-channels",
+		name: "Channels and CSP",
+		aka: ["communicating sequential processes", "share memory by communicating"],
+		origin: "Tony Hoare, 1978; popularised in Go",
+		domains: ["engineering"],
+		intents: ["structure", "explain"],
+		oneLiner: "Independent sequential processes coordinate by passing values over channels, where the handoff itself provides the synchronisation.",
+		useWhen: [
+			"coordinating these goroutines with mutexes is getting confusing",
+			"I do not know whether this channel should be buffered",
+			"the program hangs and I cannot tell which side is waiting",
+			"we leak workers that are blocked sending to a channel nobody reads"
+		],
+		prompt: "Design the channel topology for this concurrent code. For each channel, specify direction, whether it is buffered and why that buffer size, and — most importantly — who closes it and when, since closing is where these designs go wrong: closing a channel with multiple senders panics, and never closing leaks every receiver. Then trace every blocking operation and identify what guarantees it will not block forever, including the case where the consumer has abandoned the work. Recommend cancellation via a context or done channel on every blocking operation. Finish with the deadlock analysis: any cycle of blocking dependencies among these processes.",
+		why: "Ownership of channel closing and unbounded blocking on abandoned work are the two specific bugs that make channel code leak, and they are invisible in the happy path.",
+		watchOut: "Buffered channels hide backpressure and turn a coordination problem into a memory one. Prefer unbuffered until you have a reason.",
+		related: [
+			"actor-model",
+			"cancellation-propagation",
+			"producer-consumer-queue",
+			"structured-concurrency"
+		],
+		tags: [
+			"concurrency",
+			"channels",
+			"coordination",
+			"go"
+		]
+	},
+	{
+		id: "structured-concurrency",
+		name: "Structured Concurrency",
+		aka: [
+			"nurseries",
+			"scoped tasks",
+			"no orphan tasks"
+		],
+		origin: "Martin Sústrik and Nathaniel Smith, 2018; adopted in several languages",
+		domains: ["engineering"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Concurrent tasks live within a lexical scope that cannot exit until they complete, so no task outlives the code that started it or loses its errors.",
+		useWhen: [
+			"a background task threw an exception and nobody ever saw it",
+			"we start tasks and have no idea whether they finished",
+			"cancelling an operation leaves work running in the background",
+			"a request completed but its spawned work is still consuming resources"
+		],
+		prompt: "Restructure this concurrent code so every task has an owning scope. Identify each place we start work without keeping a handle on it — the fire-and-forget calls — and state what happens today to its errors, its cancellation and its resources. Then propose the scoped structure where the parent waits for all children and collects their outcomes, so an error in any child surfaces rather than vanishing. Specify the failure policy: whether the first failure cancels the siblings or all are awaited and errors aggregated. Finish with the genuinely long-lived background work that should not be scoped to a request, and where its ownership belongs instead.",
+		why: "Fire-and-forget tasks silently swallow errors and outlive their context, and enumerating them with their current error behaviour is what makes the problem visible.",
+		watchOut: "Not all work should be scoped to the request that triggered it. Genuinely asynchronous work needs an owner with a longer life, not a detached task.",
+		related: [
+			"cancellation-propagation",
+			"csp-channels",
+			"graceful-shutdown",
+			"async-await-pitfalls"
+		],
+		tags: [
+			"concurrency",
+			"structure",
+			"error handling",
+			"lifecycle"
+		]
+	},
+	{
+		id: "cancellation-propagation",
+		name: "Cancellation Propagation",
+		aka: [
+			"context cancellation",
+			"cooperative cancellation",
+			"abort signals"
+		],
+		origin: "Concurrent programming practice; Go contexts and cancellation tokens",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Cancellation is cooperative: work stops only if every layer checks and passes the signal along, so an unpropagated cancellation means the work continues invisibly.",
+		useWhen: [
+			"the user navigated away and the server kept processing",
+			"a timed-out request still holds a database connection",
+			"cancelling the operation does nothing until it finishes anyway",
+			"we waste capacity on work whose result is discarded"
+		],
+		prompt: "Trace cancellation through this call path. Identify every function that should accept and honour a cancellation signal and every place the chain is currently broken — a helper that does not take one, a library call with no cancellation support, a queue handoff that loses it, or a loop that never checks. Then specify what each layer does on cancellation: stop early, release resources, and importantly whether partial work is rolled back or left. Cover the operations that cannot be cancelled once started, such as a committed write or a sent message, and say where the point of no return is so callers know what cancelling actually guarantees.",
+		why: "Naming the point of no return is what makes cancellation semantics honest, and the broken-chain audit finds the layers that quietly ignore the signal.",
+		watchOut: "Cancellation that leaves partial state is worse than no cancellation. If the operation is not atomic, cancelling mid-way needs a defined cleanup.",
+		related: [
+			"structured-concurrency",
+			"deadline-propagation",
+			"timeout-budgets",
+			"graceful-shutdown"
+		],
+		tags: [
+			"concurrency",
+			"cancellation",
+			"resources",
+			"correctness"
+		]
+	},
+	{
+		id: "async-io-model",
+		name: "Asynchronous I/O",
+		aka: [
+			"non-blocking IO",
+			"event-driven concurrency",
+			"reactor pattern"
+		],
+		origin: "Operating systems event notification; popularised by Node.js and epoll-based servers",
+		domains: ["engineering"],
+		intents: ["explain", "decide"],
+		oneLiner: "Instead of a thread per waiting operation, register interest and be notified when ready — high concurrency for waiting workloads with a different set of hazards.",
+		useWhen: [
+			"we need to hold many thousands of connections open",
+			"threads are mostly blocked waiting on the network",
+			"memory is consumed by thread stacks doing nothing",
+			"someone proposed rewriting to be non-blocking and I need to weigh it"
+		],
+		prompt: "Assess the concurrency model for this workload. Compare thread-per-request against event-driven on the numbers: memory per unit of concurrency, context switching cost at our connection count, and where each model breaks. Then state the hazards of going event-driven honestly — any blocking call or long computation stalls everything on that loop, stack traces become harder to read, and every library in the path must also be non-blocking. Audit our dependencies for blocking calls. Finish with the middle option: lightweight threads if our platform offers them, which give the same scaling with sequential-looking code.",
+		why: "Lightweight threads make the classic trade obsolete on several platforms, and auditing dependencies for blocking calls is the step that predicts whether a migration will actually work.",
+		watchOut: "One blocking call inside an event loop degrades every connection on it, and the symptom is diffuse latency rather than an obvious error.",
+		related: [
+			"event-loop-blocking",
+			"green-threads",
+			"thread-pool-sizing",
+			"cpu-vs-io-bound"
+		],
+		tags: [
+			"concurrency",
+			"io",
+			"architecture",
+			"scaling"
+		]
+	},
+	{
+		id: "event-loop-blocking",
+		name: "Event Loop Blocking",
+		aka: [
+			"blocking the loop",
+			"starving the reactor",
+			"long task on the main thread"
+		],
+		origin: "Event-driven runtime practice; Node.js and browser main-thread guidance",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "In a single-threaded event loop, any synchronous work delays every other pending operation — so a CPU-heavy function becomes a service-wide latency spike.",
+		useWhen: [
+			"latency spikes across all requests at the same moment",
+			"the interface freezes while processing a large response",
+			"one endpoint makes every other endpoint slow",
+			"health checks time out while the process is busy"
+		],
+		prompt: "Find what blocks the loop in this code. Look for the specific offenders: synchronous file or crypto calls, large JSON parsing and serialisation, regular expressions with catastrophic backtracking, big array operations, and tight loops over large collections. Instrument to measure loop delay rather than inferring it, and say how. Then give the remedies per case: move computation to a worker, chunk long loops so control returns between slices, stream rather than parse whole payloads, and cap input sizes so a large request cannot monopolise the process. Finish with the guardrail — a loop-delay metric with an alert, since this degrades silently.",
+		why: "Loop delay is the direct measurement of this problem and is rarely instrumented, so teams diagnose it as a mysterious global latency issue instead.",
+		watchOut: "Input size limits are the most effective fix and the most often missing. Any parsing cost proportional to attacker-controlled input is a denial-of-service vector.",
+		related: [
+			"async-io-model",
+			"work-stealing",
+			"tail-latency",
+			"input-validation-boundary"
+		],
+		tags: [
+			"concurrency",
+			"latency",
+			"event loop",
+			"diagnosis"
+		]
+	},
+	{
+		id: "async-await-pitfalls",
+		name: "Async/Await Pitfalls",
+		aka: [
+			"unawaited promises",
+			"sync over async",
+			"accidental serialisation"
+		],
+		origin: "Practice across languages with async syntax; C# and JavaScript especially",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Asynchronous syntax hides real behaviour: forgotten awaits swallow errors, sequential awaits serialise independent work, and blocking on async code deadlocks.",
+		useWhen: [
+			"three independent calls take the sum of their durations",
+			"an error disappeared and we only found out from a customer",
+			"the code deadlocks when we call it from a synchronous method",
+			"an exception surfaced as an unhandled rejection with no stack"
+		],
+		prompt: "Review this asynchronous code for the standard defects. Find independent operations awaited one after another that should run concurrently, and show the corrected version with the latency saved. Find calls whose result is never awaited, and state what happens to their errors and their completion ordering. Find any place synchronous code blocks on an asynchronous result, which deadlocks on some runtimes and wastes a thread on all. Then check loops that await inside an iteration, which serialise everything and are the most common cause of slow batch processing. Finish with concurrency limits, since converting a serial loop to fully parallel can overwhelm a downstream service.",
+		why: "The await-inside-a-loop serialisation is the highest-value finding and looks completely idiomatic, and the fix needs a concurrency cap or it swaps a slow bug for an outage.",
+		watchOut: "Making everything concurrent removes the implicit rate limiting that sequential code provided. Add an explicit limit when you parallelise a loop.",
+		related: [
+			"structured-concurrency",
+			"semaphore-limiting",
+			"cancellation-propagation",
+			"event-loop-blocking"
+		],
+		tags: [
+			"concurrency",
+			"async",
+			"bugs",
+			"code review"
+		]
+	},
+	{
+		id: "green-threads",
+		name: "Lightweight Threads",
+		aka: [
+			"virtual threads",
+			"goroutines",
+			"coroutines",
+			"fibers"
+		],
+		origin: "Long history; recent mainstream revival via Go and Java virtual threads",
+		domains: ["engineering"],
+		intents: ["explain", "decide"],
+		oneLiner: "Runtime-scheduled threads cheap enough to have millions of, letting you write blocking sequential code that scales like an event loop.",
+		useWhen: [
+			"we want high concurrency without rewriting everything as callbacks",
+			"thread stacks consume all our memory",
+			"the async version of our code is much harder to read",
+			"someone is asking whether we should adopt virtual threads"
+		],
+		prompt: "Evaluate lightweight threads for this workload. Explain how they achieve high concurrency — many of them multiplexed onto few carrier threads, with blocking operations yielding rather than occupying a carrier — and therefore what makes them fail: operations that block the carrier without yielding, such as native calls, synchronised sections in some runtimes, and CPU-bound loops. Audit our code and dependencies for those. Then address pooling, since pooling lightweight threads is counterproductive and existing pool-based code needs restructuring, and thread-local state, which becomes memory per task rather than per pool thread.",
+		why: "The carrier-pinning cases and the now-harmful thread pooling are the two things that make migrations disappointing, and both are specific and checkable.",
+		watchOut: "Cheap threads remove the implicit concurrency limit a pool provided. Downstream services that coped because you had two hundred threads will now receive twenty thousand requests.",
+		related: [
+			"async-io-model",
+			"thread-pool-sizing",
+			"semaphore-limiting",
+			"structured-concurrency"
+		],
+		tags: [
+			"concurrency",
+			"runtime",
+			"scaling",
+			"threads"
+		]
+	},
+	{
+		id: "thread-safety-contracts",
+		name: "Thread-Safety Contracts",
+		aka: [
+			"documenting thread safety",
+			"confinement policy",
+			"is this class safe"
+		],
+		origin: "Brian Goetz, Java Concurrency in Practice, 2006",
+		domains: ["engineering"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Every class shared between threads has a synchronisation policy — write it down, because a caller cannot infer it and will guess wrong.",
+		useWhen: [
+			"I do not know whether it is safe to share this object between threads",
+			"someone used a library class concurrently and it corrupted state",
+			"the class is safe for some methods and not others and nobody documented it",
+			"we added a field and quietly broke a class that was thread-safe"
+		],
+		prompt: "Document the synchronisation policy for these classes. For each, state the category explicitly — immutable, thread-safe, conditionally thread-safe with the caller responsible for compound operations, or not safe and confined to one thread — and for the safe ones name what guards each mutable field. The conditionally-safe category is the one that causes bugs, so make it explicit where a caller must add external synchronisation for a sequence of calls. Then audit our usage against the documented policy and flag violations. Finish with the classes that should simply be made immutable instead, which usually removes the question entirely.",
+		why: "Conditionally thread-safe classes are used incorrectly because the contract is invisible, and making callers responsible for compound operations explicit is what prevents it.",
+		watchOut: "A thread-safe collection does not make a sequence of operations on it atomic. Iterate-then-modify is still a race regardless of the collection's guarantees.",
+		related: [
+			"immutability-by-default",
+			"race-condition-diagnosis",
+			"memory-visibility",
+			"liskov-substitution"
+		],
+		tags: [
+			"concurrency",
+			"documentation",
+			"contracts",
+			"api design"
+		]
+	},
+	{
+		id: "concurrency-testing",
+		name: "Concurrency Testing",
+		aka: [
+			"stress testing for races",
+			"interleaving exploration",
+			"race detectors"
+		],
+		origin: "Concurrent testing research; tools such as ThreadSanitizer and Lincheck",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Ordinary tests exercise one interleaving out of many, so concurrency bugs need techniques that deliberately explore or force the unlikely orderings.",
+		useWhen: [
+			"the race only shows up in production once a week",
+			"our tests pass consistently and the bug is definitely there",
+			"we cannot reproduce it locally no matter how many times we run",
+			"the fix seems to work but I cannot prove it"
+		],
+		prompt: "Design tests that can actually catch this concurrency defect. Combine the techniques rather than picking one: run under a race detector to catch unsynchronised access on executed paths, use stress tests with many threads and randomised delays inserted at the suspect points to widen the window, and where the state is small, use a systematic checker that explores interleavings exhaustively. Then make the failing case deterministic once found, by injecting a barrier or a controllable scheduling point so the test reliably reproduces it. Finish by stating which interleavings each technique cannot reach, so we know what remains unverified.",
+		why: "Turning a probabilistic failure into a deterministic one with injected scheduling points is what makes a concurrency fix verifiable rather than hopeful.",
+		watchOut: "Passing stress tests prove very little. Absence of failure under randomised scheduling is weak evidence compared with a systematic check or a proof of confinement.",
+		related: [
+			"data-race-diagnosis",
+			"deterministic-simulation-testing",
+			"race-condition-diagnosis",
+			"flaky-test-quarantine"
+		],
+		tags: [
+			"concurrency",
+			"testing",
+			"races",
+			"verification"
+		]
+	},
+	{
+		id: "deterministic-simulation-testing",
+		name: "Deterministic Simulation Testing",
+		aka: [
+			"simulation testing",
+			"FoundationDB-style testing",
+			"controlled scheduling"
+		],
+		origin: "FoundationDB, 2012; adopted by several distributed database teams",
+		domains: ["engineering"],
+		intents: ["critique", "plan"],
+		oneLiner: "Run the whole system on a simulated clock, network and scheduler seeded by a random number, so any bug found can be replayed exactly.",
+		useWhen: [
+			"our distributed bugs are impossible to reproduce",
+			"we find correctness problems only under real production conditions",
+			"each rare failure takes days to investigate and cannot be re-run",
+			"we want confidence in failure handling we cannot get from unit tests"
+		],
+		prompt: "Assess deterministic simulation for this system and be honest about the investment. The prerequisite is that all sources of nondeterminism go through injectable interfaces — clock, network, disk, scheduling, randomness — so start by auditing where our code touches those directly, since that refactor is most of the cost. Then describe the simulation: fault injection of message loss, reordering, delays, partitions and process crashes, all driven by a seed that makes any failure replayable. Specify the invariants checked continuously during the run, since a simulation without assertions only proves it did not crash. Finish with a smaller intermediate step worth taking if full simulation is too much.",
+		why: "Exact replayability from a seed is what makes rare distributed bugs tractable, and the continuously-checked invariants are what convert a fuzz run into a correctness test.",
+		watchOut: "The simulation is only as faithful as your model of the world. Bugs that depend on real hardware, real clock behaviour or real dependencies will not appear.",
+		related: [
+			"concurrency-testing",
+			"chaos-engineering",
+			"property-based-testing",
+			"deterministic-clock"
+		],
+		tags: [
+			"concurrency",
+			"testing",
+			"distributed systems",
+			"verification"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/delivery.ts
+var delivery = [
+	{
+		id: "trunk-based-development",
+		name: "Trunk-Based Development",
+		aka: ["mainline development", "short-lived branches"],
+		origin: "Continuous delivery practice; Paul Hammant and the DORA research",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Everyone integrates to one mainline at least daily behind flags, so merge conflicts stay small and the branch never diverges far enough to be scary.",
+		useWhen: [
+			"the feature branch has been open for six weeks and merging terrifies everyone",
+			"we spend days resolving conflicts at the end of every project",
+			"two people refactored the same area and neither knew",
+			"the release branch and main have diverged and nobody can reconcile them"
+		],
+		prompt: "Assess moving this team to daily integration. The blocker is always the same, so address it directly: how does unfinished work reach the mainline safely? Give the specific techniques — feature flags for user-visible behaviour, branch by abstraction for structural change, and keeping the new code path unreachable until complete — and map each of our current long branches to one. Then state the prerequisites honestly: a fast reliable pipeline, a review process that turns around in hours not days, and the discipline that mainline is always releasable. Say which prerequisite we lack, because adopting this without it makes things worse.",
+		why: "Teams fail at this because they remove long branches without adding the mechanisms for hiding incomplete work. Mapping each existing branch to a technique makes the transition concrete.",
+		watchOut: "Frequent integration into a mainline with a slow or flaky pipeline blocks everyone at once. Fix the pipeline first.",
+		related: [
+			"branching-strategy",
+			"feature-flag-hygiene",
+			"branch-by-abstraction",
+			"small-batch-releases"
+		],
+		tags: [
+			"delivery",
+			"version control",
+			"integration",
+			"workflow"
+		]
+	},
+	{
+		id: "branching-strategy",
+		name: "Branching Strategy",
+		aka: [
+			"git flow versus trunk",
+			"release branches",
+			"merge policy"
+		],
+		origin: "Version control practice; Vincent Driessen's git-flow, 2010, and the reaction to it",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose a branching model from how you release and how many versions you must support, not from what is fashionable — the two constraints differ enormously by product.",
+		useWhen: [
+			"our branching model has five branch types and nobody follows it",
+			"we support three released versions and need to patch all of them",
+			"hotfixes have to be applied to four branches by hand",
+			"we copied a diagram from a blog post and it does not fit us"
+		],
+		prompt: "Recommend a branching model for our situation. Derive it from three facts: how often we release, whether customers run versions we must patch, and whether releases require a formal approval gate. A continuously deployed web service and shipped on-premises software with three supported versions need genuinely different answers, so state ours. Then specify the mechanics that cause pain — how a fix reaches every branch that needs it and how we verify it did, since forgotten backports are the recurring failure — plus the merge policy, the protection rules, and the naming conventions. Keep the number of long-lived branches to the minimum the release model requires.",
+		why: "Anchoring the choice to release cadence and supported versions is what makes it defensible, and backport tracking is the operational detail every model handles badly by default.",
+		watchOut: "A complex model adopted for a simple release process becomes ceremony everyone routes around, which is worse than a simple model imperfectly applied.",
+		related: [
+			"trunk-based-development",
+			"release-train-vs-continuous",
+			"semantic-versioning",
+			"promotion-pipeline"
+		],
+		tags: [
+			"delivery",
+			"version control",
+			"process",
+			"releases"
+		]
+	},
+	{
+		id: "continuous-integration-discipline",
+		name: "Continuous Integration Discipline",
+		aka: [
+			"keep the build green",
+			"stop the line",
+			"integration hygiene"
+		],
+		origin: "Extreme Programming; Martin Fowler's continuous integration article",
+		domains: ["engineering"],
+		intents: ["plan", "steer"],
+		oneLiner: "The practice is not the tool: it is that everyone integrates frequently, the build is verified automatically, and a broken build is fixed before anything else.",
+		useWhen: [
+			"the build has been red for two days and people keep pushing",
+			"we have a CI server but the discipline is missing",
+			"people build up work locally for days before pushing",
+			"nobody feels responsible for a failure they did not cause"
+		],
+		prompt: "Assess our integration practice against the behaviours rather than the tooling. Check each: does everyone push to the shared mainline at least daily, does every push trigger a build that would catch a real defect, is a red build fixed within minutes, and is fixing it prioritised over new work. Measure the current state — average time to green after a break, and frequency of pushes per person — rather than asking people. Then propose the smallest set of changes that would move the weakest measure, and define the social rule explicitly, including what happens when someone leaves for the day with the build broken.",
+		why: "Measuring time-to-green and push frequency turns a cultural conversation into two numbers, and the leaving-with-a-red-build rule is the one that actually gets negotiated.",
+		watchOut: "A pipeline slow enough that people batch their work destroys the practice regardless of policy. Speed is a prerequisite, not an optimisation.",
+		related: [
+			"ci-signal-hygiene",
+			"trunk-based-development",
+			"build-time-reduction",
+			"flaky-test-quarantine"
+		],
+		tags: [
+			"delivery",
+			"ci",
+			"practice",
+			"culture"
+		]
+	},
+	{
+		id: "small-batch-releases",
+		name: "Small Batch Releases",
+		aka: [
+			"reduce batch size",
+			"ship smaller",
+			"deploy frequency"
+		],
+		origin: "Lean manufacturing; applied to software by the continuous delivery movement",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Smaller releases are safer per release and easier to diagnose, because the search space when something breaks is the size of the change.",
+		useWhen: [
+			"we release monthly and every release is an ordeal",
+			"when something breaks we cannot tell which of eighty changes caused it",
+			"the rollback reverts fifty unrelated features",
+			"testing a release takes longer than building the features in it"
+		],
+		prompt: "Analyse our release batch size and its consequences. Quantify the current batch — number of changes, number of contributors, and elapsed time since the earliest change — then connect it to the observable costs: diagnosis time when a release fails, rollback blast radius, and the coordination overhead before each release. Then find what forces batching, since that is what must change: manual verification steps, a scarce environment, an approval gate, or a dependency on another team's schedule. Address the top constraint specifically. Finish with the target cadence and the first step toward it that does not require solving everything.",
+		why: "Batch size is a symptom, not a choice, so identifying the specific constraint that forces batching is what makes an improvement plan realistic.",
+		watchOut: "Increasing frequency without reducing per-release overhead just multiplies the overhead. The manual steps have to go first.",
+		related: [
+			"trunk-based-development",
+			"dora-metrics",
+			"deployment-rollback-plan",
+			"lead-time-analysis"
+		],
+		tags: [
+			"delivery",
+			"releases",
+			"risk",
+			"flow"
+		]
+	},
+	{
+		id: "ci-signal-hygiene",
+		name: "CI Signal Hygiene",
+		aka: [
+			"trustworthy pipeline",
+			"red build discipline",
+			"required checks"
+		],
+		origin: "Continuous integration practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "A pipeline is only useful if a failure means something — flaky, slow or advisory checks train everyone to ignore red, and then real failures pass through.",
+		useWhen: [
+			"people merge with failing checks because they are always failing",
+			"half our checks are advisory and nobody looks at them",
+			"the pipeline takes fifty minutes and blocks everything",
+			"a genuine failure was ignored because it looked like the usual noise"
+		],
+		prompt: "Audit our pipeline for signal quality. For each check, pull the last month of results and compute the failure rate and the proportion of failures that were genuine defects rather than flakes or infrastructure problems — that ratio determines whether the check is trusted. Then classify each as blocking, informational or delete, and be strict: an informational check nobody acts on is noise with a maintenance cost. Order the blocking checks so the fastest and most likely to fail run first, giving a fail-fast signal. Finish with the policy for overriding a blocked merge, who may do it, and what gets recorded.",
+		why: "The genuine-defect ratio per check is the number that justifies keeping or deleting it, and it converts a debate about trust into evidence.",
+		watchOut: "Deleting a noisy check removes the noise and the coverage. Confirm what it was protecting before removing rather than fixing it.",
+		related: [
+			"flaky-test-quarantine",
+			"continuous-integration-discipline",
+			"build-time-reduction",
+			"coverage-ratchet"
+		],
+		tags: [
+			"delivery",
+			"ci",
+			"quality gates",
+			"trust"
+		]
+	},
+	{
+		id: "ci-parallelization",
+		name: "Pipeline Parallelisation",
+		aka: [
+			"test sharding",
+			"fan-out CI",
+			"parallel jobs"
+		],
+		origin: "Continuous integration scaling practice",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Split the pipeline across machines by measured duration rather than by file count, and shape the graph so independent work starts immediately.",
+		useWhen: [
+			"our test suite takes forty minutes on one machine",
+			"we split the tests evenly and one shard still takes twice as long",
+			"the pipeline is sequential even though the stages are independent",
+			"we pay for a big machine that is idle most of the run"
+		],
+		prompt: "Parallelise this pipeline. Balance shards using recorded per-test durations rather than counts, since a naive split leaves one shard dominating, and specify how those timings are collected and kept current. Then restructure the stage graph so anything independent runs concurrently rather than in a fixed sequence, and identify the true critical path — the longest chain of genuinely dependent stages — because that is the floor no amount of parallelism goes below. Finally account for the costs: per-job startup and checkout overhead, which can dominate at high shard counts, and shared resources like a test database that serialise the shards anyway.",
+		why: "Duration-balanced sharding and the critical path calculation are what turn parallelisation from guesswork into a predictable target, and per-job overhead is what limits how far it pays.",
+		watchOut: "Beyond a point, adding shards costs more in setup than it saves in execution. Measure the total machine time as well as the wall clock.",
+		related: [
+			"build-time-reduction",
+			"test-impact-analysis",
+			"build-cache-strategy",
+			"test-isolation"
+		],
+		tags: [
+			"delivery",
+			"ci",
+			"performance",
+			"testing"
+		]
+	},
+	{
+		id: "build-time-reduction",
+		name: "Build Time Reduction",
+		aka: [
+			"fast feedback loop",
+			"pipeline latency",
+			"developer wait time"
+		],
+		origin: "Continuous delivery practice; DORA research on lead time",
+		domains: ["engineering"],
+		intents: ["prioritize", "diagnose"],
+		oneLiner: "Every minute of pipeline time is multiplied by the number of runs per day, and past a threshold it changes behaviour: people batch work and stop running checks locally.",
+		useWhen: [
+			"the pipeline takes an hour and people context-switch away",
+			"developers push and go do something else and come back tomorrow",
+			"we have grown the suite steadily and nobody noticed the cost",
+			"someone is asking whether faster builds are worth the investment"
+		],
+		prompt: "Attack our pipeline duration systematically. Break the total into stages with wall-clock and queue time for each, including the time waiting for a runner, which is often the largest and least visible component. Then order the interventions by expected saving against effort: caching dependencies and build outputs, running only affected work, parallelising, removing redundant stages, and moving slow non-blocking checks off the critical path into an asynchronous run. Quantify the payoff in engineer-hours per week using our run frequency, since that is the number that justifies the work. Finish with a target and the monitoring that catches regression.",
+		why: "Queue time is usually the hidden dominant cost, and expressing the payoff in engineer-hours per week is what gets this prioritised against feature work.",
+		watchOut: "Moving checks off the critical path only helps if someone acts on the asynchronous results. Otherwise you have made the pipeline faster and weaker.",
+		related: [
+			"ci-parallelization",
+			"build-cache-strategy",
+			"test-impact-analysis",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"delivery",
+			"ci",
+			"productivity",
+			"feedback"
+		]
+	},
+	{
+		id: "build-cache-strategy",
+		name: "Build Caching",
+		aka: [
+			"incremental builds",
+			"remote cache",
+			"layer caching"
+		],
+		origin: "Build system practice; Bazel and similar tools",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Reuse the output of work whose inputs have not changed — which requires knowing the inputs exactly, and that is where caching gets subtle.",
+		useWhen: [
+			"every build recompiles everything from scratch",
+			"the cache is never hit and we do not know why",
+			"a stale cache produced a broken artefact",
+			"container image builds re-download dependencies every time"
+		],
+		prompt: "Design caching for this build. The cache key must include every input that affects the output, so enumerate them: source files, dependency versions, toolchain and compiler version, build flags, environment variables and the operating system image. Then find the hidden inputs that break correctness or hit rate — timestamps, absolute paths, network fetches without pinned versions, and anything reading the current time — since each either poisons the cache or prevents a hit. Order container layers so rarely-changing dependencies come before frequently-changing source. Finish with the hit rate measurement and what a miss on an unchanged input would indicate.",
+		why: "Cache correctness and hit rate are both determined by the completeness of the input set, and hidden inputs like timestamps are what quietly make caching useless or dangerous.",
+		watchOut: "A cache that can produce a wrong artefact is worse than no cache, because the failure appears far from the build. Prefer under-caching to unsound keys.",
+		related: [
+			"reproducible-builds",
+			"build-time-reduction",
+			"ci-parallelization",
+			"dependency-pinning"
+		],
+		tags: [
+			"delivery",
+			"build",
+			"caching",
+			"performance"
+		]
+	},
+	{
+		id: "reproducible-builds",
+		name: "Reproducible Builds",
+		aka: [
+			"deterministic builds",
+			"bit-for-bit reproducibility",
+			"hermetic build"
+		],
+		origin: "Debian Reproducible Builds project, 2013; supply chain security practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "critique"],
+		oneLiner: "The same source should produce byte-identical output on any machine at any time, which makes builds verifiable and caching sound.",
+		useWhen: [
+			"the build works on my machine and fails in the pipeline",
+			"we cannot verify that the deployed artefact came from this commit",
+			"two builds of the same commit produced different binaries",
+			"the build pulls whatever version is latest at the time it runs"
+		],
+		prompt: "Audit this build for determinism. Enumerate the sources of variation: unpinned dependency versions, embedded timestamps and build identifiers, absolute paths, locale and timezone, filesystem ordering, parallel build nondeterminism, and network fetches. For each, give the remedy — full version pinning with a lockfile, fixed source date, path normalisation, sorted inputs, and a pinned toolchain image. Then state what reproducibility buys us specifically: sound caching, the ability to verify a deployed artefact matches its source, and a much smaller supply chain trust surface. Finish with how we verify it: build twice in different environments and compare.",
+		why: "The build-twice-and-compare verification is what turns this from an aspiration into a checked property, and filesystem ordering is the variation source people never suspect.",
+		watchOut: "Full bit-for-bit reproducibility can be expensive to reach in some ecosystems. Pinning inputs and fixing timestamps gets most of the benefit for a fraction of the effort.",
+		related: [
+			"build-cache-strategy",
+			"dependency-pinning",
+			"supply-chain-provenance",
+			"sbom-generation"
+		],
+		tags: [
+			"delivery",
+			"build",
+			"security",
+			"determinism"
+		]
+	},
+	{
+		id: "monorepo-vs-polyrepo",
+		name: "Monorepo versus Many Repos",
+		aka: [
+			"repository strategy",
+			"single repository",
+			"code organisation at scale"
+		],
+		origin: "Practice at Google and Facebook versus the microservices repo-per-service norm",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "One repository makes cross-cutting change atomic and requires tooling investment; many repositories make each simple and make coordinated change hard.",
+		useWhen: [
+			"a change across four services needs four pull requests in a careful order",
+			"our single repository takes ten minutes to clone and the pipeline runs everything",
+			"shared library versions have drifted across twelve services",
+			"we are splitting up and need to decide the repository layout"
+		],
+		prompt: "Recommend a repository structure for us. Decide from the evidence in our commit history: how often changes span more than one component, and how much coordination each currently costs. Then price the tooling each option demands — a single repository needs affected-target detection, ownership rules and possibly sparse checkouts, while many repositories need dependency version management, cross-repository change tracking and release coordination — because both options have a tax and choosing is picking which tax. Finish with the hybrid, grouping tightly coupled components together while keeping genuinely independent ones separate, and where our boundary should fall.",
+		why: "Measuring how many changes actually span components makes this decidable, and framing both options as taxes stops the discussion becoming ideological.",
+		watchOut: "A single repository without affected-target detection means every change runs every test, which destroys pipeline time as the codebase grows.",
+		related: [
+			"test-impact-analysis",
+			"package-by-feature",
+			"dependency-pinning",
+			"build-cache-strategy"
+		],
+		tags: [
+			"delivery",
+			"version control",
+			"scaling",
+			"tooling"
+		]
+	},
+	{
+		id: "pipeline-as-code",
+		name: "Pipeline as Code",
+		aka: ["declarative pipelines", "versioned CI configuration"],
+		origin: "Continuous delivery practice; Jenkinsfile and successors",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Define the build and deploy process in version-controlled files alongside the code, so it is reviewable, reproducible and changes with the branch it belongs to.",
+		useWhen: [
+			"the deployment steps live in a web interface nobody can review",
+			"somebody changed the pipeline and broke everything with no record",
+			"the pipeline works on main and not on branches",
+			"only one person knows how the deployment is actually configured"
+		],
+		prompt: "Move this process into version-controlled definitions. Specify what is defined in code — stages, steps, triggers, environment configuration and required secrets by reference — and what necessarily remains outside, such as the secret values themselves and platform-level permissions, so the boundary is explicit. Then address the testability problem, since pipeline changes are usually only testable by running them: propose how a change is validated before it reaches the mainline, whether by branch execution, a linter, or extracting logic into scripts that can be tested locally. Finish with the shared-template question and how a common template is versioned so it does not break every project at once.",
+		why: "Pipelines are the least tested code in most organisations, so making validation-before-merge an explicit requirement is the part that changes outcomes.",
+		watchOut: "Complex logic inside pipeline configuration is untestable and hard to debug. Push anything non-trivial into scripts the pipeline invokes.",
+		related: [
+			"infrastructure-as-code",
+			"ci-signal-hygiene",
+			"secrets-in-ci",
+			"promotion-pipeline"
+		],
+		tags: [
+			"delivery",
+			"ci",
+			"configuration",
+			"version control"
+		]
+	},
+	{
+		id: "artifact-immutability",
+		name: "Build Once, Deploy Many",
+		aka: [
+			"immutable artefacts",
+			"promote the same binary",
+			"no rebuild per environment"
+		],
+		origin: "Continuous Delivery, Humble and Farley, 2010",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Build the artefact once and promote that exact artefact through environments, so what you tested is what you release.",
+		useWhen: [
+			"we rebuild for each environment and staging passed but production failed",
+			"the production build pulled a newer dependency than the tested one",
+			"we cannot prove which commit is running in production",
+			"the same version number refers to two different binaries"
+		],
+		prompt: "Establish artefact promotion for this pipeline. Specify that one build produces an immutable artefact with a unique identifier tied to the commit, and that every environment deploys that same artefact — then find everything currently preventing it, which is usually environment-specific configuration compiled in at build time. For each, show how to externalise it into runtime configuration. Then specify the metadata the artefact carries: commit, build time, dependency versions and the pipeline run that produced it, so a running instance can report exactly what it is. Finish with the storage and retention policy so an old version can always be redeployed for rollback.",
+		why: "Baked-in environment configuration is the specific thing that forces rebuilds, and externalising it is the concrete work that makes promotion possible.",
+		watchOut: "Immutable artefacts are only meaningful if the configuration they run with is also versioned. Otherwise you have a reproducible binary in an irreproducible environment.",
+		related: [
+			"promotion-pipeline",
+			"configuration-management",
+			"reproducible-builds",
+			"deployment-rollback-plan"
+		],
+		tags: [
+			"delivery",
+			"artefacts",
+			"deployment",
+			"reliability"
+		]
+	},
+	{
+		id: "promotion-pipeline",
+		name: "Environment Promotion",
+		aka: ["staged rollout through environments", "promotion gates"],
+		origin: "Continuous delivery practice",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Each environment a build passes through should answer a different question, otherwise it is a delay that adds no information.",
+		useWhen: [
+			"we have four environments and nobody can say what each is for",
+			"staging finds nothing that the pipeline did not already find",
+			"the release sits in an environment for three days waiting for someone",
+			"we skip environments when we are in a hurry, which is when it matters"
+		],
+		prompt: "Define the promotion path for our releases. For each environment, state the specific question it answers that no earlier stage could — integration with real dependencies, performance under load, data migration against production-shaped volumes, or acceptance by a human — and the gate criteria to move on, automated where possible. Delete any environment that cannot justify itself, since an environment with no unique question is pure lead time. Then specify what promotion means mechanically: the same artefact with different configuration, who or what approves it, and how an emergency fix moves faster without skipping the checks that matter.",
+		why: "Requiring a unique question per environment eliminates the stages that exist only by habit, which is usually where most of the lead time is.",
+		watchOut: "An environment that differs materially from production produces false confidence in both directions. Know the differences and what they invalidate.",
+		related: [
+			"artifact-immutability",
+			"environment-parity",
+			"ephemeral-environments",
+			"small-batch-releases"
+		],
+		tags: [
+			"delivery",
+			"environments",
+			"releases",
+			"process"
+		]
+	},
+	{
+		id: "semantic-versioning",
+		name: "Semantic Versioning",
+		aka: [
+			"semver",
+			"major minor patch",
+			"version contracts"
+		],
+		origin: "Tom Preston-Werner, 2011",
+		domains: ["engineering"],
+		intents: ["communicate", "decide"],
+		oneLiner: "Version numbers communicate compatibility — a major bump means consumers must do work, which makes what counts as breaking the crucial question.",
+		useWhen: [
+			"a patch release broke our build",
+			"we bump the major version for every release and it means nothing",
+			"nobody agrees whether this change is breaking",
+			"consumers pin exact versions because they do not trust our numbering"
+		],
+		prompt: "Define our versioning policy and what constitutes each kind of change. The hard part is the boundary of breaking, so write it explicitly for our library: changing a signature obviously counts, but so do tightening validation, changing observable timing or ordering, altering error types, changing default behaviour, and raising a minimum runtime version — while adding an optional parameter usually does not. Then say how we detect breaking changes rather than relying on judgement, whether by an API diff tool or contract tests. Finish with the deprecation path preceding a major change and the support commitment for the previous major version.",
+		why: "Behavioural and error-type changes break consumers while looking non-breaking by signature, and writing the boundary down is what makes the numbers trustworthy.",
+		watchOut: "Semantic versioning describes intent, not a guarantee. Consumers still need lockfiles because an unintentional break is indistinguishable from a patch.",
+		related: [
+			"api-versioning-strategy",
+			"dependency-pinning",
+			"deprecation-policy",
+			"release-notes-changelog"
+		],
+		tags: [
+			"delivery",
+			"versioning",
+			"libraries",
+			"compatibility"
+		]
+	},
+	{
+		id: "dependency-pinning",
+		name: "Dependency Pinning",
+		aka: [
+			"lockfiles",
+			"version ranges",
+			"transitive dependency control"
+		],
+		origin: "Package management practice across ecosystems",
+		domains: ["engineering", "security"],
+		intents: ["structure", "decide"],
+		oneLiner: "Lock the exact versions of every direct and transitive dependency so builds are reproducible and an upstream release cannot change your software without a commit.",
+		useWhen: [
+			"the build broke and nothing in our code changed",
+			"production has a different dependency version from our test run",
+			"a transitive dependency updated itself and introduced a bug",
+			"we cannot tell which versions are actually deployed"
+		],
+		prompt: "Review our dependency management. Confirm that a lockfile exists, is committed, covers transitive dependencies, and is actually used by the pipeline rather than being regenerated — a build that resolves versions fresh has an unlocked dependency graph regardless of the file. Then address the trade-off: pinned versions are reproducible and go stale, so specify the update cadence and automation. Cover integrity verification so a published version cannot be swapped for different content, and the vendoring or mirroring question for critical dependencies given that public registries can remove packages. Finish with the policy for direct versus transitive version constraints.",
+		why: "A lockfile the pipeline ignores is the common failure, and it makes reproducibility claims false while looking correct in the repository.",
+		watchOut: "Pinning without an update process means running known-vulnerable versions indefinitely. Pinning and updating are two halves of one practice.",
+		related: [
+			"dependency-update-automation",
+			"reproducible-builds",
+			"supply-chain-provenance",
+			"sbom-generation"
+		],
+		tags: [
+			"delivery",
+			"dependencies",
+			"security",
+			"reproducibility"
+		]
+	},
+	{
+		id: "dependency-update-automation",
+		name: "Dependency Update Automation",
+		aka: [
+			"automated upgrade pull requests",
+			"staying current",
+			"update fatigue"
+		],
+		origin: "Practice around tools such as Dependabot and Renovate",
+		domains: ["engineering", "security"],
+		intents: ["plan", "prioritize"],
+		oneLiner: "Small frequent upgrades are far cheaper than a big-bang catch-up years later, but only if the flow of update pull requests is filtered and grouped so people act on it.",
+		useWhen: [
+			"we are four major versions behind on everything",
+			"we get thirty update pull requests a week and merge none",
+			"a security advisory means upgrading through six breaking versions",
+			"nobody has time to review dependency bumps"
+		],
+		prompt: "Design an update policy that people will actually follow. Differentiate by risk and effort: security patches and patch-level updates should merge automatically when the pipeline is green, minor updates should be grouped into a periodic batch, and major updates should become deliberate scheduled work with an owner. Specify the grouping and cadence so the notification volume is manageable, since volume is what kills these programmes. Then state the prerequisite plainly — automatic merging requires a test suite you trust to catch a regression — and if we do not have that, say what must be true first. Finish with the metric: the age distribution of our dependencies.",
+		why: "Tying automatic merging to trust in the suite is the honest prerequisite, and grouping by risk class is what keeps the pull request volume from being ignored.",
+		watchOut: "Automatically merging updates you do not test is how a compromised or broken package reaches production unnoticed. The suite is the whole control.",
+		related: [
+			"dependency-pinning",
+			"supply-chain-provenance",
+			"ci-signal-hygiene",
+			"technical-debt-register"
+		],
+		tags: [
+			"delivery",
+			"dependencies",
+			"maintenance",
+			"security"
+		]
+	},
+	{
+		id: "sbom-generation",
+		name: "Software Bill of Materials",
+		aka: [
+			"SBOM",
+			"dependency inventory",
+			"component transparency"
+		],
+		origin: "Supply chain security practice; formats such as SPDX and CycloneDX",
+		domains: ["security", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "A machine-readable inventory of every component in a build, so that when a vulnerability is announced you can answer within minutes whether you are affected.",
+		useWhen: [
+			"a major vulnerability was announced and it took us days to check",
+			"we do not know what is inside our container images",
+			"a customer is asking for a list of components and licences",
+			"we cannot tell which deployed versions contain the affected library"
+		],
+		prompt: "Set up component inventory for our artefacts. Specify what is captured — direct and transitive dependencies with versions and hashes, and components inside the base image, which is the part most inventories miss — plus when it is generated, which must be at build time from the actual artefact rather than reconstructed from manifests. Then design for the question it exists to answer: given a vulnerable component and version range, which of our deployed artefacts contain it and where are they running. That requires linking inventory to deployment records, so specify that link. Finish with storage, retention and who may query it.",
+		why: "An inventory not linked to what is currently deployed cannot answer the only question that matters during an advisory, and base image contents are the usual blind spot.",
+		watchOut: "Generating inventories nobody queries is compliance theatre. Rehearse the lookup against a real recent advisory to check it works.",
+		related: [
+			"supply-chain-provenance",
+			"dependency-pinning",
+			"reproducible-builds",
+			"vulnerability-triage"
+		],
+		tags: [
+			"security",
+			"supply chain",
+			"dependencies",
+			"compliance"
+		]
+	},
+	{
+		id: "secrets-in-ci",
+		name: "Secrets in Pipelines",
+		aka: [
+			"build credentials",
+			"pipeline secret handling",
+			"OIDC federation"
+		],
+		origin: "DevOps security practice",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Pipelines hold credentials to everything they deploy to, which makes them a high-value target and their secret handling a first-order security control.",
+		useWhen: [
+			"our deploy credentials are long-lived and stored in the CI settings",
+			"a secret was printed in a build log",
+			"a pull request from a fork could access our secrets",
+			"we do not know which pipelines can deploy to production"
+		],
+		prompt: "Audit secret handling in our pipelines. Prefer short-lived federated credentials over stored long-lived ones and state whether our platform supports that, since eliminating standing secrets is worth more than protecting them better. Then check the specific exposures: secrets available to builds triggered from forks or untrusted branches, secrets visible to arbitrary build scripts including those of dependencies, values reaching logs or error output, and secrets that persist in caches or artefacts. For each, give the control. Finish with scoping — a pipeline should hold only the credentials for its own targets — and the rotation procedure with a defined frequency.",
+		why: "Fork-triggered builds and dependency-executed scripts are the two paths by which pipeline secrets actually leak, and both are invisible in a review of the configuration alone.",
+		watchOut: "Any code the pipeline runs, including a build script from a dependency, can read the environment. Scoping matters more than masking.",
+		related: [
+			"secrets-management",
+			"supply-chain-provenance",
+			"pipeline-as-code",
+			"deployment-permissions"
+		],
+		tags: [
+			"security",
+			"ci",
+			"credentials",
+			"supply chain"
+		]
+	},
+	{
+		id: "infrastructure-as-code",
+		name: "Infrastructure as Code",
+		aka: [
+			"declarative infrastructure",
+			"Terraform practice",
+			"drift detection"
+		],
+		origin: "DevOps practice; Kief Morris's book and the configuration management lineage",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Define infrastructure in version-controlled declarations applied by automation, so environments are reviewable, reproducible and recoverable.",
+		useWhen: [
+			"someone changed a setting in the console and nobody knows what or when",
+			"we cannot rebuild this environment if we lose it",
+			"the environments have drifted apart in ways nobody can enumerate",
+			"infrastructure changes have no review and no history"
+		],
+		prompt: "Plan the move to declared infrastructure. Start with state and drift, since those determine whether this works: where the state is stored, how it is locked against concurrent applies, and how manual changes are detected and reconciled rather than silently overwritten. Then define the change workflow — plan output reviewed before apply, and who may apply to production. Address the parts that are genuinely awkward: resources that cannot be recreated without data loss, secrets that must not be in the declaration, and the blast radius of a single apply. Finish with the adoption order, importing existing resources gradually rather than recreating them.",
+		why: "State management and drift reconciliation are what make this practice safe or dangerous, and the not-recreatable resources are where a careless apply destroys production data.",
+		watchOut: "A declaration that has diverged from reality will do something unexpected on the next apply. Continuous drift detection is not optional at scale.",
+		related: [
+			"configuration-management",
+			"environment-parity",
+			"pipeline-as-code",
+			"ephemeral-environments"
+		],
+		tags: [
+			"delivery",
+			"infrastructure",
+			"automation",
+			"operations"
+		]
+	},
+	{
+		id: "configuration-management",
+		name: "Configuration Management",
+		aka: [
+			"config versus code",
+			"environment variables",
+			"dynamic configuration"
+		],
+		origin: "Twelve-factor app methodology and operational practice",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Separate what varies by environment from the code, and decide deliberately which settings may change at runtime versus requiring a deployment.",
+		useWhen: [
+			"a config change took down production and there was no review",
+			"we have settings in four places and cannot tell which wins",
+			"changing a timeout requires a full release",
+			"nobody knows what this environment variable does or who set it"
+		],
+		prompt: "Design the configuration model for this service. Classify every setting into three groups with different handling: build-time constants that belong in code, deploy-time environment settings that are versioned alongside the deployment, and runtime-adjustable values that can change without a release. Be strict about the third group, since anything changeable at runtime is effectively a production change with no pipeline — so specify its review, audit and rollback. Then define precedence between sources unambiguously, validation of configuration at startup so a bad value fails fast rather than at first use, and how a setting is discovered and documented.",
+		why: "Runtime-adjustable configuration is production change management with no controls, and treating it as a deployment mechanism rather than a settings file is what prevents the outage.",
+		watchOut: "Validating configuration lazily means an error surfaces on the first request that uses it, often hours after the deploy that caused it.",
+		related: [
+			"feature-flag-hygiene",
+			"artifact-immutability",
+			"twelve-factor-app",
+			"infrastructure-as-code"
+		],
+		tags: [
+			"delivery",
+			"configuration",
+			"deployment",
+			"operations"
+		]
+	},
+	{
+		id: "environment-parity",
+		name: "Environment Parity",
+		aka: [
+			"dev-prod parity",
+			"it works on my machine",
+			"environment drift"
+		],
+		origin: "Twelve-factor app methodology",
+		domains: ["engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "The more your test environments differ from production, the less their results mean — and the differences are usually undocumented.",
+		useWhen: [
+			"it passed in staging and failed in production",
+			"staging runs a different database version and nobody noticed",
+			"production data volumes are a thousand times larger than our test data",
+			"the bug only appears with real traffic patterns"
+		],
+		prompt: "Produce a difference inventory between our environments and production. Cover the dimensions that actually cause divergent behaviour: runtime and dependency versions, data volume and distribution, concurrency and traffic shape, network topology and latency, resource limits, configuration and feature flag state, and which external dependencies are real versus stubbed. For each difference, state what class of defect it could hide. Then rank by risk and recommend which to close given cost — some, like production data volume, are better addressed with representative synthetic data than with a copy. Finish with the differences we accept and how we compensate, usually by shifting that verification into production with controls.",
+		why: "Naming what each specific difference could hide converts an unbounded parity goal into a ranked list, and it justifies deliberately accepting some gaps.",
+		watchOut: "Copying production data into lower environments creates a serious privacy exposure. Parity of shape and volume matters more than parity of content.",
+		related: [
+			"ephemeral-environments",
+			"testing-in-production",
+			"promotion-pipeline",
+			"anonymization-techniques"
+		],
+		tags: [
+			"delivery",
+			"environments",
+			"testing",
+			"risk"
+		]
+	},
+	{
+		id: "ephemeral-environments",
+		name: "Ephemeral Environments",
+		aka: [
+			"preview environments",
+			"per-pull-request environments",
+			"on-demand stacks"
+		],
+		origin: "Cloud-native delivery practice",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Create a full environment per change on demand and destroy it afterwards, removing the queue for a shared environment and the drift that comes with long-lived ones.",
+		useWhen: [
+			"everyone is queuing to use the one staging environment",
+			"someone left broken code in staging and blocked the team",
+			"reviewers cannot try the change without checking it out",
+			"our shared environments have drifted and nobody rebuilds them"
+		],
+		prompt: "Design on-demand environments for this system. The hard parts are data and dependencies, so lead with them: how each environment gets a usable data set — seeded, sampled, anonymised or synthetic — and how it handles dependencies that cannot be duplicated per environment, such as third-party services with limited sandbox accounts. Then specify creation time, since anything over a few minutes means people stop using them, plus the automatic destruction policy and cost controls. Finish with the honest scope: what these can verify and what still requires a shared environment with production-like scale.",
+		why: "Test data provisioning and unduplicatable third-party dependencies are what make or break this, and both are usually discovered after the infrastructure is built.",
+		watchOut: "Environments that are not destroyed automatically become a large cost line and a set of forgotten, unpatched deployments.",
+		related: [
+			"environment-parity",
+			"infrastructure-as-code",
+			"hermetic-tests",
+			"cloud-cost-attribution"
+		],
+		tags: [
+			"delivery",
+			"environments",
+			"testing",
+			"automation"
+		]
+	},
+	{
+		id: "zero-downtime-deployment",
+		name: "Zero-Downtime Deployment",
+		aka: [
+			"rolling deploy",
+			"no maintenance window",
+			"in-place upgrade"
+		],
+		origin: "Continuous delivery and orchestration practice",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Replacing running instances without dropping requests requires readiness signalling, connection draining, and old and new versions coexisting correctly.",
+		useWhen: [
+			"we see errors during every deployment",
+			"deploying requires a maintenance window customers hate",
+			"the new version cannot run alongside the old one",
+			"requests fail for thirty seconds after each rollout"
+		],
+		prompt: "Design deployment without user-visible errors for this service. The requirement that drives everything is version coexistence, so start there: during a rolling update both versions serve traffic simultaneously, which means the database schema, the cache format, the message formats and any shared state must be compatible in both directions. Audit our change for that. Then specify the mechanics: readiness gating so an instance takes traffic only when warm, connection draining with the correct wait for load balancer propagation, surge and unavailable settings, and the pace of the rollout. Finish with what makes a change genuinely require downtime and how we would recognise one in advance.",
+		why: "Version coexistence is the constraint that decides whether a change can roll out safely at all, and it is a property of the change rather than of the deployment mechanism.",
+		watchOut: "A rollout that is faster than the health checks can detect failure will replace every instance with a broken version before anything notices.",
+		related: [
+			"graceful-shutdown",
+			"health-check-design",
+			"expand-and-contract-migration",
+			"canary-release"
+		],
+		tags: [
+			"delivery",
+			"deployment",
+			"availability",
+			"rollout"
+		]
+	},
+	{
+		id: "blue-green-deployment",
+		name: "Blue-Green Deployment",
+		aka: [
+			"red-black deployment",
+			"environment swap",
+			"instant cutover"
+		],
+		origin: "Continuous Delivery, Humble and Farley; earlier operational practice",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Run a complete second environment with the new version, verify it, then switch traffic across — giving an instant cutover and an instant rollback.",
+		useWhen: [
+			"we need the ability to revert a release in seconds",
+			"a rolling deploy leaves us in a mixed state we cannot reason about",
+			"we want to verify the new version fully before any user reaches it",
+			"rollback currently means a full redeploy that takes twenty minutes"
+		],
+		prompt: "Assess a full environment swap for this service. The rollback promise is what justifies the cost, so test whether it survives our reality: shared state that both environments use, chiefly the database, means the schema must work for both versions and any write made by the new version must remain valid after reverting — state whether that holds for this change. Then cover the switch mechanism and its propagation delay, in-flight requests and sessions at cutover, warm-up of the idle environment before it takes traffic, and the cost of running double capacity. Finish with how long the old environment is retained and what would make us abandon the rollback option.",
+		why: "Shared data is what breaks the instant-rollback promise, and asking whether new-version writes survive a revert is the check that determines if this is real.",
+		watchOut: "Rollback is only instant if the data written since the switch is compatible. Otherwise you are reverting code and keeping incompatible data.",
+		related: [
+			"canary-release",
+			"deployment-rollback-plan",
+			"expand-and-contract-migration",
+			"zero-downtime-deployment"
+		],
+		tags: [
+			"delivery",
+			"deployment",
+			"rollback",
+			"releases"
+		]
+	},
+	{
+		id: "canary-release",
+		name: "Canary Release",
+		aka: [
+			"gradual rollout",
+			"percentage rollout",
+			"automated canary analysis"
+		],
+		origin: "Continuous delivery practice; automated analysis pioneered at Netflix",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Expose the new version to a small slice of traffic, compare its behaviour against the old, and continue or abort based on evidence rather than hope.",
+		useWhen: [
+			"a bad release reached every customer before we noticed",
+			"we deploy to everyone at once and find out from support",
+			"we roll out gradually but nobody watches the metrics",
+			"the problem only appeared with real production traffic"
+		],
+		prompt: "Design a gradual rollout for this change. The comparison is the whole mechanism, so specify it properly: which metrics are compared between the new and the existing version, over what duration, and with what threshold for a statistically meaningful difference at our traffic volume — a one percent canary on a low-traffic endpoint may never gather enough data to conclude anything, and that is worth knowing before relying on it. Then define the traffic slice and whether it is sticky per user, the progression steps with a bake time at each, and the automatic abort criteria. Finish with the failure classes this cannot catch, such as slow leaks and effects that only appear at full load.",
+		why: "The statistical power question determines whether canary analysis can conclude anything at all, and it is routinely assumed rather than calculated.",
+		watchOut: "A canary that receives unrepresentative traffic, such as only one region or only healthy sessions, will pass while the change is broken for others.",
+		related: [
+			"blue-green-deployment",
+			"ring-deployment",
+			"deploy-verification",
+			"feature-flag-hygiene"
+		],
+		tags: [
+			"delivery",
+			"deployment",
+			"rollout",
+			"risk"
+		]
+	},
+	{
+		id: "ring-deployment",
+		name: "Ring Deployment",
+		aka: [
+			"deployment rings",
+			"staged audience rollout",
+			"dogfooding rings"
+		],
+		origin: "Microsoft engineering practice; common in shipped-software release management",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Roll out through successive audience rings — internal, early adopters, general — so each ring provides a longer soak with more diverse usage before the next.",
+		useWhen: [
+			"a percentage-based rollout does not match how our customers differ",
+			"we want internal users to hit problems before customers do",
+			"some enterprise customers require advance notice of changes",
+			"issues only appear with certain customer configurations"
+		],
+		prompt: "Define deployment rings for our product. Compose each ring by the diversity of usage it adds rather than by size alone, since a large homogeneous ring exercises less than a small varied one — state what each ring covers that the previous did not. Specify the soak time per ring and the criteria to advance, including the qualitative signal from internal users which is usually the point of the first ring. Then handle the operational reality: customers who must be in a late ring contractually, customers who want the earliest, and how a fix is expedited across rings during an incident without abandoning the structure.",
+		why: "Composing rings for usage diversity rather than headcount is what makes early rings informative, and the expedited-fix path is what keeps the structure from being bypassed under pressure.",
+		watchOut: "Long ring progressions mean several versions in the field at once, which multiplies the support and compatibility surface.",
+		related: [
+			"canary-release",
+			"feature-flag-hygiene",
+			"release-train-vs-continuous",
+			"deploy-verification"
+		],
+		tags: [
+			"delivery",
+			"rollout",
+			"releases",
+			"risk"
+		]
+	},
+	{
+		id: "shadow-traffic",
+		name: "Shadow Traffic",
+		aka: [
+			"traffic mirroring",
+			"dark traffic",
+			"dual running"
+		],
+		origin: "Migration and performance validation practice",
+		domains: ["engineering"],
+		intents: ["plan", "critique"],
+		oneLiner: "Send a copy of real production requests to the new system without using its responses, so you can compare correctness and performance under genuine load.",
+		useWhen: [
+			"we are replacing a service and cannot risk switching blind",
+			"synthetic load tests do not resemble real traffic",
+			"we need to know the new implementation returns the same answers",
+			"we want production-scale evidence before committing to a cutover"
+		],
+		prompt: "Design shadow running for this migration. The safety constraint dominates, so lead with it: the shadow path must not produce side effects — no writes to shared systems, no emails, no third-party calls that cost money or change state — so enumerate every side effect in the request path and state how each is neutralised. Then design the comparison: which parts of the response are compared, how expected differences such as identifiers and timestamps are normalised, and how discrepancies are sampled and reported. Cover the load implication, since we are now doubling traffic to shared dependencies. Finish with the exit criteria that would justify cutting over.",
+		why: "Unneutralised side effects in a shadow path cause real customer harm from a supposedly safe experiment, and the enumeration is the only reliable way to find them.",
+		watchOut: "Mirrored traffic doubles load on anything both paths share, including databases and third parties. That is a capacity change, not a free observation.",
+		related: [
+			"testing-in-production",
+			"strangler-fig",
+			"canary-release",
+			"reconciliation-jobs"
+		],
+		tags: [
+			"delivery",
+			"migration",
+			"validation",
+			"production"
+		]
+	},
+	{
+		id: "feature-flag-hygiene",
+		name: "Feature Flag Hygiene",
+		aka: [
+			"toggle debt",
+			"flag lifecycle",
+			"kill switches"
+		],
+		origin: "Continuous delivery practice; Pete Hodgson's feature toggle taxonomy",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Flags are how you separate deploy from release, and they become a combinatorial mess unless each has a type, an owner and a removal date from the moment it is created.",
+		useWhen: [
+			"we have two hundred flags and nobody knows which are still needed",
+			"a stale flag turned a feature off for a customer for a year",
+			"the code has so many conditionals nobody can follow the logic",
+			"two flags interacted and produced a state we never tested"
+		],
+		prompt: "Bring order to our flags. Classify each by type, because the types have completely different lifetimes: release toggles that must be removed within weeks, experiment toggles that end with the experiment, operational kill switches that live indefinitely, and permission toggles that are really product configuration. Then assign an owner and an expiry to every temporary flag, and propose the mechanism that enforces removal, such as a build failure past the expiry date. Address the testing problem: we cannot test every combination, so define which flag states are supported and tested, and how a flag defaults if the flag service is unreachable.",
+		why: "Classifying by type gives each flag a correct lifetime, and defining the fallback when the flag service is unavailable prevents a flag system outage becoming a product outage.",
+		watchOut: "Every flag doubles the number of code paths in principle. The combinations you never test are where the surprising bugs live.",
+		related: [
+			"trunk-based-development",
+			"canary-release",
+			"configuration-management",
+			"technical-debt-register"
+		],
+		tags: [
+			"delivery",
+			"feature flags",
+			"release",
+			"maintenance"
+		]
+	},
+	{
+		id: "migration-deploy-ordering",
+		name: "Migration and Deploy Ordering",
+		aka: ["schema change sequencing", "migrate before or after deploy"],
+		origin: "Continuous delivery practice for stateful applications",
+		domains: ["engineering", "data"],
+		intents: ["plan", "structure"],
+		oneLiner: "Code and schema change at different moments and both versions run during a rollout, so the ordering has to be chosen deliberately per change.",
+		useWhen: [
+			"the migration ran and the old instances started erroring",
+			"we rolled back the code and the schema stayed changed",
+			"deploying requires a precise manual sequence somebody has to remember",
+			"a column was dropped while old instances were still selecting it"
+		],
+		prompt: "Sequence this change safely. Determine whether the migration is additive and therefore safe before the code, or destructive and therefore only safe after every old instance is gone, and state the rule you applied. Then check the mixed-version window explicitly: during the rollout, old code runs against the new schema and possibly new code against the old schema — walk through both and confirm each works or say what breaks. Handle rollback: if we revert the code after migrating, does the old version still function. Finish with the migrations that must never run automatically as part of a deploy, such as anything long-running or locking, and how those are executed instead.",
+		why: "Walking both mixed-version directions is the check that catches the failure, and separating long-running migrations from the deploy is what prevents a deploy hanging on a table lock.",
+		watchOut: "Automatic migrations on startup mean several instances may run them simultaneously. Without locking, that is a race with unpredictable results.",
+		related: [
+			"expand-and-contract-migration",
+			"zero-downtime-deployment",
+			"backfill-strategy",
+			"deployment-rollback-plan"
+		],
+		tags: [
+			"delivery",
+			"database",
+			"deployment",
+			"migration"
+		]
+	},
+	{
+		id: "deployment-rollback-plan",
+		name: "Rollback Plan",
+		aka: [
+			"revert strategy",
+			"roll forward versus back",
+			"undo a release"
+		],
+		origin: "Release engineering practice",
+		domains: ["engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "Decide before deploying how this change is undone, how long that takes, and at what point it stops being possible.",
+		useWhen: [
+			"something broke and we spent an hour deciding whether to revert",
+			"the rollback failed because the database had already changed",
+			"we always roll forward because rolling back has never worked",
+			"nobody knows how long a revert would take"
+		],
+		prompt: "Write the rollback plan for this release. State the mechanism and its measured duration, then identify the point of no return — the first irreversible action, usually a destructive migration, a message published to consumers, or a third-party call — since after that the honest plan is fixing forward. Then define the decision criteria in advance: the specific signals that trigger a revert, who may make the call without convening a meeting, and the time limit on investigating before reverting anyway. Finish by verifying the plan is real: when did we last successfully revert, and what would we do about data written by the new version.",
+		why: "Pre-deciding the revert criteria and authority is what prevents the hour of debate during an incident, and naming the point of no return sets expectations honestly.",
+		watchOut: "A rollback path never exercised will not work when needed. Practise reverting a harmless change so the mechanism is known to function.",
+		related: [
+			"blue-green-deployment",
+			"migration-deploy-ordering",
+			"incident-command",
+			"mttr-decomposition"
+		],
+		tags: [
+			"delivery",
+			"rollback",
+			"incident response",
+			"risk"
+		]
+	},
+	{
+		id: "deploy-verification",
+		name: "Deploy Verification",
+		aka: [
+			"post-deploy checks",
+			"deployment markers",
+			"release validation"
+		],
+		origin: "Continuous delivery and observability practice",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "A deployment is not finished when the rollout completes; it is finished when evidence shows the new version is behaving, and that evidence should be automatic.",
+		useWhen: [
+			"we deploy and hope, then find out from customers",
+			"the rollout succeeded and the application was broken",
+			"when something breaks we cannot tell whether a deploy caused it",
+			"nobody watches anything after pressing deploy"
+		],
+		prompt: "Define what proves this deployment succeeded. Specify the checks in order of speed: the process is running and healthy, a smoke test of the critical paths passes, and then the comparison signals over a bake period — error rate, latency percentiles, and the key business metric compared against the previous version and against the same time yesterday. Set the abort criteria and whether the abort is automatic. Then make deploys visible in observability by emitting a deployment marker with version and commit onto the dashboards, since correlating a metric change with a release is the most common diagnostic question and is trivial to enable.",
+		why: "Deployment markers on dashboards make the did-a-deploy-cause-this question answerable in seconds, and a bake period with defined abort criteria is what turns deployment into a verified step.",
+		watchOut: "Verifying only technical signals misses changes that work perfectly and harm the business metric. Include at least one outcome measure.",
+		related: [
+			"smoke-test-suite",
+			"canary-release",
+			"deployment-rollback-plan",
+			"observability-instrumentation"
+		],
+		tags: [
+			"delivery",
+			"deployment",
+			"monitoring",
+			"verification"
+		]
+	},
+	{
+		id: "deployment-permissions",
+		name: "Deployment Permissions",
+		aka: [
+			"who can deploy",
+			"production access control",
+			"break-glass deploys"
+		],
+		origin: "Operational governance practice",
+		domains: ["engineering", "security"],
+		intents: ["decide", "structure"],
+		oneLiner: "Decide who may deploy what, where, and under which conditions — with the goal of enabling safe frequent deployment rather than restricting it.",
+		useWhen: [
+			"only two people can deploy and both are on holiday",
+			"anyone can push to production with no record",
+			"an emergency fix was blocked by an approval nobody could give at 2am",
+			"the auditor asked who deployed this and we could not say"
+		],
+		prompt: "Design deployment access for our team. Start from the two goals in tension — anyone on the team should be able to ship safely, and every production change should be attributable and reviewable — and note that automation satisfies both better than gatekeeping does, since a pipeline that enforces checks makes broad access safe. Specify what the pipeline enforces, what a human approves and why that approval adds information, and the emergency path with its own controls: who may use it, what it skips, what is logged, and the mandatory review afterwards. Finish with the audit record: what is captured for each deployment.",
+		why: "Framing approval as needing to add information kills the rubber-stamp gates, and designing the emergency path deliberately stops it becoming an undocumented back door.",
+		watchOut: "Restricting deployment to a few people creates a bottleneck and reduces safety, because those people deploy changes they did not write and cannot verify.",
+		related: [
+			"separation-of-duties",
+			"break-glass-access",
+			"change-management-lightweight",
+			"audit-logging"
+		],
+		tags: [
+			"delivery",
+			"access control",
+			"governance",
+			"security"
+		]
+	},
+	{
+		id: "change-freeze-policy",
+		name: "Change Freeze Policy",
+		aka: [
+			"code freeze",
+			"deployment blackout",
+			"peak period lockdown"
+		],
+		origin: "Release management practice, particularly in retail and finance",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Halting changes during a critical period reduces the rate of new problems and increases the size and risk of the release that follows it.",
+		useWhen: [
+			"we freeze every December and January is chaos",
+			"the freeze means a month of accumulated changes ship at once",
+			"urgent fixes during the freeze go through an unclear exception process",
+			"someone is proposing a freeze and I want to argue it properly"
+		],
+		prompt: "Evaluate a freeze for this period. State the risk it addresses and the risk it creates, quantifying the second: how many changes will accumulate, how much larger the post-freeze release will be, and what that does to diagnosis when something breaks. Then propose the alternative that usually serves the same goal better — allowing small, well-tested, individually reversible changes while blocking large or risky ones — with the criteria that distinguish them. If a freeze is genuinely warranted, define its scope precisely by system rather than blanket, the exception process with a named approver, and the plan for the resumption, which is the actually dangerous moment.",
+		why: "Quantifying the accumulated batch shows the freeze moves risk rather than removing it, and the resumption is where the incidents actually happen.",
+		watchOut: "Freezes stop routine deployment and not the things that break systems: traffic spikes, expiring certificates and third-party changes carry on regardless.",
+		related: [
+			"small-batch-releases",
+			"change-management-lightweight",
+			"deployment-rollback-plan",
+			"dora-metrics"
+		],
+		tags: [
+			"delivery",
+			"risk",
+			"policy",
+			"releases"
+		]
+	},
+	{
+		id: "change-management-lightweight",
+		name: "Lightweight Change Management",
+		aka: ["change advisory board alternatives", "peer review as approval"],
+		origin: "DORA research showing external approval correlates poorly with stability",
+		domains: ["engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Approval by people distant from the change slows delivery without improving stability; peer review and automated verification do better on both.",
+		useWhen: [
+			"every change waits a week for a board that always approves it",
+			"our process is heavy and our failure rate is still high",
+			"the approver cannot possibly evaluate what they are approving",
+			"we need an auditable process and want it not to be theatre"
+		],
+		prompt: "Redesign our change approval so it improves outcomes rather than only creating records. Classify changes by risk with objective criteria, and route standard low-risk changes to a pre-authorised path where peer review and the pipeline are the control. For the genuinely high-risk minority, define what the reviewer must actually verify — a rollback plan, a blast radius assessment, a communication plan — so approval is substantive. Then satisfy the audit requirement from artefacts that already exist: the review record, pipeline results, deployment log and verification evidence. Finish with the measure that tells us whether the process is working, which is change failure rate rather than approval count.",
+		why: "Deriving the audit trail from artefacts the delivery process already produces is what makes lightweight governance defensible to an auditor rather than merely faster.",
+		watchOut: "Regulated environments may mandate specific approval structures. Work out what the regulation actually requires before assuming the heavy process is necessary.",
+		related: [
+			"deployment-permissions",
+			"dora-metrics",
+			"change-freeze-policy",
+			"separation-of-duties"
+		],
+		tags: [
+			"delivery",
+			"governance",
+			"process",
+			"compliance"
+		]
+	},
+	{
+		id: "dora-metrics",
+		name: "DORA Metrics",
+		aka: [
+			"four key metrics",
+			"deployment frequency and lead time",
+			"accelerate metrics"
+		],
+		origin: "DevOps Research and Assessment; Forsgren, Humble and Kim, Accelerate, 2018",
+		domains: ["engineering"],
+		intents: ["estimate", "diagnose"],
+		oneLiner: "Deployment frequency, lead time for change, change failure rate and time to restore, measured together because any one alone is trivially gameable.",
+		useWhen: [
+			"we want to know whether our delivery is improving",
+			"someone wants a productivity metric and I want a defensible one",
+			"we deploy more often now and I cannot show it is better",
+			"leadership is asking for engineering metrics"
+		],
+		prompt: "Define these four measures for our context and how each is captured from existing systems rather than self-reported. Be precise about the boundaries: lead time from commit to running in production, not from ticket creation, and failure rate as deployments causing degraded service, with the definition of degraded stated. Then insist on reading them as a set, since throughput without stability is recklessness and stability without throughput is stagnation. Finish with the anti-patterns: using them to compare teams with different contexts, or setting them as targets, which converts them from a diagnostic into something people optimise directly.",
+		why: "These are diagnostics, and the moment they become targets they are gamed by splitting deployments and redefining failures. Saying so explicitly is part of implementing them.",
+		watchOut: "They measure delivery capability and say nothing about whether you are building the right thing. A team can excel on all four while shipping products nobody wants.",
+		related: [
+			"lead-time-analysis",
+			"small-batch-releases",
+			"mttr-decomposition",
+			"goodharts-law"
+		],
+		tags: [
+			"delivery",
+			"metrics",
+			"measurement",
+			"improvement"
+		]
+	},
+	{
+		id: "lead-time-analysis",
+		name: "Lead Time Analysis",
+		aka: [
+			"value stream mapping",
+			"cycle time breakdown",
+			"wait time versus work time"
+		],
+		origin: "Lean value stream mapping applied to software delivery",
+		domains: ["engineering"],
+		intents: ["diagnose", "prioritize"],
+		oneLiner: "Break the journey from idea to production into stages and measure waiting separately from working — the waiting is usually most of it.",
+		useWhen: [
+			"everything takes weeks and nobody can say why",
+			"we hired more engineers and delivery did not speed up",
+			"the work takes two days and the change takes three weeks to ship",
+			"we optimise coding speed and it changes nothing"
+		],
+		prompt: "Map the flow of a change through our process with timestamps from our actual tools. For each stage, separate active work time from queue time — waiting for review, waiting for an environment, waiting for approval, waiting for a release window — and compute the ratio, because a process where most of the elapsed time is waiting will not improve by making people code faster. Identify the largest queue and what causes it: a scarce resource, a batching policy, or a handoff between teams. Then propose the intervention for that specific queue and estimate the effect on total lead time. Finish with what to measure to confirm the improvement.",
+		why: "The work-to-wait ratio redirects improvement effort from productivity to flow, which is where the time actually goes, and it is measurable from existing tool timestamps.",
+		watchOut: "Optimising a stage that is not the constraint changes nothing overall. Find the biggest queue before improving anything.",
+		related: [
+			"dora-metrics",
+			"theory-of-constraints",
+			"small-batch-releases",
+			"wip-limits"
+		],
+		tags: [
+			"delivery",
+			"flow",
+			"metrics",
+			"process"
+		]
+	},
+	{
+		id: "release-notes-changelog",
+		name: "Release Notes and Changelog",
+		aka: ["keep a changelog", "user-facing release communication"],
+		origin: "Software release practice; the Keep a Changelog convention",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Write for the person deciding whether to upgrade and what they must do — which is a different document from a list of commit messages.",
+		useWhen: [
+			"our release notes are auto-generated commit messages nobody reads",
+			"customers upgraded and were surprised by a behaviour change",
+			"nobody can tell from the notes whether they need to act",
+			"the breaking change was mentioned in the middle of forty bullet points"
+		],
+		prompt: "Write release notes for this version aimed at the upgrade decision. Lead with anything requiring action — breaking changes, required migrations, deprecations with their removal date — before the improvements, since burying a required action is the failure that costs people. Group by audience impact rather than by component, describe each change in terms of what it means for the reader rather than what was modified internally, and link to migration instructions for anything that needs them. Then propose how this is produced sustainably: what authors record at the time of the change so notes are not reconstructed from history at release time.",
+		why: "Ordering by required action rather than chronology is what makes notes useful, and capturing the entry at change time is what stops them degrading into commit dumps.",
+		watchOut: "Fully automated notes from commits describe implementation, not impact. They are a starting point for a human, not a substitute.",
+		related: [
+			"semantic-versioning",
+			"deprecation-policy",
+			"bluf",
+			"status-page-communication"
+		],
+		tags: [
+			"delivery",
+			"communication",
+			"documentation",
+			"releases"
+		]
+	},
+	{
+		id: "release-train-vs-continuous",
+		name: "Release Train versus Continuous",
+		aka: [
+			"scheduled releases",
+			"cadence versus flow",
+			"ship when ready"
+		],
+		origin: "Release management practice; train model from large-scale product organisations",
+		domains: ["engineering", "product"],
+		intents: ["decide", "plan"],
+		oneLiner: "Either changes ship as they are ready, or they board a scheduled release — the trade is coordination cost against per-change latency.",
+		useWhen: [
+			"features wait weeks for the next release slot",
+			"coordinating a release across five teams is chaos",
+			"our mobile app has a store review cycle and the backend does not",
+			"marketing needs to know when things ship and we cannot tell them"
+		],
+		prompt: "Choose a release model for this product. Identify what genuinely forces batching — app store review, customer change windows, coordinated marketing, or hardware — versus what is habit, since only the former justifies a schedule. If a train is required, define the cadence, the cut-off, and the rule that a change missing the train waits for the next one rather than delaying it, because a train that waits stops being a train. Then decouple what can be decoupled: deploy continuously behind flags and release features on the schedule, which gives both. Finish with the exception path for urgent fixes and who authorises it.",
+		why: "Separating deployment cadence from release cadence via flags dissolves most of this dilemma, and it is the option teams rarely consider when arguing about the schedule.",
+		watchOut: "A train that departs late once will depart late always, because every team learns that pressure works. The cut-off has to be enforced from the start.",
+		related: [
+			"feature-flag-hygiene",
+			"small-batch-releases",
+			"branching-strategy",
+			"ring-deployment"
+		],
+		tags: [
+			"delivery",
+			"releases",
+			"planning",
+			"coordination"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/codecraft.ts
+var codecraft = [
+	{
+		id: "naming-as-design",
+		name: "Naming as Design",
+		aka: [
+			"intention-revealing names",
+			"if you cannot name it",
+			"renaming as refactoring"
+		],
+		origin: "Kent Beck and Ward Cunningham; central to Clean Code and Refactoring",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Difficulty naming something is evidence about the design, not about vocabulary — a thing that resists a name usually does more than one job.",
+		useWhen: [
+			"I cannot think of a name for this function that is not manager or handler",
+			"the name has and in it and I know that is bad",
+			"reviewers keep asking what this variable actually holds",
+			"the class is called util and does eleven things"
+		],
+		prompt: "Review the names in this code as a design diagnostic. For each poorly named element, first try to name it precisely; where you cannot without a conjunction or a vague noun like manager, processor or data, report that as a cohesion finding rather than a naming one and say what the split would be. Then apply the specific tests: does the name state what it is rather than how it is implemented, does it use the domain's vocabulary rather than ours, is the abstraction level consistent with its neighbours, and does a boolean read positively. Rank the renames by how often the name appears in code and conversation.",
+		why: "Treating an unnameable thing as a cohesion problem is what turns naming review from bikeshedding into design work, and it finds classes that should be split.",
+		watchOut: "Renaming widely touches a lot of code and creates review noise. Do it as its own change so the real change stays reviewable.",
+		related: [
+			"ubiquitous-language",
+			"single-responsibility",
+			"readability-over-cleverness",
+			"api-naming-conventions"
+		],
+		tags: [
+			"code quality",
+			"naming",
+			"design",
+			"refactoring"
+		]
+	},
+	{
+		id: "readability-over-cleverness",
+		name: "Readability Over Cleverness",
+		aka: [
+			"write for the reader",
+			"code is read more than written",
+			"obvious code"
+		],
+		origin: "Long-standing programming maxim; Brian Kernighan's debugging observation",
+		domains: ["engineering"],
+		intents: ["critique", "communicate"],
+		oneLiner: "Code is read far more often than written, and debugging is harder than writing — so code at the limit of your cleverness is code you cannot debug.",
+		useWhen: [
+			"this one-liner is impressive and nobody can explain it",
+			"the reviewer asked what this does and the author had to think",
+			"we saved four lines and lost an hour of comprehension",
+			"the clever solution broke and nobody could fix it"
+		],
+		prompt: "Review this code for comprehension cost. For each dense section, state what a competent reader unfamiliar with it must hold in their head simultaneously, and rewrite the worst offenders in the most boring form that does the same thing. Then compare honestly: sometimes the dense version is genuinely better because the boring one is longer and repetitive, so judge each case rather than applying a rule. Where the clever version wins, require a comment explaining the trick and why it is worth it. Finish with the places where cleverness was justified by a measured performance need and the places where it was habit.",
+		why: "Making the comparison explicit rather than assuming boring is better keeps this from becoming dogma, and requiring justification for retained cleverness leaves a record for the next reader.",
+		watchOut: "Verbose code is not automatically readable. Ten obvious lines can obscure intent that one well-named function call would have conveyed.",
+		related: [
+			"naming-as-design",
+			"cyclomatic-complexity",
+			"comment-why-not-what",
+			"code-review-checklist"
+		],
+		tags: [
+			"code quality",
+			"readability",
+			"maintainability",
+			"review"
+		]
+	},
+	{
+		id: "comment-why-not-what",
+		name: "Comment Why, Not What",
+		aka: [
+			"intent comments",
+			"self-documenting code",
+			"comment rot"
+		],
+		origin: "Widely held convention; articulated in Clean Code and A Philosophy of Software Design",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Comments should carry what the code cannot — the reason, the rejected alternative, the external constraint — because restating the code just creates something that goes stale.",
+		useWhen: [
+			"the comment says increment counter above counter plus plus",
+			"the comment describes behaviour the code no longer has",
+			"someone removed a strange line and broke production",
+			"nobody knows why this sleep is here"
+		],
+		prompt: "Audit the comments in this code. Delete those restating the code, since they add maintenance cost and will eventually lie. Then find the far more important gap: places where the code cannot express the reason and there is no comment — a workaround for a third-party bug with its issue reference, a deliberately unusual ordering, a value derived from a measurement, a legal or contractual constraint, or a rejected simpler approach that does not work. Write those comments. Finish with the invariants that are assumed but unstated, since a comment asserting an invariant is the most valuable kind and often signals where an assertion belongs.",
+		why: "Hunting for missing why-comments is far more valuable than removing redundant ones, and workarounds without a reference are what make future readers delete necessary code.",
+		watchOut: "A comment explaining confusing code is often a plaster over a naming or structure problem. Try fixing the code first.",
+		related: [
+			"naming-as-design",
+			"chestertons-fence",
+			"assertions-and-invariants",
+			"documentation-freshness"
+		],
+		tags: [
+			"code quality",
+			"comments",
+			"documentation",
+			"maintainability"
+		]
+	},
+	{
+		id: "magic-numbers-constants",
+		name: "Magic Numbers",
+		aka: [
+			"named constants",
+			"unexplained literals",
+			"configuration values in code"
+		],
+		origin: "Long-standing code quality convention",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "An unexplained literal hides both its meaning and its relationship to the other literals that must change with it.",
+		useWhen: [
+			"there are three different timeout values and I do not know which to change",
+			"someone changed a buffer size and something unrelated broke",
+			"the number 86400 appears in six files",
+			"nobody knows where this threshold came from"
+		],
+		prompt: "Find the unexplained literals here and treat the relationships as the main finding. For each, give it a name that states its meaning, and then identify which other values must change with it — a buffer size that must exceed a message size, a timeout that must be shorter than its caller's, a retry count that multiplies with a delay to fit a budget — and express those as derivations rather than as separate literals, since independent constants drift apart. Then decide which belong in code as fixed constants and which are operational settings that should be configurable. Note any value nobody can justify, since that is a finding in itself.",
+		why: "Expressing dependent values as derivations rather than separate named constants is what prevents the drift that causes subtle failures, and it is a step past simply naming things.",
+		watchOut: "Naming a literal used once at its point of use can add indirection without adding meaning. The win is in relationships and repetition.",
+		related: [
+			"configuration-management",
+			"timeout-budgets",
+			"naming-as-design",
+			"comment-why-not-what"
+		],
+		tags: [
+			"code quality",
+			"constants",
+			"maintainability",
+			"configuration"
+		]
+	},
+	{
+		id: "guard-clauses",
+		name: "Guard Clauses",
+		aka: [
+			"early return",
+			"flattening nesting",
+			"bouncer pattern"
+		],
+		origin: "Refactoring catalogue; replace nested conditional with guard clauses",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Handle the exceptional and invalid cases immediately and return, so the main path runs at one indentation level and reads as the intent.",
+		useWhen: [
+			"the function is six levels of nested if statements",
+			"the happy path is buried in the middle of the function",
+			"I cannot tell which condition leads to which outcome",
+			"the else branches are far from their conditions"
+		],
+		prompt: "Restructure this nesting into early exits. Identify the preconditions and error cases, handle each at the top with an immediate return or raise, and leave the main path unindented. Then check the two things this refactor can break: cleanup that was previously guaranteed by the single exit point, which now needs a scoped mechanism, and conditions whose evaluation order matters. Confirm neither is affected. Finish by looking at what the guards reveal — a long list of preconditions usually means validation belongs at a boundary rather than in this function, and repeated identical guards across functions mean the type should make them unnecessary.",
+		why: "The cleanup-on-single-exit hazard is the real risk in this refactor, and reading the guard list as evidence of misplaced validation turns a formatting change into a design insight.",
+		watchOut: "Many scattered return points in a long function can be harder to follow than nesting. This works best on functions short enough to see at once.",
+		related: [
+			"parse-dont-validate",
+			"cyclomatic-complexity",
+			"input-validation-boundary",
+			"readability-over-cleverness"
+		],
+		tags: [
+			"code quality",
+			"control flow",
+			"readability",
+			"refactoring"
+		]
+	},
+	{
+		id: "cyclomatic-complexity",
+		name: "Cyclomatic Complexity",
+		aka: [
+			"branch count",
+			"cognitive complexity",
+			"complexity metrics"
+		],
+		origin: "Thomas McCabe, 1976; cognitive complexity from SonarSource",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Counting independent paths through a function gives a rough measure of how hard it is to test and to hold in your head — useful as a signal, harmful as a target.",
+		useWhen: [
+			"this function has too many branches to test properly",
+			"we need an objective way to find the worst code",
+			"someone set a complexity limit and people are gaming it",
+			"the function is short and still incomprehensible"
+		],
+		prompt: "Use complexity metrics to find the code most worth attention, and use them properly. Rank functions by branch count, then weight by change frequency from the history, because a complex function nobody touches is a much smaller problem than a moderately complex one edited weekly. For the top items, explain what the number means concretely: how many test cases full branch coverage would require. Then note where the metric misleads — a long flat switch scores high and reads easily, while deeply nested conditions score similarly and read terribly — and recommend the cognitive variant where that distinction matters. Recommend specific decompositions rather than a threshold.",
+		why: "Weighting by change frequency is what makes the metric actionable, and distinguishing flat branching from nesting is why the raw number alone produces bad refactors.",
+		watchOut: "Enforced as a hard limit, this is trivially gamed by extracting arbitrary fragments into badly named helpers, which is worse than the original.",
+		related: [
+			"code-smells-catalog",
+			"guard-clauses",
+			"hot-path-identification",
+			"goodharts-law"
+		],
+		tags: [
+			"code quality",
+			"metrics",
+			"complexity",
+			"testing"
+		]
+	},
+	{
+		id: "code-smells-catalog",
+		name: "Code Smells",
+		aka: [
+			"refactoring smells",
+			"feature envy",
+			"shotgun surgery",
+			"primitive obsession"
+		],
+		origin: "Kent Beck and Martin Fowler, Refactoring, 1999",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "A vocabulary of recurring structural problems — each with a name, a diagnosis and a known refactoring — that turns vague unease into a specific finding.",
+		useWhen: [
+			"this code feels wrong and I cannot say why",
+			"reviews produce vague comments about the code being messy",
+			"I want to justify a refactor to someone who wants features",
+			"the same kind of problem keeps appearing and we have no name for it"
+		],
+		prompt: "Diagnose this code against the smell catalogue, naming each finding explicitly. Look for the ones with the highest cost: shotgun surgery, where one conceptual change requires edits in many places; divergent change, where one module changes for many unrelated reasons; feature envy, where a method is more interested in another object's data than its own; primitive obsession; long parameter lists; and message chains. For each, quote the code, name the smell, give the standard refactoring and estimate the effort. Then rank by evidence rather than severity — how often the affected code has been edited, and how many defects it has carried.",
+		why: "Naming the smell connects an observation to a known remedy, and ranking by edit and defect history is what makes the refactoring case fundable rather than aesthetic.",
+		watchOut: "A smell is a hint, not a verdict. Some are the right trade in context, and refactoring on the strength of the name alone can make things worse.",
+		related: [
+			"refactoring-catalog",
+			"god-object",
+			"connascence",
+			"single-responsibility"
+		],
+		tags: [
+			"code quality",
+			"refactoring",
+			"diagnosis",
+			"review"
+		]
+	},
+	{
+		id: "god-object",
+		name: "God Object",
+		aka: [
+			"blob class",
+			"the everything file",
+			"kitchen sink module"
+		],
+		origin: "Anti-pattern literature; AntiPatterns, Brown and colleagues, 1998",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "One class or file accumulates most of the system's knowledge and becomes the thing every change touches and nobody dares restructure.",
+		useWhen: [
+			"this file is eight thousand lines and every pull request touches it",
+			"merge conflicts always happen in the same class",
+			"everything depends on this one module",
+			"nobody understands the whole of it and everyone edits parts"
+		],
+		prompt: "Plan the decomposition of this oversized module. Do it from evidence rather than intuition: cluster its methods by which fields they touch and by which callers use them, since disjoint clusters are the natural seams, and cross-reference with the commit history to see which parts change together. Then propose an extraction order starting with the cluster having the fewest inbound dependencies, so the first step is small and independently mergeable. For each extraction, state what breaks and how callers are updated. Finish with the guardrail preventing regrowth, since these reform quickly unless something makes adding to them uncomfortable.",
+		why: "Clustering by field access and co-change history finds real seams, and starting with the least-depended-upon cluster is what makes the first step shippable rather than a six-month branch.",
+		watchOut: "Splitting a large class into pieces that all still need each other produces the same coupling with more files. Verify the clusters are genuinely disjoint first.",
+		related: [
+			"code-smells-catalog",
+			"single-responsibility",
+			"coupling-metrics",
+			"package-by-feature"
+		],
+		tags: [
+			"code quality",
+			"anti-patterns",
+			"refactoring",
+			"modularity"
+		]
+	},
+	{
+		id: "connascence",
+		name: "Connascence",
+		aka: [
+			"forms of coupling",
+			"connascence of name and position",
+			"coupling taxonomy"
+		],
+		origin: "Meilir Page-Jones, 1992; revived by Jim Weirich",
+		domains: ["engineering"],
+		intents: ["critique", "explain"],
+		oneLiner: "A precise vocabulary for coupling: two pieces of code are connascent if changing one requires changing the other, and the kinds range from harmless to dangerous.",
+		useWhen: [
+			"these two modules are coupled and I cannot explain how badly",
+			"reviews argue about coupling with no shared vocabulary",
+			"a change here always requires a change there and nobody knows why",
+			"I want to compare two designs on coupling rather than by feel"
+		],
+		prompt: "Analyse the coupling between these components using the connascence taxonomy. Identify each form present — name, type, meaning where a magic value is agreed, position where argument order matters, algorithm where two places must implement the same rule identically, timing, and execution order — and note that the later forms are progressively harder to detect and to change safely. Then apply the two axes that make this useful: strength, since weaker forms are preferable, and locality, since strong coupling inside one small module is fine while the same coupling across a service boundary is dangerous. Recommend conversions from stronger to weaker forms, prioritising the least local instances.",
+		why: "The strength-times-distance framing explains why the same coupling is fine locally and unacceptable across a boundary, which is the judgement most coupling arguments are missing.",
+		watchOut: "Connascence of algorithm — two places implementing the same rule — is invisible to every tool and is the one that produces silent divergence.",
+		related: [
+			"coupling-metrics",
+			"code-smells-catalog",
+			"law-of-demeter",
+			"rule-of-three-duplication"
+		],
+		tags: [
+			"code quality",
+			"coupling",
+			"design",
+			"vocabulary"
+		]
+	},
+	{
+		id: "coupling-metrics",
+		name: "Coupling and Cohesion Metrics",
+		aka: [
+			"afferent and efferent coupling",
+			"instability metric",
+			"dependency structure matrix"
+		],
+		origin: "Robert C. Martin's package metrics; structured design lineage",
+		domains: ["engineering"],
+		intents: ["diagnose", "estimate"],
+		oneLiner: "Measure how many things depend on a module and how many it depends on, to find the components that are hard to change and the ones that are risky to change.",
+		useWhen: [
+			"I do not know which modules are safe to modify",
+			"a small change caused failures in unrelated areas",
+			"we want to split the system and do not know where",
+			"someone claims the architecture is layered and I want to check"
+		],
+		prompt: "Compute the dependency structure of this codebase. For each module, count inbound and outbound dependencies and identify three categories: highly depended upon, where a change is risky and the interface should be stable; highly dependent, where the module is fragile to others' changes; and cyclic groups, which cannot be understood, tested or deployed independently and should be reported first. Then compare the actual dependency graph against the intended architecture and list every violation. Finish with the modules that are both heavily depended upon and frequently changed, since that combination is the highest-risk code in the system.",
+		why: "Cycles and the depended-upon-yet-frequently-changing intersection are the two findings that predict where breakage happens, and both fall straight out of the graph.",
+		watchOut: "Static dependency graphs miss runtime coupling through configuration, events and shared data. A clean graph does not prove modules are independent.",
+		related: [
+			"connascence",
+			"god-object",
+			"package-by-feature",
+			"single-responsibility"
+		],
+		tags: [
+			"code quality",
+			"coupling",
+			"metrics",
+			"architecture"
+		]
+	},
+	{
+		id: "refactoring-catalog",
+		name: "Refactoring Catalogue",
+		aka: [
+			"named refactorings",
+			"extract method",
+			"behaviour-preserving change"
+		],
+		origin: "Martin Fowler, Refactoring, 1999 and 2018",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "A set of named, small, behaviour-preserving transformations with known mechanics — applying them one at a time is what makes large restructuring safe.",
+		useWhen: [
+			"the refactor turned into a rewrite and broke things",
+			"we changed the structure and the behaviour at the same time and cannot tell what broke",
+			"I know this needs restructuring but not how to get there in steps",
+			"the refactoring branch has been open for three weeks"
+		],
+		prompt: "Plan this restructuring as a sequence of named refactorings, each small enough to complete and verify in minutes. For each step, give the transformation, the mechanics, and confirm it preserves behaviour so the tests should pass unchanged at every step — any step where they must change is not a refactoring and should be separated and labelled as a behaviour change. Then order the steps so the code compiles and passes at every point and each is independently mergeable, since that is what prevents a long-lived branch. Finish with the point at which we could stop and still be better off than we started, because most refactorings are abandoned partway.",
+		why: "The stop-and-still-be-better checkpoint is what makes incremental restructuring survive changing priorities, and separating behaviour changes from structural ones is what keeps the tests meaningful.",
+		watchOut: "Refactoring without adequate tests is editing and hoping. Establish the safety net first even if that means characterisation tests you throw away later.",
+		related: [
+			"preparatory-refactoring",
+			"characterization-tests",
+			"branch-by-abstraction",
+			"code-smells-catalog"
+		],
+		tags: [
+			"code quality",
+			"refactoring",
+			"process",
+			"safety"
+		]
+	},
+	{
+		id: "preparatory-refactoring",
+		name: "Preparatory Refactoring",
+		aka: ["make the change easy then make the easy change", "two-hat refactoring"],
+		origin: "Kent Beck, 2012",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Before adding a feature, reshape the code so the feature becomes a simple addition — and keep the two commits separate so both are reviewable.",
+		useWhen: [
+			"adding this feature means threading a parameter through eleven functions",
+			"the change is small in principle and horrible in this code",
+			"the pull request mixes a refactor and a feature and nobody can review it",
+			"we always say we will clean up afterwards and never do"
+		],
+		prompt: "Plan this feature as preparation followed by addition. First describe the shape the code would need for the feature to be a small local change, then give the behaviour-preserving steps to reach that shape, keeping them as separate commits with tests passing throughout. Then show the feature as the addition it becomes. The reviewability argument matters, so state it: a reviewer can verify a structural change is behaviour-preserving and verify a small feature, and cannot do either when they are mixed. Finish by scoping the preparation to what this feature actually needs, since the temptation is to fix everything you notice on the way.",
+		why: "Separating the commits is what makes both halves reviewable, and scoping preparation to the feature at hand is what stops it becoming an open-ended cleanup.",
+		watchOut: "Preparation that turns out to be unnecessary is speculative design. If the feature would have been fine without it, you refactored for taste rather than need.",
+		related: [
+			"refactoring-catalog",
+			"review-size-limits",
+			"commit-hygiene",
+			"boy-scout-rule"
+		],
+		tags: [
+			"code quality",
+			"refactoring",
+			"workflow",
+			"review"
+		]
+	},
+	{
+		id: "boy-scout-rule",
+		name: "Boy Scout Rule",
+		aka: ["leave it better than you found it", "opportunistic refactoring"],
+		origin: "Robert C. Martin, adapting the scouting maxim",
+		domains: ["engineering"],
+		intents: ["plan", "steer"],
+		oneLiner: "Improve something small in every area you touch, so quality rises continuously in exactly the code that gets used rather than through cleanup projects.",
+		useWhen: [
+			"quality work never gets prioritised as its own project",
+			"the codebase degrades a little with every change",
+			"we plan big cleanups that never happen",
+			"the worst code is also the code we edit most"
+		],
+		prompt: "Apply an improve-as-you-go practice to this change. Identify the small improvements available in the code being touched — a clarifying rename, a missing test, an extracted function, a deleted dead branch, a comment recording why — and pick the one or two with the best value for the review cost. Then state the boundary explicitly, because that is what makes this sustainable: improvements stay within the area already being modified and never expand the review beyond what a reviewer can hold, and anything larger becomes a separate ticket. Finish by noting that this concentrates improvement in frequently edited code, which is exactly where it pays.",
+		why: "Bounding the improvement to the area already touched is what keeps this from producing unreviewable pull requests, which is how the practice usually dies.",
+		watchOut: "Unbounded cleanup mixed into a feature change makes review harder and can hide a real defect among the noise of formatting.",
+		related: [
+			"preparatory-refactoring",
+			"review-size-limits",
+			"broken-windows",
+			"technical-debt-register"
+		],
+		tags: [
+			"code quality",
+			"refactoring",
+			"practice",
+			"incremental"
+		]
+	},
+	{
+		id: "broken-windows",
+		name: "Broken Windows",
+		aka: [
+			"entropy in codebases",
+			"quality norms",
+			"first crack"
+		],
+		origin: "Wilson and Kelling's criminology theory; applied to software by the Pragmatic Programmers",
+		domains: ["engineering"],
+		intents: ["diagnose", "steer"],
+		oneLiner: "Visible neglect licenses more neglect — once a codebase looks uncared-for, the standard for what is acceptable falls quickly.",
+		useWhen: [
+			"the new code is as messy as the old code",
+			"people copy the existing bad pattern because it is what is there",
+			"the failing test has been commented out for months and nobody minds",
+			"standards slipped and I cannot point to a single decision"
+		],
+		prompt: "Identify the visible signals of neglect in this codebase that are shaping what people think is acceptable: disabled tests, ignored warnings, stale to-do comments, commented-out code, an unformatted file, an unfixed lint rule, an outdated readme. Rank them by visibility rather than by technical severity, since the argument here is about norms and the most-seen ones do the most damage. Then propose the smallest set of fixes that would visibly reset the standard, and the automation that keeps each fixed — a norm maintained by discipline decays, one enforced by tooling does not. Finish with what the team should agree is now unacceptable.",
+		why: "Ranking by visibility rather than severity is the right ordering for a norms problem, and pairing each fix with automation is what makes the reset last.",
+		watchOut: "A tidy codebase is not a correct one. Do not let visible neatness substitute for the harder work on structure and tests.",
+		related: [
+			"boy-scout-rule",
+			"linting-and-formatting",
+			"ci-signal-hygiene",
+			"technical-debt-register"
+		],
+		tags: [
+			"code quality",
+			"culture",
+			"norms",
+			"maintenance"
+		]
+	},
+	{
+		id: "dead-code-removal",
+		name: "Dead Code Removal",
+		aka: [
+			"unused code deletion",
+			"unreachable branches",
+			"code archaeology"
+		],
+		origin: "Standard maintenance practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Unused code costs comprehension, review time, build time and security surface, and every reader has to work out whether it matters.",
+		useWhen: [
+			"half this file is commented out and I do not know if it is needed",
+			"we maintain a feature nobody has used in two years",
+			"there are three implementations and I cannot tell which is live",
+			"the dependency is only used by code that never runs"
+		],
+		prompt: "Identify code that can be deleted here, using evidence rather than reading. Combine static analysis for unreferenced symbols with runtime evidence — instrumentation showing a path was never executed over a meaningful window — because static analysis misses reflection, dynamic dispatch and configuration-driven paths, and runtime data misses rare but legitimate uses. State the confidence for each candidate and the window observed. Then propose the safe removal sequence: instrument first, then log-and-warn, then remove, with the observation period before each step. Finish by noting that version control is the archive, so nothing needs commenting out.",
+		why: "Combining static and runtime evidence with a stated observation window is what makes deletion safe, and the instrument-then-remove sequence catches the rare legitimate caller.",
+		watchOut: "Public interfaces and library exports may be used by consumers you cannot see. Internal-only code is much safer to delete than anything published.",
+		related: [
+			"chestertons-fence",
+			"api-usage-analytics",
+			"copy-paste-detection",
+			"technical-debt-register"
+		],
+		tags: [
+			"code quality",
+			"maintenance",
+			"deletion",
+			"simplification"
+		]
+	},
+	{
+		id: "copy-paste-detection",
+		name: "Duplication Detection",
+		aka: [
+			"clone detection",
+			"copy-paste analysis",
+			"duplicate blocks"
+		],
+		origin: "Static analysis practice; clone detection research",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Automated detection finds where the same logic exists in several places — then judgement decides which duplicates are a risk and which are coincidence.",
+		useWhen: [
+			"we fixed a bug and the same bug exists in three other places",
+			"a security fix was applied in one copy and not the others",
+			"the same function has been copied across five services",
+			"I suspect there is duplication and want to know where"
+		],
+		prompt: "Run duplication analysis over this codebase and interpret the results properly. Report the clone groups, then classify each: duplication of a rule where divergence is a defect, which must be unified; duplication of shape where the instances serve different purposes and unifying would couple them wrongly; and generated or boilerplate code, which is noise. Prioritise by risk rather than by size — a duplicated authorisation check or validation rule is far more dangerous than a long duplicated data structure. Then check the history: for each risky clone, has a change ever been applied to one copy and not the others, since that is direct evidence of the harm.",
+		why: "Finding a past fix applied to one copy but not others is the evidence that converts a duplication report into an urgent correctness issue.",
+		watchOut: "Aggressively unifying coincidental duplication creates shared components that must change for unrelated reasons, which is worse than the duplication.",
+		related: [
+			"rule-of-three-duplication",
+			"code-smells-catalog",
+			"dead-code-removal",
+			"static-analysis-adoption"
+		],
+		tags: [
+			"code quality",
+			"duplication",
+			"static analysis",
+			"risk"
+		]
+	},
+	{
+		id: "technical-debt-register",
+		name: "Technical Debt Register",
+		aka: [
+			"debt inventory",
+			"deliberate versus inadvertent debt",
+			"debt quadrants"
+		],
+		origin: "Ward Cunningham's debt metaphor, 1992; Fowler's technical debt quadrant",
+		domains: ["engineering"],
+		intents: ["prioritize", "communicate"],
+		oneLiner: "Make the shortcuts explicit with their cost and the interest they accrue, so paying them down competes for priority on evidence rather than on complaint.",
+		useWhen: [
+			"everyone says the codebase is full of debt and nobody can point at it",
+			"we cannot justify cleanup work to stakeholders",
+			"the same complaints recur in every retrospective with no action",
+			"we took a shortcut and nobody remembers why or where"
+		],
+		prompt: "Build a debt register for this codebase. For each item, record what was traded and why, which is often a legitimate deliberate decision rather than a mistake, plus the interest it charges — specifically, what it makes slower or riskier today, expressed in something measurable like time added per change or defects attributable to it. That interest figure is what allows prioritisation against feature work, so estimate it rather than leaving it qualitative. Then rank by interest rather than by principal, since large ugly code nobody touches costs nothing. Finish with the items to accept permanently and stop discussing.",
+		why: "Ranking by interest rather than by how bad the code looks is what directs effort to the debt actually costing money, and it makes the case in terms leadership can weigh.",
+		watchOut: "A register that becomes a dumping ground for every complaint loses signal. Require an interest estimate as the entry price.",
+		related: [
+			"boy-scout-rule",
+			"code-smells-catalog",
+			"cost-of-delay",
+			"lead-time-analysis"
+		],
+		tags: [
+			"code quality",
+			"technical debt",
+			"prioritisation",
+			"communication"
+		]
+	},
+	{
+		id: "cargo-cult-code",
+		name: "Cargo Cult Code",
+		aka: [
+			"copied without understanding",
+			"ritual configuration",
+			"superstitious code"
+		],
+		origin: "Richard Feynman's cargo cult science; applied to programming practice",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Code and configuration copied because it appeared alongside something that worked, without anyone knowing which parts are load-bearing.",
+		useWhen: [
+			"this configuration block is in every service and nobody knows what it does",
+			"we always add these three lines because the template has them",
+			"someone said we needed this flag years ago",
+			"the setup includes steps from a tutorial for a different framework"
+		],
+		prompt: "Identify the parts of this code or configuration that nobody can currently justify. For each, try to establish what it does and whether it is required, then classify: load-bearing and should be documented with its reason, harmless but pointless and should be removed, or actively harmful. Then design the safe test for the uncertain ones — remove in an environment where the consequence is observable, with a defined observation window and a specific signal, rather than removing and hoping. Be explicit that not knowing what something does is a reason to investigate rather than to keep or to delete, since both reflexes are wrong.",
+		why: "Framing the unknown as neither keep nor delete but investigate, with a designed removal test, is what breaks the standoff between superstition and recklessness.",
+		watchOut: "Some copied code protects against a failure that has not occurred recently precisely because it works. Establish what it defends before removing it.",
+		related: [
+			"chestertons-fence",
+			"dead-code-removal",
+			"comment-why-not-what",
+			"configuration-management"
+		],
+		tags: [
+			"code quality",
+			"understanding",
+			"configuration",
+			"maintenance"
+		]
+	},
+	{
+		id: "defensive-programming-limits",
+		name: "Limits of Defensive Programming",
+		aka: [
+			"paranoid checks",
+			"over-validation",
+			"trust boundaries in code"
+		],
+		origin: "Software construction practice; discussed in Code Complete and A Philosophy of Software Design",
+		domains: ["engineering"],
+		intents: ["critique", "decide"],
+		oneLiner: "Checking everything everywhere hides bugs behind fallbacks and doubles the code — defend at boundaries and assert internally instead.",
+		useWhen: [
+			"every function checks its arguments even when the caller already did",
+			"the code swallows errors and returns a default and nobody notices failures",
+			"half of every function is null checks",
+			"a bug survived for months because a fallback quietly hid it"
+		],
+		prompt: "Review the defensive checks in this code and classify each by where it sits. At a trust boundary, where input comes from outside, validation is required and must produce a clear error. Inside the trusted core, a check for something that should be impossible is an assertion — it should crash loudly rather than fall back to a default, because a silent fallback converts a detectable bug into corrupted data. Find every place we currently return a default or swallow an exception for an impossible condition and say what damage that hides. Then delete the redundant checks that duplicate boundary validation and show what the types could enforce instead.",
+		why: "Distinguishing boundary validation from internal assertion is the whole discipline, and the silent-fallback audit finds the checks that actively hide defects.",
+		watchOut: "Crashing loudly is right in a service that restarts and wrong in software running on a customer's device. The correct response depends on what recovery is available.",
+		related: [
+			"assertions-and-invariants",
+			"input-validation-boundary",
+			"fail-fast-vs-fault-tolerance",
+			"parse-dont-validate"
+		],
+		tags: [
+			"code quality",
+			"error handling",
+			"validation",
+			"design"
+		]
+	},
+	{
+		id: "assertions-and-invariants",
+		name: "Assertions and Invariants",
+		aka: [
+			"executable assumptions",
+			"internal consistency checks",
+			"crash early"
+		],
+		origin: "Design by contract lineage; Pragmatic Programmer practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Write down the conditions that must always hold as executable checks, so a violated assumption is caught where it happens rather than three layers away.",
+		useWhen: [
+			"the error surfaces far from where the data went wrong",
+			"we have comments saying this must never be null",
+			"a corrupted value propagated through the system before anyone noticed",
+			"debugging takes hours because the failure is remote from the cause"
+		],
+		prompt: "Identify the invariants in this code and make them executable. Look for assumptions currently held in comments, in variable names, or in nobody's head: relationships between fields, ordering guarantees, non-empty collections, ranges, and state machine constraints. For each, write the check and place it where the invariant could first be violated rather than where it is later relied upon. Then decide behaviour in production per assertion — crash, log and continue, or emit a metric — based on what happens if we proceed with a violated invariant, since for anything touching money or user data proceeding is usually worse than stopping. Note which should also become type-level guarantees.",
+		why: "Placing the check where the invariant could first break, rather than where it is used, is what collapses the distance between cause and symptom during debugging.",
+		watchOut: "Assertions compiled out in production give you checks exactly where you do not need them. Decide deliberately which must remain live.",
+		related: [
+			"design-by-contract",
+			"defensive-programming-limits",
+			"illegal-states-unrepresentable",
+			"comment-why-not-what"
+		],
+		tags: [
+			"code quality",
+			"debugging",
+			"correctness",
+			"invariants"
+		]
+	},
+	{
+		id: "design-by-contract",
+		name: "Design by Contract",
+		aka: [
+			"preconditions and postconditions",
+			"Eiffel contracts",
+			"obligations and benefits"
+		],
+		origin: "Bertrand Meyer, Eiffel, 1986",
+		domains: ["engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "State what a routine requires of its caller, what it guarantees in return, and what it keeps true throughout — and make violation the caller's bug, not a case to handle.",
+		useWhen: [
+			"nobody knows whose job it is to check this argument",
+			"both caller and callee validate the same thing defensively",
+			"the documentation says what it does but not what it needs",
+			"a subclass quietly demands more than its parent did"
+		],
+		prompt: "Write contracts for these routines. For each, state the precondition the caller must satisfy, the postcondition guaranteed if the precondition holds, and any invariant preserved. Then use them to settle the redundant-checking question: with a stated precondition, the caller is responsible and the callee may assert rather than validate, which removes duplicated checks. Say which of our current checks that eliminates. Cover the inheritance rule too, since a subtype may only weaken preconditions and strengthen postconditions, and flag any override that violates it. Finish with which contracts should be enforced at runtime and which are documentation.",
+		why: "Contracts assign responsibility, which is what eliminates duplicated validation, and the inheritance rule catches substitutability violations that no type checker sees.",
+		watchOut: "Contracts on interfaces crossing a trust boundary are not enough. Untrusted input needs real validation regardless of what the contract says.",
+		related: [
+			"assertions-and-invariants",
+			"liskov-substitution",
+			"defensive-programming-limits",
+			"thread-safety-contracts"
+		],
+		tags: [
+			"code quality",
+			"contracts",
+			"correctness",
+			"documentation"
+		]
+	},
+	{
+		id: "fail-fast-vs-fault-tolerance",
+		name: "Fail Fast versus Fault Tolerance",
+		aka: [
+			"crash early",
+			"let it crash",
+			"graceful degradation in code"
+		],
+		origin: "Erlang's let-it-crash philosophy versus defensive traditions",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Decide per failure whether stopping immediately or continuing degraded does less harm, because applying one policy everywhere is wrong in both directions.",
+		useWhen: [
+			"the service kept running with corrupt state and made it worse",
+			"one bad record stopped a job that could have skipped it",
+			"we catch everything at the top and log it and carry on",
+			"the process crashes on a problem it could have worked around"
+		],
+		prompt: "Classify the failure modes in this code and assign a policy to each. Stopping immediately is right when continuing would corrupt data, produce wrong results, or hide a defect; continuing degraded is right when the failure is expected, isolated to one item or one optional feature, and the rest of the work is still correct. Apply that test to each of our current catch blocks and report the ones that are wrong. Then specify the supervision around fail-fast components — what restarts them, with what backoff, and how a crash loop is detected — since stopping fast is only safe when something reliably brings the system back.",
+		why: "Crash-fast is only a strategy when supervision and restart behaviour exist, and specifying that alongside the policy is what makes it safe rather than merely brave.",
+		watchOut: "Catch-all handlers at the top of a request path convert every unexpected failure into a degraded success. That is a policy decision made by accident.",
+		related: [
+			"defensive-programming-limits",
+			"graceful-degradation",
+			"dead-letter-queue",
+			"assertions-and-invariants"
+		],
+		tags: [
+			"code quality",
+			"error handling",
+			"reliability",
+			"design"
+		]
+	},
+	{
+		id: "result-error-handling",
+		name: "Errors as Values",
+		aka: [
+			"result types",
+			"either type",
+			"checked versus unchecked errors"
+		],
+		origin: "Functional programming tradition; mainstream via Rust, Go and modern type systems",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Return failures as part of the type rather than as an out-of-band throw, so the compiler and the reader can see which calls can fail and force a decision.",
+		useWhen: [
+			"I cannot tell from a signature which calls can fail",
+			"an exception from three layers down surfaced somewhere unexpected",
+			"we catch and rethrow with no added information at every layer",
+			"a failure was silently swallowed and nobody knew"
+		],
+		prompt: "Redesign error handling for this module around explicit outcomes. Separate expected failures, which are ordinary results the caller must handle — not found, invalid, conflict, unavailable — from genuine defects, which should not be modelled as values at all. Show the types for the first category. Then address the ergonomics honestly, because verbose propagation is what makes teams abandon this: show the composition or propagation mechanism our language offers. Finish with the boundary policy, since interoperating with exception-based libraries means converting at the edge, and specify exactly where that conversion happens so both styles do not spread through the codebase.",
+		why: "Separating expected failures from defects is what keeps the result type from becoming a catch-all, and fixing the conversion boundary prevents two error styles interleaving everywhere.",
+		watchOut: "Wrapping every possible failure in a result type, including programming errors, produces enormous ceremony and hides the failures that matter.",
+		related: [
+			"railway-oriented-programming",
+			"exception-hierarchy-design",
+			"parse-dont-validate",
+			"error-message-design"
+		],
+		tags: [
+			"code quality",
+			"error handling",
+			"types",
+			"design"
+		]
+	},
+	{
+		id: "exception-hierarchy-design",
+		name: "Exception Hierarchy Design",
+		aka: [
+			"error taxonomy",
+			"catchable categories",
+			"wrapping exceptions"
+		],
+		origin: "Object-oriented error handling practice; Effective Java guidance",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Design exception types around how callers will handle them, not around where they were thrown, and preserve the original cause when wrapping.",
+		useWhen: [
+			"callers catch the base exception type because they cannot distinguish cases",
+			"the stack trace stops at a layer boundary and the real cause is gone",
+			"we have forty exception classes and callers catch three",
+			"the same failure arrives as a different type depending on the path"
+		],
+		prompt: "Design the exception taxonomy for this component from the caller's perspective. Enumerate the distinct handling strategies a caller could reasonably take — retry, fall back, report to the user, abort — and define one type per strategy rather than one per throw site, since types callers cannot act on differently do not need to be distinct. Then set the rules for crossing layers: wrap lower-level exceptions in domain terms while always preserving the cause chain, and never catch a broad type only to log and rethrow unchanged. Finish with the information each exception must carry so a handler and a log reader can both act on it.",
+		why: "Deriving types from caller handling strategies is what stops the proliferation of unusable exception classes, and cause-chain preservation is what keeps the trace diagnostic across boundaries.",
+		watchOut: "Wrapping without preserving the cause destroys the only evidence of what actually failed, and it is invisible until you need it during an incident.",
+		related: [
+			"result-error-handling",
+			"error-message-design",
+			"error-response-design",
+			"fail-fast-vs-fault-tolerance"
+		],
+		tags: [
+			"code quality",
+			"error handling",
+			"design",
+			"diagnostics"
+		]
+	},
+	{
+		id: "error-message-design",
+		name: "Error Message Design",
+		aka: [
+			"diagnostic messages",
+			"actionable errors",
+			"what went wrong and what to do"
+		],
+		origin: "Usability and developer experience practice; compiler error message research",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "A good error names what failed, gives the specific values involved, and says what to do next — the reader is stuck, and the message is your only chance to help.",
+		useWhen: [
+			"the error says operation failed and nothing else",
+			"support tickets all say it did not work with no detail",
+			"the message tells us what happened but not what to do",
+			"users see a stack trace and a raw exception name"
+		],
+		prompt: "Rewrite these error messages for the person who will read them. Each should carry four things: what was attempted, what went wrong, the specific values involved including the offending input, and the next action. Then separate audiences deliberately — the end user needs plain language and a next step, while the log needs identifiers, context and correlation — and design both rather than showing one to the other. Check each rewritten message against the test that matters: could someone act on this without opening the code. Finally, audit for the information that must not appear, such as secrets, other users' data, or details that would help an attacker.",
+		why: "The could-you-act-without-the-source test is a concrete bar, and separating user-facing from log-facing content prevents the usual compromise that serves neither.",
+		watchOut: "Including the offending input in the message can echo untrusted data into logs and interfaces. Truncate and escape it.",
+		related: [
+			"error-response-design",
+			"exception-hierarchy-design",
+			"assertion-roulette",
+			"structured-logging"
+		],
+		tags: [
+			"code quality",
+			"errors",
+			"usability",
+			"writing"
+		]
+	},
+	{
+		id: "delta-debugging",
+		name: "Delta Debugging",
+		aka: [
+			"automated input minimisation",
+			"ddmin",
+			"systematic reduction"
+		],
+		origin: "Andreas Zeller, 1999",
+		domains: ["engineering"],
+		intents: ["diagnose"],
+		oneLiner: "Automatically shrink a failing input or change set by systematically removing parts and re-testing, converging on the minimal thing that still fails.",
+		useWhen: [
+			"the failing input is a ten megabyte file and I cannot read it",
+			"the regression is somewhere in a hundred commits",
+			"the configuration that breaks it has two hundred settings",
+			"reducing this by hand would take days"
+		],
+		prompt: "Set up systematic reduction for this failure. Define the three pieces precisely: the input space and how it can be split, the test that classifies an attempt as failing, passing or invalid — that third category matters because most reduced inputs will be malformed rather than informative — and the granularity to stop at. Then run the reduction conceptually and explain how the algorithm narrows, so the result is understood rather than magic. Apply the same technique to change sets as well as inputs, since bisecting a set of configuration differences or commits uses the same procedure. Finish with what the minimal case tells us about the cause.",
+		why: "Explicitly handling the invalid-input category is what makes automated reduction converge instead of wandering, and it is the part hand-rolled reductions get wrong.",
+		watchOut: "A minimal input for a nondeterministic failure is meaningless, since the test result varies independently of the reduction. Establish reliable reproduction first.",
+		related: [
+			"minimal-reproducible-example",
+			"binary-search-debugging",
+			"fuzz-testing",
+			"hypothesis-driven-debugging"
+		],
+		tags: [
+			"debugging",
+			"automation",
+			"reduction",
+			"diagnosis"
+		]
+	},
+	{
+		id: "print-debugging-discipline",
+		name: "Instrumented Debugging",
+		aka: [
+			"printf debugging done well",
+			"trace statements",
+			"debugger versus logging"
+		],
+		origin: "Universal practice; discipline articulated in debugging literature",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Adding output to understand a running program works well when the additions are chosen to discriminate between hypotheses rather than sprinkled hopefully.",
+		useWhen: [
+			"I have added twenty print statements and learned nothing",
+			"the debugger changes the timing and the bug disappears",
+			"I cannot attach a debugger to this environment",
+			"the output is so noisy I cannot find what I added"
+		],
+		prompt: "Turn this into a disciplined instrumentation exercise. State the competing hypotheses first, then place output at the points that would distinguish between them — a value at a boundary that is correct under one hypothesis and wrong under another — rather than at every step. Each statement should print an identifier, the values involved and enough context to correlate across concurrent activity. Then say when to use the debugger instead: interactive stepping is superior for a reproducible single-threaded failure and useless for a timing-dependent or production-only one. Finish with what happens to the instrumentation afterwards — deleted, or promoted into permanent structured telemetry if it proved valuable.",
+		why: "Placing output where hypotheses diverge, rather than where the code looks interesting, is the difference between a two-minute diagnosis and an afternoon, and promoting good instrumentation makes the next bug cheaper.",
+		watchOut: "Debug output containing user data can land in logs and violate privacy commitments. Treat temporary instrumentation as if it will ship, because sometimes it does.",
+		related: [
+			"hypothesis-driven-debugging",
+			"observability-instrumentation",
+			"structured-logging",
+			"delta-debugging"
+		],
+		tags: [
+			"debugging",
+			"instrumentation",
+			"diagnosis",
+			"practice"
+		]
+	},
+	{
+		id: "commit-hygiene",
+		name: "Commit Hygiene",
+		aka: [
+			"atomic commits",
+			"commit messages",
+			"clean history"
+		],
+		origin: "Version control practice; conventions such as Conventional Commits",
+		domains: ["engineering", "writing"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Each commit should be one coherent change with a message explaining why, because history is the only documentation guaranteed to still exist.",
+		useWhen: [
+			"the commit message says fixes and nothing else",
+			"I cannot revert one change because it is mixed with four others",
+			"bisecting is impossible because half the commits do not build",
+			"I found the line that caused the bug and the commit explains nothing"
+		],
+		prompt: "Improve the commit structure and messages for this work. Split the changes so each commit is independently buildable and revertible and does one thing — a refactor, a feature, a formatting pass — which is what makes both reverting and bisecting possible. Then write messages with a short imperative summary and a body explaining why the change was needed, what alternatives were rejected, and any consequence a future reader should know, since the what is already in the diff. Include references to the issue or incident that prompted it. Finish with the policy on rewriting history before review and the rule for shared branches.",
+		why: "Independently buildable commits are what make bisecting work, and the why-and-rejected-alternatives body is the documentation that survives when everything else is deleted.",
+		watchOut: "A pristine history is not worth blocking work over. The value is in revertibility and explanation, not in aesthetics.",
+		related: [
+			"review-size-limits",
+			"preparatory-refactoring",
+			"binary-search-debugging",
+			"pull-request-description"
+		],
+		tags: [
+			"version control",
+			"documentation",
+			"workflow",
+			"history"
+		]
+	},
+	{
+		id: "pull-request-description",
+		name: "Pull Request Description",
+		aka: [
+			"change summary for reviewers",
+			"review context",
+			"PR template"
+		],
+		origin: "Code review practice",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Give reviewers the context they cannot get from the diff — why this change, what alternatives you rejected, what you are unsure about, and how to verify it.",
+		useWhen: [
+			"reviewers ask questions I could have answered up front",
+			"the review focuses on style because nobody understands the intent",
+			"nobody knows how to test this change",
+			"the pull request title is update code"
+		],
+		prompt: "Write the description for this change. Include what a reviewer cannot derive from the diff: the problem being solved, the approach and why, the alternatives considered and rejected, the areas where you specifically want scrutiny, and how the change was verified. That request-for-scrutiny section is the highest-value part, so be specific about which parts you are least confident in rather than asking for general review. Then add the practical context: how to test it, risk and rollback, and anything that must be done at deploy time. Keep it short enough that reviewers actually read it, and note where the diff itself is self-explanatory.",
+		why: "Explicitly naming the parts you are unsure about directs reviewer attention where defects are most likely, which is the single change that most improves review effectiveness.",
+		watchOut: "A long description compensating for an unreviewable diff is treating the symptom. If it needs an essay, the change is probably too large.",
+		related: [
+			"review-size-limits",
+			"code-review-checklist",
+			"commit-hygiene",
+			"architecture-decision-records"
+		],
+		tags: [
+			"code review",
+			"communication",
+			"writing",
+			"workflow"
+		]
+	},
+	{
+		id: "code-review-checklist",
+		name: "Code Review Focus",
+		aka: [
+			"what reviewers should look for",
+			"review checklist",
+			"review priorities"
+		],
+		origin: "Code review research; Google's engineering practices documentation",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Reviewers should spend their attention on what tools cannot check — correctness, design, security and missing cases — not on formatting a linter should own.",
+		useWhen: [
+			"reviews are full of style comments and miss real bugs",
+			"a serious defect got approved by two reviewers",
+			"reviews take days and produce nothing substantive",
+			"nobody knows what they are supposed to be looking for"
+		],
+		prompt: "Define what our reviews should focus on, ordered by what only a human can do. Start with correctness against intent, including the cases the change does not handle, then design fit with the surrounding code, then security and privacy implications, then test adequacy, then readability for the next reader. Automate everything below that line and say so explicitly, since style comments crowd out substantive ones. Then set the norms that determine whether review works: turnaround expectation, how comments are phrased as questions rather than instructions, which comments block approval versus are suggestions, and how disagreement is resolved without stalling.",
+		why: "Drawing the line between human review and automation is what recovers reviewer attention for defects, and marking blocking versus non-blocking comments is what stops reviews stalling on preferences.",
+		watchOut: "Approving because the author is experienced defeats the purpose. Review effort should scale with risk, not with trust in the author.",
+		related: [
+			"review-size-limits",
+			"pull-request-description",
+			"linting-and-formatting",
+			"security-review-triggers"
+		],
+		tags: [
+			"code review",
+			"quality",
+			"process",
+			"collaboration"
+		]
+	},
+	{
+		id: "review-size-limits",
+		name: "Review Size Limits",
+		aka: [
+			"small pull requests",
+			"reviewable chunks",
+			"defect detection falls with size"
+		],
+		origin: "Code review research; SmartBear study on review effectiveness",
+		domains: ["engineering"],
+		intents: ["plan", "critique"],
+		oneLiner: "Defect detection falls sharply as a change grows, so a huge pull request is not reviewed more thoroughly, it is reviewed less.",
+		useWhen: [
+			"the pull request has ninety files and got approved in four minutes",
+			"reviews sit for days because nobody wants to start them",
+			"we cannot split this change without it being broken in between",
+			"the review found nothing and production found plenty"
+		],
+		prompt: "Break this large change into reviewable pieces. The obstacle is usually that intermediate states must work, so use the techniques that allow it: introduce the new path behind a flag, add the new code before removing the old, and separate mechanical changes such as renames and moves from behavioural ones so the reviewer can skim the first and concentrate on the second. Give the sequence with each piece independently mergeable. Then state the practical limits for us — a size beyond which we split, and a review turnaround target — and acknowledge the changes that genuinely cannot be split, where the response is a walkthrough rather than an asynchronous review.",
+		why: "Separating mechanical from behavioural changes is what makes a large change reviewable, and admitting that some changes need a live walkthrough is more honest than pretending a huge diff got reviewed.",
+		watchOut: "Splitting into pieces that individually make no sense shifts the burden to the reviewer to reassemble them. Each piece must be coherent on its own.",
+		related: [
+			"code-review-checklist",
+			"commit-hygiene",
+			"preparatory-refactoring",
+			"small-batch-releases"
+		],
+		tags: [
+			"code review",
+			"process",
+			"quality",
+			"workflow"
+		]
+	},
+	{
+		id: "code-ownership",
+		name: "Code Ownership Models",
+		aka: [
+			"strong versus collective ownership",
+			"CODEOWNERS",
+			"maintainer model"
+		],
+		origin: "Martin Fowler's ownership taxonomy; open source maintainer practice",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose between one team owning each area, anyone changing anything, and a middle model where owners review but do not gate — each trades speed against coherence.",
+		useWhen: [
+			"nobody feels responsible for this module and it has rotted",
+			"every change needs approval from a team that is always busy",
+			"two teams changed the same area in incompatible ways",
+			"the owner left and nobody knows the code"
+		],
+		prompt: "Recommend an ownership model for this codebase. Compare strong ownership, collective ownership and the review-but-not-gate middle on the outcomes that matter: how quickly a change outside your area can ship, how consistent the design stays, how knowledge spreads, and what happens when an owner is unavailable. Recommend one, likely differing by area — a shared platform library warrants stricter ownership than a feature module. Then specify the mechanics: how ownership is recorded, the response time owners commit to, the path when an owner is unresponsive, and how ownership is transferred rather than lapsing silently when someone leaves.",
+		why: "The unresponsive-owner escape path and explicit transfer are what keep ownership from becoming a bottleneck or an orphan, and both are missing from most ownership files.",
+		watchOut: "Strong ownership with no bus factor plan is a single point of failure in people form. Pair it with deliberate knowledge sharing.",
+		related: [
+			"bus-factor",
+			"code-review-checklist",
+			"package-by-feature",
+			"documentation-freshness"
+		],
+		tags: [
+			"code review",
+			"ownership",
+			"team",
+			"process"
+		]
+	},
+	{
+		id: "linting-and-formatting",
+		name: "Linting and Formatting",
+		aka: [
+			"automated style",
+			"formatter as arbiter",
+			"lint rule selection"
+		],
+		origin: "Tooling practice; gofmt and Prettier established the auto-format norm",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Delegate every mechanical style question to a tool so that human review never spends attention on it, and choose lint rules by the defects they prevent.",
+		useWhen: [
+			"reviews are full of arguments about formatting",
+			"the diff is unreadable because someone reformatted the file",
+			"we have three hundred lint warnings and ignore all of them",
+			"style discussions consume more time than design discussions"
+		],
+		prompt: "Set up automated style enforcement for this codebase. Choose a formatter with minimal configuration and apply it to everything in one commit, recorded so it can be excluded from blame — that single step ends the formatting debate permanently. Then select lint rules by evidence: enable those catching classes of defect we have actually experienced, and disable stylistic rules that produce noise without preventing bugs, since a warning list nobody reads is worse than none. Set the enforcement point so violations cannot be merged, and provide the automatic fix locally so it costs nothing. Finish with the process for changing a rule, including who decides.",
+		why: "Selecting rules by defects actually experienced is what keeps the warning list at zero and therefore meaningful, and the blame-excluded formatting commit removes the main objection to adopting a formatter.",
+		watchOut: "Applying a formatter across a codebase invalidates open branches and obscures history. Do it once, at a quiet moment, and communicate it.",
+		related: [
+			"static-analysis-adoption",
+			"code-review-checklist",
+			"broken-windows",
+			"ci-signal-hygiene"
+		],
+		tags: [
+			"code quality",
+			"tooling",
+			"automation",
+			"style"
+		]
+	},
+	{
+		id: "static-analysis-adoption",
+		name: "Static Analysis Adoption",
+		aka: [
+			"introducing a linter to legacy code",
+			"baseline suppression",
+			"zero-warning policy"
+		],
+		origin: "Static analysis tooling practice",
+		domains: ["engineering", "security"],
+		intents: ["plan", "structure"],
+		oneLiner: "Turning a serious analyser on an existing codebase produces thousands of findings — the adoption strategy matters more than the tool choice.",
+		useWhen: [
+			"we enabled the analyser and got four thousand warnings",
+			"the security scanner output is ignored by everyone",
+			"we cannot fix everything and cannot decide what to fix",
+			"the tool has a high false positive rate and people stopped looking"
+		],
+		prompt: "Plan the adoption of this analyser. Take a baseline of existing findings and suppress it explicitly, then enforce zero new findings from the moment of adoption — that ratchet is what makes adoption possible without a cleanup project. Then prioritise the baseline by rule severity and by whether the code is actively changed, and burn it down gradually. Address false positives directly: measure the rate per rule, disable rules whose noise exceeds their value, and define how an individual finding is suppressed with a required justification. Finish with the ownership question — who triages findings, and how a security finding is routed differently from a style one.",
+		why: "Baseline-and-ratchet is what makes adoption feasible on a large codebase, and per-rule false positive measurement is what prevents the tool being ignored within a month.",
+		watchOut: "A suppression with no justification is indistinguishable from a missed bug. Require a reason in the annotation or the suppressions become permanent.",
+		related: [
+			"coverage-ratchet",
+			"linting-and-formatting",
+			"vulnerability-triage",
+			"type-system-leverage"
+		],
+		tags: [
+			"code quality",
+			"static analysis",
+			"security",
+			"adoption"
+		]
+	},
+	{
+		id: "type-system-leverage",
+		name: "Type System Leverage",
+		aka: [
+			"gradual typing adoption",
+			"types as documentation",
+			"strictness settings"
+		],
+		origin: "Practice around TypeScript, mypy, Sorbet and similar gradual type systems",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Types prevent whole categories of defect and document intent, but only where they are precise — a codebase full of permissive escape hatches gets neither benefit.",
+		useWhen: [
+			"we added types and still get the same runtime errors",
+			"half the codebase is typed as any and nobody notices",
+			"the type checker passes and the field is undefined at runtime",
+			"we want stricter settings and cannot turn them on without breaking everything"
+		],
+		prompt: "Plan strengthening the types in this codebase. Measure the current state first — how much of the code is genuinely typed versus escaping through permissive types, and where those escapes cluster — because the escapes concentrate at boundaries and that is exactly where errors enter. Prioritise typing the boundaries: external inputs, database results and third-party responses, since types asserted rather than validated at those points are a lie the checker cannot detect. Then sequence the strictness settings from lowest to highest cost, with an estimate for each. Finish with the enforcement that prevents new escapes appearing.",
+		why: "Types asserted at an unvalidated boundary give false confidence, so directing effort at boundaries first is what converts type coverage into actual defect reduction.",
+		watchOut: "A type checker only constrains what it can see. Data crossing a serialisation boundary needs runtime validation regardless of how it is declared.",
+		related: [
+			"parse-dont-validate",
+			"illegal-states-unrepresentable",
+			"static-analysis-adoption",
+			"input-validation-boundary"
+		],
+		tags: [
+			"code quality",
+			"types",
+			"adoption",
+			"correctness"
+		]
+	},
+	{
+		id: "architecture-decision-records",
+		name: "Architecture Decision Records",
+		aka: [
+			"ADR",
+			"decision log",
+			"lightweight design documents"
+		],
+		origin: "Michael Nygard, 2011",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Record each significant decision with its context, the options considered and the consequences accepted, so future readers know why rather than guessing.",
+		useWhen: [
+			"nobody remembers why we chose this database",
+			"we keep revisiting a decision that was settled two years ago",
+			"a new joiner asks why and the answer is historical and lost",
+			"someone wants to change something without knowing what it was solving"
+		],
+		prompt: "Write a decision record for this choice. Keep it to the structure that makes these sustainable: the context and forces at play, the decision, the options considered with why each was rejected, and the consequences accepted including the negative ones — that last part is what makes the record honest and useful when someone later hits the downside. Write it in the present tense as of the decision, and mark it immutable: a later change supersedes it with a new record rather than editing the old one, so the history of reasoning survives. Then say what qualifies as significant enough to record, since recording everything means nobody reads any of them.",
+		why: "Immutability plus recorded negative consequences is what distinguishes these from design documents that get edited into uselessness, and the significance threshold keeps the set readable.",
+		watchOut: "Records nobody reads are wasted effort. Link them from the code and the readme where the decision manifests, or they will not be found when needed.",
+		related: [
+			"chestertons-fence",
+			"documentation-freshness",
+			"pull-request-description",
+			"type-1-type-2-decisions"
+		],
+		tags: [
+			"documentation",
+			"architecture",
+			"decisions",
+			"writing"
+		]
+	},
+	{
+		id: "todo-hygiene",
+		name: "TODO Hygiene",
+		aka: [
+			"comment markers",
+			"FIXME rot",
+			"deferred work in code"
+		],
+		origin: "Code maintenance practice",
+		domains: ["engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "A marker with no owner, no date and no ticket is a note to nobody — either the work matters and belongs in the backlog, or it does not and the note should go.",
+		useWhen: [
+			"there are four hundred markers in the codebase and none have been actioned",
+			"this note says fix before launch and we launched three years ago",
+			"nobody knows whether these remaining notes still apply",
+			"a marker described a known bug nobody had recorded anywhere"
+		],
+		prompt: "Audit the deferred-work markers in this codebase. Categorise each: notes describing a real defect or risk, which should become tracked issues; notes describing an intended improvement, which should either be recorded or deleted; and notes that are actually explanations, which should be rewritten as ordinary comments. Report any marker describing a security or correctness problem separately and first, since those are undocumented known defects. Then set the convention going forward — a marker must carry an owner and an issue reference — and the automated check that enforces it. Finish by deleting everything that no longer applies, which will be most of them.",
+		why: "Markers describing known security or correctness defects that exist nowhere in the tracker are the finding that justifies the audit, and requiring an issue reference prevents recurrence.",
+		watchOut: "Deleting a marker without understanding it can remove the only record of a real problem. Read each before removing.",
+		related: [
+			"technical-debt-register",
+			"comment-why-not-what",
+			"dead-code-removal",
+			"broken-windows"
+		],
+		tags: [
+			"code quality",
+			"maintenance",
+			"comments",
+			"tracking"
+		]
+	},
+	{
+		id: "inline-vs-extract",
+		name: "Inline versus Extract",
+		aka: [
+			"abstraction altitude",
+			"too many tiny functions",
+			"right-sizing units"
+		],
+		origin: "Refactoring practice; John Ousterhout's argument for deeper modules",
+		domains: ["engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Both a thousand-line function and fifty three-line functions are hard to read — judge by whether each unit hides meaningful complexity behind a simple interface.",
+		useWhen: [
+			"following this logic means jumping through nine files",
+			"every function is three lines and I still cannot see what happens",
+			"we extracted everything and it got harder to understand",
+			"the helper is called once and its name explains less than its body"
+		],
+		prompt: "Assess the decomposition here using interface simplicity against hidden complexity. A unit earns its existence when its interface is much simpler than its implementation; one whose name and signature are as complex as its body is pure indirection and should be inlined. Apply that test to each extracted function and report both directions — things to extract and things to inline — since the second direction is almost never considered. Then check the sequence a reader must follow to understand one behaviour, and count the jumps; a high count with shallow units is the specific problem. Recommend the target shape and the ordering rule for related units.",
+		why: "Explicitly looking for things to inline is the missing half of decomposition review, and the interface-versus-implementation depth test gives an objective criterion for both directions.",
+		watchOut: "Extraction driven by a line-count rule produces shallow units with awkward names. The measure is complexity hidden, not lines moved.",
+		related: [
+			"cyclomatic-complexity",
+			"naming-as-design",
+			"code-smells-catalog",
+			"readability-over-cleverness"
+		],
+		tags: [
+			"code quality",
+			"abstraction",
+			"refactoring",
+			"readability"
+		]
+	},
+	{
+		id: "synthetic-test-data",
+		name: "Synthetic Test Data",
+		aka: [
+			"generated fixtures",
+			"production-shaped data",
+			"data generation for testing"
+		],
+		origin: "Testing and privacy engineering practice",
+		domains: ["engineering", "data"],
+		intents: ["structure", "plan"],
+		oneLiner: "Generate data that matches production in shape, scale and awkwardness without containing anyone's real information.",
+		useWhen: [
+			"our test data is ten tidy rows and production is millions of messy ones",
+			"we copy production data into development and that is a privacy problem",
+			"performance testing uses uniform data and production is skewed",
+			"the bug involved a name with an apostrophe and we never test those"
+		],
+		prompt: "Design synthetic data generation for this system. Characterise production first along the dimensions that affect behaviour: volume, distribution and skew, cardinality of key fields, null and missing rates, and the awkward values that occur in reality — unusual scripts, very long strings, emoji, historic records with retired formats, and the single enormous account. Then specify generation that reproduces those characteristics without copying real records, plus referential integrity across related tables so the data is usable. Finish with how the generator stays current as the schema evolves and how a specific production-shaped scenario can be reproduced deterministically from a seed.",
+		why: "Reproducing skew and the awkward-value tail is what makes synthetic data catch real defects, and deterministic seeding is what makes a failure reproducible.",
+		watchOut: "Generated data that is too uniform makes performance results optimistic and hides the hot-key problems that dominate production.",
+		related: [
+			"anonymization-techniques",
+			"test-data-builder",
+			"environment-parity",
+			"load-testing-strategy"
+		],
+		tags: [
+			"testing",
+			"data",
+			"privacy",
+			"fixtures"
+		]
+	},
+	{
+		id: "documentation-freshness",
+		name: "Documentation Freshness",
+		aka: [
+			"docs rot",
+			"documentation ownership",
+			"executable documentation"
+		],
+		origin: "Technical writing and developer experience practice",
+		domains: ["engineering", "writing"],
+		intents: ["structure", "plan"],
+		oneLiner: "Documentation decays silently, and the only reliable defences are keeping it close to the code, making it executable, or deleting what nobody maintains.",
+		useWhen: [
+			"the setup instructions have not worked for a year",
+			"the architecture diagram shows services we removed",
+			"new joiners follow the guide and get stuck at step three",
+			"we have a wiki full of pages nobody trusts"
+		],
+		prompt: "Assess our documentation for decay and propose a maintenance model. Classify each document by how it can be kept true: generated from the source, executable and therefore verified by the pipeline such as a setup script or a runnable tutorial, or manually maintained and therefore requiring an owner and a review trigger. Convert what can be converted, since executable documentation cannot silently rot. Then apply the deletion test: for each manually maintained document, if nobody will own it, delete it, because wrong documentation costs more than none. Finish with the review triggers tied to code changes rather than to a calendar, since calendar reviews get skipped.",
+		why: "Sorting documents by how they can be kept true, and deleting the unownable ones, is what stops a documentation set from becoming uniformly untrusted.",
+		watchOut: "Deleting documentation removes knowledge that may exist nowhere else. Check whether it is wrong or merely unloved before removing it.",
+		related: [
+			"architecture-decision-records",
+			"api-documentation-quality",
+			"runbook-writing",
+			"code-ownership"
+		],
+		tags: [
+			"documentation",
+			"maintenance",
+			"writing",
+			"process"
+		]
+	},
+	{
+		id: "floating-point-money",
+		name: "Money and Floating Point",
+		aka: [
+			"decimal arithmetic",
+			"minor units",
+			"rounding rules"
+		],
+		origin: "Numerical computing practice; IEEE 754 behaviour",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Binary floating point cannot represent most decimal fractions exactly, so monetary arithmetic needs integers of the smallest unit or a decimal type, plus explicit rounding.",
+		useWhen: [
+			"the invoice total is off by a penny and nobody can explain it",
+			"the sum of the lines does not equal the total we display",
+			"a comparison between two amounts that should be equal returns false",
+			"the tax calculation rounds differently in two places"
+		],
+		prompt: "Audit monetary handling in this code. Identify every amount stored or computed as a binary floating point value and show the representation error concretely for one of our real values, since that is what makes the argument land. Then specify the replacement: integer minor units or a decimal type, with the currency travelling alongside the amount so the two cannot be separated. Then handle the part that causes disputes rather than crashes — rounding: state where it happens, which rule applies, and how remainders are distributed when splitting an amount, because inconsistent rounding is what makes the lines fail to sum to the total. Finish with the comparison and serialisation rules.",
+		why: "Rounding policy and remainder distribution cause the reconciliation disputes, and they remain wrong even after the storage type is fixed unless they are specified explicitly.",
+		watchOut: "Currencies differ in their smallest unit, and some have none. A hardcoded two-decimal assumption breaks the moment you trade in another currency.",
+		related: [
+			"value-object",
+			"assertions-and-invariants",
+			"reconciliation-jobs",
+			"boundary-value-analysis"
+		],
+		tags: [
+			"correctness",
+			"money",
+			"numerics",
+			"data"
+		]
+	},
+	{
+		id: "character-encoding-issues",
+		name: "Character Encoding and Unicode",
+		aka: [
+			"mojibake",
+			"normalisation forms",
+			"string length is not character count"
+		],
+		origin: "Unicode standard; Joel Spolsky's minimum every developer must know, 2003",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Text is bytes plus an encoding, and a string's length, comparison and truncation all behave differently from what English-only intuition expects.",
+		useWhen: [
+			"names with accents display as garbled symbols",
+			"the emoji broke our database column",
+			"two strings that look identical do not compare as equal",
+			"truncating a field cut a character in half"
+		],
+		prompt: "Audit text handling along this data path. Identify the encoding at every boundary — database column and connection, file reads and writes, HTTP headers and bodies, terminal output — and find where a conversion happens implicitly using a platform default, since that is where the corruption enters. Then address the semantics: comparing strings that are visually identical but differently composed requires normalisation before comparison or storage, case folding is locale-dependent, and truncating by bytes or by code units can split a character or a grapheme cluster. Specify the normalisation form we use and where it is applied. Finish with the validation rules for identifiers where lookalike characters matter.",
+		why: "Normalisation before comparison and storage is the fix for the equal-looking-but-unequal problem, and identifying the implicit default-encoding conversions is what stops corruption at the source.",
+		watchOut: "A column declared with an encoding that does not cover the full range will silently truncate or reject characters users legitimately have in their names.",
+		related: [
+			"input-validation-boundary",
+			"internationalization",
+			"boundary-value-analysis",
+			"data-quality-checks"
+		],
+		tags: [
+			"correctness",
+			"text",
+			"unicode",
+			"internationalisation"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/frontend.ts
+var frontend = [
+	{
+		id: "core-web-vitals",
+		name: "Core Web Vitals",
+		aka: [
+			"LCP INP CLS",
+			"field performance metrics",
+			"page experience"
+		],
+		origin: "Google Chrome team, 2020",
+		domains: ["engineering", "design"],
+		intents: ["diagnose", "estimate"],
+		oneLiner: "Three field-measured signals — when the main content appears, how quickly the page responds to input, and how much it shifts — chosen to approximate what users feel.",
+		useWhen: [
+			"our lab scores are green and real users say the site is slow",
+			"the page jumps around while loading and people click the wrong thing",
+			"the button does nothing for a second after being tapped",
+			"someone wants a performance target and I need a defensible one"
+		],
+		prompt: "Diagnose this page against the three headline experience signals and be precise about what each measures. For the largest content paint, identify the element actually being measured, since it is often not what we assume, and attribute its delay across server response, resource load and render blocking. For interaction responsiveness, find the long tasks that block the main thread during and after load. For layout stability, find every element inserted or resized after first paint — late images without dimensions, injected banners, web fonts swapping. Report per segment rather than in aggregate, since mobile on a poor connection is where the failures are.",
+		why: "Identifying which element is actually measured and attributing its delay across phases is what turns a score into a specific fix rather than general advice.",
+		watchOut: "These are proxies for experience, not experience itself. A page can score well and still feel bad if the content people came for arrives last.",
+		related: [
+			"critical-rendering-path",
+			"perceived-performance",
+			"real-user-monitoring",
+			"performance-budget"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"metrics",
+			"user experience"
+		]
+	},
+	{
+		id: "critical-rendering-path",
+		name: "Critical Rendering Path",
+		aka: [
+			"render blocking resources",
+			"above the fold delivery",
+			"waterfall analysis"
+		],
+		origin: "Web performance practice; Ilya Grigorik's writing on browser rendering",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Trace exactly what must be downloaded, parsed and executed before the user sees content, and remove or defer everything else from that chain.",
+		useWhen: [
+			"the page is blank for three seconds before anything appears",
+			"our stylesheet blocks rendering and it is enormous",
+			"a third-party tag in the head delays everything",
+			"the browser cannot start fetching an image until a script has run"
+		],
+		prompt: "Map the chain of dependencies before first meaningful content on this page. Build the waterfall showing what blocks what, and identify chains where one resource is only discoverable after another has been parsed or executed, since those serial dependencies dominate and are invisible from a resource list. Then apply the remedies per item: inline the styles needed for initial content and defer the rest, defer or move scripts, preload late-discovered critical resources, and remove render-blocking third parties from the head. Quantify the expected saving per change from the waterfall rather than asserting it, and state what must stay blocking and why.",
+		why: "Serial discovery chains are the specific structure that produces long blank periods, and they are only visible when you look at what blocks what rather than at total bytes.",
+		watchOut: "Preloading too much competes for bandwidth with the truly critical resources and can make first paint worse rather than better.",
+		related: [
+			"core-web-vitals",
+			"bundle-splitting",
+			"font-loading-strategy",
+			"third-party-script-governance"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"loading",
+			"diagnosis"
+		]
+	},
+	{
+		id: "perceived-performance",
+		name: "Perceived Performance",
+		aka: [
+			"felt speed",
+			"response time psychology",
+			"progressive display"
+		],
+		origin: "Human-computer interaction research; Nielsen's response time limits",
+		domains: ["design", "engineering"],
+		intents: ["reframe", "structure"],
+		oneLiner: "What users experience is not elapsed time but whether the interface acknowledges them, shows progress and gives them something to do — which is often cheaper to fix than the actual latency.",
+		useWhen: [
+			"we cannot make this faster but people complain about waiting",
+			"the operation genuinely takes eight seconds and always will",
+			"users click twice because nothing happened after the first click",
+			"the app is objectively fast and feels sluggish"
+		],
+		prompt: "Improve how fast this interaction feels, separately from how fast it is. Apply the response-time thresholds: under about a tenth of a second feels instant and needs no feedback, up to a second keeps flow but needs acknowledgement, and beyond that needs a progress indication that shows actual progress rather than an indefinite animation. Map our interactions to those bands. Then apply the specific techniques: immediate acknowledgement of input, showing partial results as they arrive rather than waiting for completion, doing predictable work in advance, and placing unavoidable waits where users expect them. Finish with what genuinely must get faster because no presentation will hide it.",
+		why: "Mapping interactions to the response-time bands tells you which need acknowledgement versus real progress, and it separates the waits you can dress up from the ones you must actually fix.",
+		watchOut: "Fake progress that completes and then waits is worse than honest uncertainty, because it destroys trust in every future indicator.",
+		related: [
+			"skeleton-vs-spinner",
+			"optimistic-ui",
+			"core-web-vitals",
+			"progressive-disclosure"
+		],
+		tags: [
+			"frontend",
+			"user experience",
+			"performance",
+			"psychology"
+		]
+	},
+	{
+		id: "skeleton-vs-spinner",
+		name: "Loading State Design",
+		aka: [
+			"skeleton screens",
+			"spinners",
+			"progress indication"
+		],
+		origin: "Interface design practice; skeleton screens popularised by Luke Wroblewski",
+		domains: ["design", "engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Choose the loading treatment by how long the wait is and how much of the layout you can predict, because the wrong one makes a fast page feel slower.",
+		useWhen: [
+			"the spinner flashes for a moment and the page flickers",
+			"the layout jumps when the content finally arrives",
+			"everything shows a spinner including things that load instantly",
+			"users cannot tell whether the page is loading or broken"
+		],
+		prompt: "Design loading states for these interfaces. Choose per case by duration and predictability: for waits under a few hundred milliseconds show nothing, since an indicator that flashes is worse than none — specify the delay before any indicator appears. For predictable layouts use a placeholder matching the final dimensions so nothing shifts when content arrives. For long or unpredictable operations show real progress and what is happening. Then cover the states people forget: the empty result, which must look different from loading, the error state, and the partial state where some content has arrived. Finish with the minimum display duration that prevents flicker.",
+		why: "The delay-before-showing and minimum-display-duration rules are what eliminate loading flicker, and they are the details that separate a considered implementation from a spinner on every request.",
+		watchOut: "A placeholder whose shape does not match the real content causes the layout shift it was meant to prevent, plus a moment of confusion.",
+		related: [
+			"perceived-performance",
+			"optimistic-ui",
+			"core-web-vitals",
+			"error-boundaries"
+		],
+		tags: [
+			"frontend",
+			"user experience",
+			"loading",
+			"design"
+		]
+	},
+	{
+		id: "optimistic-ui",
+		name: "Optimistic UI",
+		aka: [
+			"optimistic updates",
+			"assume success",
+			"local-first response"
+		],
+		origin: "Interface engineering practice; common in collaborative and mobile applications",
+		domains: ["engineering", "design"],
+		intents: ["structure", "decide"],
+		oneLiner: "Show the result of an action immediately and reconcile with the server afterwards, which removes latency from the interaction and requires a plan for when you were wrong.",
+		useWhen: [
+			"every click waits for a round trip before anything visibly happens",
+			"the app feels sluggish on mobile networks",
+			"liking something takes a second to register",
+			"we tried this and the interface got into confusing states when calls failed"
+		],
+		prompt: "Design optimistic updates for these actions. Select them by failure probability and reversal cost: an action that rarely fails and is trivially undone is a good candidate, while anything that moves money or is externally visible is not — classify ours. For each chosen action, specify the predicted local state, how the real response reconciles with it including when the server returns something different rather than merely succeeding, and the rollback presentation, which must explain what happened rather than silently reverting. Then handle sequencing: several optimistic actions in flight, and one failing while later ones depend on it.",
+		why: "The server-returns-something-different case and dependent queued actions are where these implementations break, and both need designing before the happy path is built.",
+		watchOut: "Silently reverting an optimistic change makes users believe their action was lost. The reversal needs an explanation as much as an error does.",
+		related: [
+			"perceived-performance",
+			"offline-first-sync",
+			"client-state-management",
+			"idempotency-keys"
+		],
+		tags: [
+			"frontend",
+			"user experience",
+			"latency",
+			"state"
+		]
+	},
+	{
+		id: "server-vs-client-rendering",
+		name: "Rendering Strategy",
+		aka: [
+			"SSR versus CSR",
+			"static generation",
+			"streaming rendering"
+		],
+		origin: "Web architecture practice; the debate renewed with each framework generation",
+		domains: ["engineering"],
+		intents: ["decide", "structure"],
+		oneLiner: "Decide where each page is rendered — build time, request time on the server, or in the browser — from its data freshness, personalisation and discoverability needs.",
+		useWhen: [
+			"our marketing pages are slow because they render in the browser",
+			"search engines see an empty page",
+			"the server rendering makes every request expensive",
+			"someone is proposing a framework migration and I need the actual criteria"
+		],
+		prompt: "Choose a rendering strategy per route rather than for the whole application, since the answer differs by page. For each, state the data freshness required, whether the content is personalised, whether it must be indexable, and how interactive it is — those four determine the answer. Then map to a strategy: pre-rendered at build for static content, rendered per request where content is fresh or personalised, rendered in the browser for highly interactive authenticated views, or a hybrid streaming the shell first. Include the operational consequences: server cost per request, cache strategy at the edge, and what happens when the rendering server is slow or unavailable.",
+		why: "Deciding per route from four concrete properties avoids the whole-application argument, and the caching and failure implications are what the framework comparison usually omits.",
+		watchOut: "Server rendering moves work from the user's device to your servers, which is a real cost line and a new availability dependency for pages that previously needed neither.",
+		related: [
+			"hydration-cost",
+			"cdn-edge-caching",
+			"critical-rendering-path",
+			"progressive-enhancement"
+		],
+		tags: [
+			"frontend",
+			"architecture",
+			"rendering",
+			"performance"
+		]
+	},
+	{
+		id: "hydration-cost",
+		name: "Hydration Cost",
+		aka: [
+			"islands architecture",
+			"partial hydration",
+			"interactive too late"
+		],
+		origin: "Frontend framework practice; islands architecture named by Katie Sylor-Miller and Jason Miller",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Server-rendered markup that must be re-processed in the browser to become interactive means shipping the content twice and blocking the main thread to reconnect it.",
+		useWhen: [
+			"the page appears quickly and does nothing when clicked",
+			"we server-render and the JavaScript bundle is still huge",
+			"the main thread is blocked for a second after content appears",
+			"mostly static pages ship an entire application framework"
+		],
+		prompt: "Analyse the cost of making this server-rendered page interactive. Measure the gap between content appearing and the page responding to input, and attribute it to script download, parse and the reconnection work itself. Then identify which parts of the page genuinely need client-side interactivity and which are static content that is currently being processed anyway — that ratio is the size of the opportunity. Propose the reduction: isolating interactive regions so only they ship and process script, deferring the reconnection of below-the-fold regions until visible, and removing framework involvement entirely from static areas. Estimate the saving per change.",
+		why: "Quantifying the static-versus-interactive ratio on the page turns an architectural debate into a measured opportunity, and the appear-to-respond gap is the number users actually feel.",
+		watchOut: "Splitting a page into independently interactive regions complicates shared state between them. Regions that must coordinate closely are poor candidates.",
+		related: [
+			"server-vs-client-rendering",
+			"bundle-splitting",
+			"core-web-vitals",
+			"progressive-enhancement"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"rendering",
+			"javascript"
+		]
+	},
+	{
+		id: "bundle-splitting",
+		name: "Bundle Splitting",
+		aka: [
+			"code splitting",
+			"lazy loading routes",
+			"chunk strategy"
+		],
+		origin: "Frontend build tooling practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Ship only the code needed for the current view, splitting along boundaries that match how users actually navigate rather than however the bundler happens to divide things.",
+		useWhen: [
+			"the initial download includes the admin panel nobody uses",
+			"our bundle is two megabytes and growing every sprint",
+			"every route change downloads everything again",
+			"we split the bundle and the number of requests exploded"
+		],
+		prompt: "Design a splitting strategy for this application. Analyse the current bundle to see what is included and what proportion is used on the first view. Then split along the boundaries that match navigation: route level first, then heavy components loaded on interaction such as editors, charts and date pickers. Separate rarely-changing vendor code so it stays cached across deploys, and state how the chunk hashing avoids invalidating everything on every release. Then avoid the two failure modes: too many small chunks creating request overhead and dependency waterfalls, and shared code duplicated across chunks. Finish with prefetching for likely next navigations.",
+		why: "Cache-friendly chunking across deploys and avoiding chunk waterfalls are what determine whether splitting actually helps repeat visitors, and both are commonly missed.",
+		watchOut: "Lazily loading a component the user reaches immediately just adds a round trip to the interaction. Split by what is genuinely deferred, not by what is easy to split.",
+		related: [
+			"dependency-weight-budget",
+			"critical-rendering-path",
+			"cdn-edge-caching",
+			"hydration-cost"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"build",
+			"loading"
+		]
+	},
+	{
+		id: "dependency-weight-budget",
+		name: "Dependency Weight",
+		aka: [
+			"bundle size budget",
+			"library cost analysis",
+			"the cost of one more package"
+		],
+		origin: "Frontend performance practice",
+		domains: ["engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Every added library costs download, parse and execution time on the user's device, and the cost is easy to add and hard to notice.",
+		useWhen: [
+			"we added a library for one function and the bundle grew by a hundred kilobytes",
+			"nobody knows why the bundle is this large",
+			"we have three date libraries in one application",
+			"someone wants to add a dependency and we have no basis for saying no"
+		],
+		prompt: "Audit our client dependencies for weight against value. For each significant one, report its contribution after tree-shaking and compression, what we actually use it for, and whether that use is a small fraction of what it provides. Then evaluate the alternatives specifically: a smaller library, a platform capability that has since become widely available, or a local implementation of the part we need. Include the transitive weight and any duplicate functionality across packages. Then propose a budget and the pipeline check reporting the size difference on every change, since making the cost visible at review time is what prevents the slow accumulation.",
+		why: "Reporting the size delta per change at review time is the control that works, because the problem is accumulation rather than any single decision.",
+		watchOut: "Replacing a library with your own code moves the cost from bytes to maintenance and bugs. Weigh both, especially for anything involving dates, currency or text encoding.",
+		related: [
+			"bundle-splitting",
+			"performance-budget",
+			"dependency-pinning",
+			"supply-chain-provenance"
+		],
+		tags: [
+			"frontend",
+			"dependencies",
+			"performance",
+			"budgets"
+		]
+	},
+	{
+		id: "image-optimization",
+		name: "Image Delivery",
+		aka: [
+			"responsive images",
+			"modern formats",
+			"lazy loading images"
+		],
+		origin: "Web performance practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Images are usually most of a page's weight, and most of that is waste — wrong dimensions, outdated formats and eager loading of things nobody scrolls to.",
+		useWhen: [
+			"we serve a four thousand pixel wide photo to a phone",
+			"the page weighs six megabytes and it is all pictures",
+			"images load slowly and shift the layout when they arrive",
+			"the same image is fetched at three different sizes with no caching benefit"
+		],
+		prompt: "Design image delivery for this site. Cover each dimension with the specific mechanism: correct dimensions per viewport and pixel density using responsive source sets, modern formats with fallbacks, compression quality chosen per image type rather than globally, and deferred loading for anything below the fold while never deferring the largest visible element, since that directly delays first content. Then require explicit dimensions or aspect ratios on every image to prevent layout shift. Finish with the pipeline: whether transformation happens at build or through an on-demand service, and the caching strategy given that each variant is a separate cache entry.",
+		why: "Never deferring the largest above-the-fold image and always declaring dimensions are the two rules that keep image optimisation from harming the metrics it is meant to improve.",
+		watchOut: "Aggressive compression on images with text or fine detail produces visible artefacts. Quality settings need to vary by content type.",
+		related: [
+			"core-web-vitals",
+			"cdn-edge-caching",
+			"compression-tradeoffs",
+			"critical-rendering-path"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"images",
+			"media"
+		]
+	},
+	{
+		id: "font-loading-strategy",
+		name: "Font Loading Strategy",
+		aka: [
+			"FOIT and FOUT",
+			"font-display",
+			"web font performance"
+		],
+		origin: "Web typography and performance practice",
+		domains: ["engineering", "design"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Custom fonts block or swap text as they load, so choose deliberately between invisible text, a visible swap, and a fallback that never changes.",
+		useWhen: [
+			"the text is invisible for a second while the font loads",
+			"the page reflows noticeably when the font arrives",
+			"we load six font files for two visible weights",
+			"the font blocks rendering on slow connections"
+		],
+		prompt: "Design font loading for this site. Choose the display behaviour deliberately and state the trade: blocking briefly avoids a visible change at the cost of invisible text, swapping shows content immediately at the cost of a visible reflow, and a limit means the custom font may never apply on a slow connection. Then reduce the cost: subset to the characters actually needed, ship only the weights and styles genuinely used, self-host with a long cache lifetime and preload the critical file. Then minimise the reflow by choosing a fallback with similar metrics and adjusting its size and spacing to match, which makes the swap nearly invisible.",
+		why: "Metric-matched fallbacks turn the swap from a jarring reflow into something users do not notice, which resolves the trade-off rather than choosing a side of it.",
+		watchOut: "Third-party font services add a connection and a dependency on the critical path. Self-hosting is usually faster and always more reliable.",
+		related: [
+			"critical-rendering-path",
+			"core-web-vitals",
+			"third-party-script-governance",
+			"image-optimization"
+		],
+		tags: [
+			"frontend",
+			"performance",
+			"typography",
+			"loading"
+		]
+	},
+	{
+		id: "client-data-fetching-strategy",
+		name: "Client Data Fetching",
+		aka: [
+			"stale-while-revalidate on the client",
+			"request deduplication",
+			"cache and refetch"
+		],
+		origin: "Frontend data library practice; patterns from SWR and React Query",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Client-side data needs a policy for caching, revalidation, deduplication and invalidation — otherwise every component fetches independently and shows different values.",
+		useWhen: [
+			"three components on the page fetch the same data separately",
+			"the list shows stale data after we edited an item",
+			"navigating back refetches everything and the page flashes",
+			"we manage loading and error state by hand in every component"
+		],
+		prompt: "Define the data fetching policy for this application. Specify the cache key structure including every parameter that changes the result, deduplication of concurrent identical requests, and the revalidation triggers — on mount, on window focus, on reconnect, and on an interval — with the staleness tolerated per data type rather than one global setting. Then design invalidation after mutations: which cached entries a given mutation invalidates, and whether we refetch or update in place. Finish with the states every consumer must handle, including showing stale data while revalidating, which is the pattern that removes most loading spinners.",
+		why: "Mapping mutations to the cache entries they invalidate is the part hand-rolled fetching always gets wrong, and stale-while-revalidate is what eliminates the flash on navigation.",
+		watchOut: "Showing stale data without any indication is wrong for anything where currency matters, such as balances, availability or prices.",
+		related: [
+			"cache-invalidation-strategy",
+			"optimistic-ui",
+			"client-state-management",
+			"request-coalescing"
+		],
+		tags: [
+			"frontend",
+			"data",
+			"caching",
+			"state"
+		]
+	},
+	{
+		id: "infinite-scroll-tradeoffs",
+		name: "Infinite Scroll Trade-offs",
+		aka: ["endless scrolling versus pagination", "load more button"],
+		origin: "Interface design practice; long-standing usability debate",
+		domains: ["design", "engineering"],
+		intents: ["decide", "critique"],
+		oneLiner: "Continuous loading suits browsing and breaks finding, sharing, returning and reaching the footer — choose by what users are trying to do.",
+		useWhen: [
+			"users cannot get back to an item they saw earlier",
+			"nobody can reach the footer links anymore",
+			"the page becomes slow and heavy after scrolling for a while",
+			"we are choosing between paging and endless loading and arguing about it"
+		],
+		prompt: "Decide the list navigation pattern for this view based on user intent: continuous loading suits open-ended browsing, explicit paging suits searching for something specific or working through a set systematically, and a load-more button sits between and keeps the footer reachable. Recommend one for our case. Then specify the implementation requirements whichever is chosen: a stable identity in the URL so a position can be shared and restored, restoring the scroll position on back navigation, releasing off-screen items so memory does not grow without limit, keyboard and screen reader accessibility, and stable ordering so items do not repeat or vanish as new ones arrive.",
+		why: "Position restoration on back navigation and unbounded memory growth are the two failures that make continuous loading feel broken, and both are implementation choices rather than consequences of the pattern.",
+		watchOut: "Endless loading destroys any sense of how much there is. For sets users need to work through completely, that removes their ability to plan.",
+		related: [
+			"api-pagination",
+			"perceived-performance",
+			"client-data-fetching-strategy",
+			"user-journey-mapping"
+		],
+		tags: [
+			"frontend",
+			"user experience",
+			"lists",
+			"navigation"
+		]
+	},
+	{
+		id: "client-state-management",
+		name: "Client State Management",
+		aka: [
+			"state colocation",
+			"global store",
+			"server state versus UI state"
+		],
+		origin: "Frontend architecture practice",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Separate state by origin — server data, UI state, form state, URL state — because each has a different lifetime and owner, and treating them alike causes most state bugs.",
+		useWhen: [
+			"our global store contains server data that is always out of date",
+			"everything is in one store and any change re-renders the world",
+			"the URL does not reflect what the user is looking at",
+			"we cannot tell where a piece of state actually lives"
+		],
+		prompt: "Categorise the state in this application by origin and assign each an owner. Server data belongs in a cache with revalidation rather than in a store treated as truth, since copying it into a store is what makes it go stale. State that should survive a refresh or be shareable belongs in the URL. State used by one component belongs in that component, and only genuinely cross-cutting UI state belongs in a shared store. Apply that classification to our current state and report the misplacements. Then say what each move fixes concretely, and what the smallest state container is that we still need after the reclassification.",
+		why: "Treating server data as cache rather than as store contents removes an entire class of staleness bugs, and the origin-based classification usually shrinks the global store dramatically.",
+		watchOut: "Putting everything in the URL makes it unreadable and exposes state you may not want shared. Reserve it for what genuinely identifies the view.",
+		related: [
+			"client-data-fetching-strategy",
+			"mvi-architecture",
+			"optimistic-ui",
+			"form-ux-validation"
+		],
+		tags: [
+			"frontend",
+			"state",
+			"architecture",
+			"design"
+		]
+	},
+	{
+		id: "form-ux-validation",
+		name: "Form Validation Experience",
+		aka: [
+			"inline validation",
+			"error timing",
+			"form usability"
+		],
+		origin: "Interface design research; Luke Wroblewski's work on web forms",
+		domains: ["design", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "When and how you tell someone their input is wrong determines whether a form feels helpful or hostile — and validating too eagerly is the common mistake.",
+		useWhen: [
+			"the field turns red while the user is still typing it",
+			"users abandon the form at the same field every time",
+			"the error appears at the top and nobody knows which field it means",
+			"the form clears everything when submission fails"
+		],
+		prompt: "Design validation behaviour for this form. Set the timing rules: validate a field when the user leaves it rather than on each keystroke, except when confirming success as they type helps such as a password meeting requirements, and never mark a field invalid before they have finished it. Then design the messages: adjacent to the field, stating what is wrong and what would be right rather than restating the rule, and never discarding what they entered. Cover submission failure, where errors must be summarised, linked to their fields, focus moved to the first one, and announced to assistive technology. Finish with the fields that could accept more formats instead of rejecting them.",
+		why: "Accepting more input formats rather than validating them away removes whole categories of error, and it is the option teams skip in favour of better error messages.",
+		watchOut: "Client validation is a convenience and never a control. Every rule must also be enforced on the server.",
+		related: [
+			"input-validation-boundary",
+			"error-message-design",
+			"focus-management",
+			"client-state-management"
+		],
+		tags: [
+			"frontend",
+			"forms",
+			"user experience",
+			"validation"
+		]
+	},
+	{
+		id: "error-boundaries",
+		name: "Error Boundaries",
+		aka: [
+			"component error isolation",
+			"partial failure in the UI",
+			"fallback rendering"
+		],
+		origin: "Frontend framework practice; the term from React",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Contain a component failure so it degrades one region instead of blanking the entire application.",
+		useWhen: [
+			"one broken widget renders the whole page blank",
+			"an error in an analytics component took down the checkout",
+			"users see a white screen with no explanation",
+			"a single malformed record breaks the entire list"
+		],
+		prompt: "Design failure isolation for this interface. Identify the regions that should fail independently — each should be something a user can do without, and the boundary should sit where a fallback still leaves a usable page — then specify the fallback content per region, which should explain that this part is unavailable rather than showing an empty space. Include a recovery action where retrying could work. Then handle the errors that boundaries do not catch, typically those in asynchronous callbacks and event handlers, and say how those are captured. Finish with reporting, so a contained failure is still visible to us rather than silently degrading for every user.",
+		why: "Contained failures that are not reported are the trap: the interface looks fine and a feature is broken for everyone, so the reporting requirement is part of the design.",
+		watchOut: "Wrapping everything in boundaries can hide a systemic failure behind many small fallbacks. Boundaries need monitoring at least as much as crashes do.",
+		related: [
+			"client-error-monitoring",
+			"graceful-degradation",
+			"skeleton-vs-spinner",
+			"fail-fast-vs-fault-tolerance"
+		],
+		tags: [
+			"frontend",
+			"error handling",
+			"resilience",
+			"user experience"
+		]
+	},
+	{
+		id: "client-error-monitoring",
+		name: "Client Error Monitoring",
+		aka: [
+			"browser error reporting",
+			"crash reporting",
+			"source maps in production"
+		],
+		origin: "Frontend operations practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "Errors happening in users' browsers are invisible to server monitoring, and without reporting you learn about them from support tickets or not at all.",
+		useWhen: [
+			"a customer reported a broken page and we have no record of it",
+			"the error only happens in one browser version",
+			"our stack traces are minified and meaningless",
+			"we do not know how many users hit errors"
+		],
+		prompt: "Set up client-side error reporting. Specify what is captured beyond the message and stack: browser and version, application release, the user action leading to it, and a breadcrumb trail of recent events, since a stack trace without the sequence that produced it is rarely enough. Then handle the practical obstacles — uploading source maps privately so traces are readable without exposing source, grouping errors so one broken deploy does not create thousands of separate reports, and filtering the noise from browser extensions and third-party scripts that will otherwise dominate the volume. Finish with the privacy rules on what may be captured and the alerting threshold based on affected user rate.",
+		why: "Extension and third-party noise is what makes client error reporting unusable, and filtering it plus grouping by release is what leaves a signal anyone will act on.",
+		watchOut: "Capturing the state that caused an error can capture personal data typed into a form. Redaction rules have to be part of the setup.",
+		related: [
+			"error-boundaries",
+			"real-user-monitoring",
+			"observability-instrumentation",
+			"browser-support-matrix"
+		],
+		tags: [
+			"frontend",
+			"monitoring",
+			"errors",
+			"observability"
+		]
+	},
+	{
+		id: "offline-first-sync",
+		name: "Offline-First Sync",
+		aka: [
+			"local-first software",
+			"sync engine",
+			"conflict resolution on reconnect"
+		],
+		origin: "Mobile and local-first application practice; Ink and Switch local-first essay, 2019",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Treat the local copy as primary and the server as a synchronisation partner, which makes the application work offline and makes conflict resolution a first-class design problem.",
+		useWhen: [
+			"the app is useless on a train or in a lift",
+			"users lose work when the connection drops",
+			"we sync on reconnect and sometimes overwrite changes",
+			"the mobile experience on a poor network is unusable"
+		],
+		prompt: "Design offline-capable synchronisation for this application. Specify the local store and what is available offline versus what genuinely requires the network. Then design the change queue: how local mutations are recorded, ordered and retried, and how they are made idempotent so a retry after an ambiguous failure does not duplicate. Conflict resolution is the heart of it, so define per data type whether last-write-wins is acceptable, whether changes can be merged automatically, or whether a user must decide — and design what that decision looks like. Finish with the visible state: how the interface shows what is unsynced, what failed, and how much has queued up.",
+		why: "Making the sync state visible and deciding conflict policy per data type are what prevent silent data loss, which is the failure that destroys trust in an offline-capable app.",
+		watchOut: "A device offline for a long time can return with changes conflicting against many later ones. Test the long-absence case, not just a brief disconnection.",
+		related: [
+			"crdt",
+			"optimistic-ui",
+			"idempotency-keys",
+			"eventual-consistency"
+		],
+		tags: [
+			"frontend",
+			"offline",
+			"sync",
+			"mobile"
+		]
+	},
+	{
+		id: "progressive-enhancement",
+		name: "Progressive Enhancement",
+		aka: [
+			"works without JavaScript",
+			"layered capability",
+			"resilient web design"
+		],
+		origin: "Web standards practice; Steven Champeon, 2003",
+		domains: ["engineering", "design"],
+		intents: ["structure", "decide"],
+		oneLiner: "Build the core experience with the most reliable technology available and layer enhancements on top, so a failure in one layer degrades the experience rather than removing it.",
+		useWhen: [
+			"a script failed to load and the entire page is unusable",
+			"the form does not submit if JavaScript is disabled or broken",
+			"users on old devices or poor networks get nothing at all",
+			"someone says nobody disables JavaScript and I want a better argument"
+		],
+		prompt: "Assess this feature for layered resilience. Make the argument on the right grounds, which is not about users disabling scripts but about the many ways a script fails to run — a failed request, a parse error from an unsupported syntax, an extension, a timeout on a poor connection, a third party breaking. Then define the base experience that works without our enhancements and what each layer adds. Apply it concretely to forms and navigation, which are the highest-value cases because the platform already provides working versions. Finish with what genuinely cannot work this way and what the fallback should say when it cannot function.",
+		why: "Framing this as script-fails-to-run rather than script-disabled is what makes the argument land, since the failure modes are common and measurable rather than hypothetical.",
+		watchOut: "Fully duplicating rich interactions in a basic form can double the work. Aim for a usable base, not an equivalent one.",
+		related: [
+			"server-vs-client-rendering",
+			"graceful-degradation",
+			"browser-support-matrix",
+			"error-boundaries"
+		],
+		tags: [
+			"frontend",
+			"resilience",
+			"accessibility",
+			"web standards"
+		]
+	},
+	{
+		id: "browser-support-matrix",
+		name: "Browser Support Matrix",
+		aka: [
+			"supported environments",
+			"baseline compatibility",
+			"feature detection"
+		],
+		origin: "Web development practice",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Write down which environments you support, at what level, based on your actual audience — so decisions about using a new capability stop being arguments.",
+		useWhen: [
+			"nobody knows whether we still support that old browser",
+			"we avoid modern features in case someone somewhere cannot use them",
+			"a customer reported a failure on a browser we did not know we supported",
+			"our build targets an ancient baseline and ships enormous compatibility code"
+		],
+		prompt: "Define our support policy from data. Pull the actual distribution of browsers, versions and devices from our analytics, weighted by revenue or by the importance of the users rather than by raw session count, since a small share may be a large customer. Then define tiers: fully supported and tested, functional but not visually identical, and unsupported with a clear message rather than a broken page. Tie the build targets to that policy so we are not shipping compatibility code for environments we do not support. Finish with the review cadence and how a capability is adopted — feature detection with a fallback rather than version sniffing.",
+		why: "Weighting by user importance rather than session share is what makes the policy defensible, and tying build targets to it removes compatibility overhead nobody realised was there.",
+		watchOut: "Analytics under-counts environments where your site already fails, since those users leave without generating sessions. Check error reports too.",
+		related: [
+			"progressive-enhancement",
+			"client-error-monitoring",
+			"dependency-weight-budget",
+			"accessibility-audit"
+		],
+		tags: [
+			"frontend",
+			"compatibility",
+			"policy",
+			"browsers"
+		]
+	},
+	{
+		id: "responsive-breakpoints",
+		name: "Responsive Breakpoints",
+		aka: [
+			"mobile first",
+			"container queries",
+			"fluid layout"
+		],
+		origin: "Ethan Marcotte, Responsive Web Design, 2010",
+		domains: ["design", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Choose layout change points from where the content stops working rather than from a list of device widths, because devices change and content constraints do not.",
+		useWhen: [
+			"the layout breaks at a size between our breakpoints",
+			"we have breakpoints named after phones from years ago",
+			"the component looks wrong in a sidebar although the page width is fine",
+			"we maintain separate layouts for every device class"
+		],
+		prompt: "Rework the responsive strategy for this interface. Derive breakpoints from content: resize continuously and note where lines become too long or too short, where a table stops being readable, or where a navigation no longer fits — those points are the breakpoints, and they should be named for what changes rather than for a device. Then prefer intrinsic sizing and fluid values so fewer explicit breakpoints are needed, and use container-relative queries where a component must adapt to its own space rather than the viewport, which is the fix for a component that looks wrong in a sidebar. Finish with the testing sizes, including the awkward ones between common devices.",
+		why: "Content-derived breakpoints survive new devices, and container-relative sizing is the specific answer to components that must work in several contexts at once.",
+		watchOut: "Designs specified at three fixed widths hide what happens between them. Most real viewports are not any of the sizes in the mockups.",
+		related: [
+			"css-architecture",
+			"component-api-design",
+			"design-system-governance",
+			"theming-and-dark-mode"
+		],
+		tags: [
+			"frontend",
+			"layout",
+			"responsive",
+			"design"
+		]
+	},
+	{
+		id: "theming-and-dark-mode",
+		name: "Theming and Dark Mode",
+		aka: [
+			"design tokens",
+			"colour modes",
+			"semantic colour naming"
+		],
+		origin: "Design systems practice; accelerated by system-level dark mode",
+		domains: ["design", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Support alternative appearances by naming colours for their role rather than their value, so a theme is a swap of tokens instead of a rewrite.",
+		useWhen: [
+			"adding dark mode means finding every colour in the codebase",
+			"our dark theme has unreadable text in half a dozen places",
+			"the same grey is used for borders, text and backgrounds",
+			"the theme flashes light before switching to dark on load"
+		],
+		prompt: "Design the theming layer for this interface. Replace value-based colour names with role-based tokens — surface, surface raised, text primary, text muted, border, accent, danger — so each theme provides values for the same roles, and note that a single grey used for several roles is what makes theming impossible. Then require contrast checking per theme rather than once, since a pairing that passes in one mode often fails in the other, and cover states like hover, disabled and focus which are usually forgotten. Finish with the mechanics: respecting the system preference, allowing an override, persisting it, and applying it before first paint to avoid a flash.",
+		why: "Role-based tokens are what make a second theme a data change rather than a rewrite, and per-theme contrast checking catches the failures that a single audit misses.",
+		watchOut: "Dark mode is not an inversion. Elevation, shadows and image treatment all need their own decisions or the result looks wrong even with correct contrast.",
+		related: [
+			"design-system-governance",
+			"accessibility-audit",
+			"css-architecture",
+			"responsive-breakpoints"
+		],
+		tags: [
+			"frontend",
+			"design systems",
+			"accessibility",
+			"theming"
+		]
+	},
+	{
+		id: "design-system-governance",
+		name: "Design System Governance",
+		aka: [
+			"component library ownership",
+			"contribution model",
+			"system versus product teams"
+		],
+		origin: "Design systems practice",
+		domains: ["design", "engineering"],
+		intents: ["plan", "decide"],
+		oneLiner: "A shared component library succeeds or fails on its governance — who decides what belongs, how teams contribute, and how breaking changes reach consumers.",
+		useWhen: [
+			"every team has forked the button component",
+			"the design system team is a bottleneck for every request",
+			"nobody uses the shared components because they never fit",
+			"a change to a shared component broke three products"
+		],
+		prompt: "Design the governance model for our shared component library. Define what belongs in it — patterns used by several products and stable enough to standardise — and what deliberately stays in product code, since an over-inclusive system becomes a bottleneck. Then design the contribution path so a team needing a variant can add it rather than forking, with review by the system owners but not a queue they must join. Specify the versioning and adoption policy: how a breaking change is communicated and migrated, whether consumers upgrade on their own schedule, and how much version skew is tolerated. Finish with the adoption measure that shows whether it is working.",
+		why: "The contribution path is what determines whether teams fork, and forks are the failure mode that quietly ends a design system while the library still exists.",
+		watchOut: "A system that cannot express a legitimate product need forces teams to work around it, and those workarounds become the real system.",
+		related: [
+			"component-api-design",
+			"theming-and-dark-mode",
+			"plugin-architecture",
+			"semantic-versioning"
+		],
+		tags: [
+			"design systems",
+			"governance",
+			"collaboration",
+			"frontend"
+		]
+	},
+	{
+		id: "component-api-design",
+		name: "Component API Design",
+		aka: [
+			"props design",
+			"composition versus configuration",
+			"slot patterns"
+		],
+		origin: "Component-based frontend practice",
+		domains: ["engineering", "design"],
+		intents: ["structure", "critique"],
+		oneLiner: "A reusable component either grows a configuration option for every variation or exposes composition points — the second scales and the first does not.",
+		useWhen: [
+			"this component has twenty-three properties and counting",
+			"every new use case needs another boolean flag",
+			"the component is so flexible it is easier to write your own",
+			"two flags interact and produce a combination nobody designed"
+		],
+		prompt: "Review this component interface. Count the configuration options and identify how many exist to support a single caller, since those are the signal that configuration is being used where composition belongs. Then propose the composition alternative: exposing slots or children so callers supply structure rather than toggling behaviour, and splitting a component that is really two into separate ones sharing internals. Apply the design rules: no boolean that changes what the component fundamentally is, no option whose valid values depend on another option, and defaults that make the common case require almost nothing. Finish with what the interface should refuse to support.",
+		why: "Counting options that exist for one caller is a concrete measure of configuration creep, and refusing to support some cases is what keeps a shared component coherent.",
+		watchOut: "Composition pushes responsibility onto callers, who may then all implement the common case slightly differently. Provide an easy default alongside the flexible form.",
+		related: [
+			"design-system-governance",
+			"api-ergonomics",
+			"strategy-pattern",
+			"interface-segregation"
+		],
+		tags: [
+			"frontend",
+			"components",
+			"api design",
+			"reuse"
+		]
+	},
+	{
+		id: "css-architecture",
+		name: "CSS Architecture",
+		aka: [
+			"BEM",
+			"utility classes",
+			"scoped styles",
+			"specificity management"
+		],
+		origin: "Frontend styling practice; methodologies from BEM through utility-first",
+		domains: ["engineering", "design"],
+		intents: ["structure", "decide"],
+		oneLiner: "Styling at scale is a naming and scoping problem: without a convention, specificity escalates and nobody can safely delete a rule.",
+		useWhen: [
+			"nobody dares delete any CSS in case something breaks",
+			"we keep adding important to override our own rules",
+			"a style change in one place broke a page nobody was thinking about",
+			"the stylesheet has grown for years and only ever grows"
+		],
+		prompt: "Recommend a styling approach for this codebase. Evaluate the options — strict naming conventions, component-scoped styles, or utility classes — against three things that actually matter here: whether a style can be changed without unknown side effects, whether unused styles can be identified and deleted, and how the approach handles the cascade for genuinely global concerns like typography and spacing. Then specify what stays global: tokens, resets and layout primitives. Finish with the migration path from the current state, which should be incremental with new work in the new approach rather than a rewrite, and the rule preventing specificity escalation.",
+		why: "Deletability is the property that determines whether a stylesheet stops growing, and it is the criterion most methodology comparisons leave out.",
+		watchOut: "Any approach applied inconsistently is worse than the one you had, because now readers must understand two systems and where each applies.",
+		related: [
+			"design-system-governance",
+			"theming-and-dark-mode",
+			"dead-code-removal",
+			"responsive-breakpoints"
+		],
+		tags: [
+			"frontend",
+			"css",
+			"architecture",
+			"maintainability"
+		]
+	},
+	{
+		id: "keyboard-navigation",
+		name: "Keyboard Navigation",
+		aka: [
+			"tab order",
+			"keyboard accessibility",
+			"no mouse required"
+		],
+		origin: "Accessibility practice; WCAG operable criteria",
+		domains: ["design", "engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "Everything achievable with a pointer must be achievable from the keyboard, in a sensible order, with visible indication of where you are.",
+		useWhen: [
+			"the custom dropdown cannot be opened without a mouse",
+			"tabbing through the page jumps around unpredictably",
+			"the focus outline was removed because it looked untidy",
+			"you can tab into a hidden menu that is off screen"
+		],
+		prompt: "Audit this interface for keyboard operability. Walk the page with the keyboard alone and record: whether every interactive element is reachable, whether the order follows the visual reading order, whether focus is always visible, and whether any action requires a pointer. Then check the patterns that commonly fail — custom controls built from non-interactive elements, modals that do not trap focus or that lose it on close, off-screen content that remains focusable, and content whose visibility depends on hover. For each finding, give the fix, preferring native interactive elements over recreating their behaviour, since that removes most of the work.",
+		why: "Preferring native elements over rebuilt ones is the fix that resolves most keyboard findings at once, and the walk-the-page procedure produces evidence rather than a checklist opinion.",
+		watchOut: "Adding tab index values to force an order creates a separate sequence that diverges from the visual layout as soon as anything changes. Fix the source order instead.",
+		related: [
+			"focus-management",
+			"screen-reader-testing",
+			"accessibility-audit",
+			"component-api-design"
+		],
+		tags: [
+			"accessibility",
+			"frontend",
+			"keyboard",
+			"usability"
+		]
+	},
+	{
+		id: "focus-management",
+		name: "Focus Management",
+		aka: [
+			"focus trapping",
+			"moving focus after navigation",
+			"skip links"
+		],
+		origin: "Accessibility engineering practice; WAI-ARIA authoring practices",
+		domains: ["engineering", "design"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "In an application that changes content without a page load, you must move focus deliberately, or keyboard and screen reader users are left behind.",
+		useWhen: [
+			"after opening a dialog the keyboard is still on the page behind it",
+			"navigating to a new view leaves focus at the top with no announcement",
+			"closing a menu loses focus entirely and tabbing starts from the beginning",
+			"the new content appeared and screen reader users did not know"
+		],
+		prompt: "Specify focus behaviour for these interactions. For each, state where focus goes and where it returns: opening a dialog moves focus inside and traps it, closing returns it to the trigger, client-side navigation moves it to the new content heading, and removing a focused element moves it to a sensible neighbour rather than to the document. Then cover announcement, since moving focus is only half of it — content appearing without focus moving needs a live region, and every live region needs a politeness level chosen so it does not interrupt. Finish with the skip link for repeated navigation and how it is verified to work.",
+		why: "The pair of rules — where focus goes and where it returns — is what makes dialogs and client-side navigation usable, and it is the specific thing single-page applications break by default.",
+		watchOut: "Live regions that announce every change are as unusable as silence. Reserve assertive announcements for things that genuinely interrupt.",
+		related: [
+			"keyboard-navigation",
+			"screen-reader-testing",
+			"accessibility-audit",
+			"client-state-management"
+		],
+		tags: [
+			"accessibility",
+			"frontend",
+			"focus",
+			"usability"
+		]
+	},
+	{
+		id: "screen-reader-testing",
+		name: "Screen Reader Testing",
+		aka: [
+			"assistive technology testing",
+			"semantic markup verification",
+			"accessible name"
+		],
+		origin: "Accessibility practice",
+		domains: ["engineering", "design"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Automated checks catch a minority of accessibility problems; hearing the interface read aloud reveals whether it is actually usable.",
+		useWhen: [
+			"we pass the automated audit and a user still cannot complete the task",
+			"the button is announced as just button with no label",
+			"the reading order makes no sense even though the page looks fine",
+			"nobody on the team has ever used the site with a screen reader"
+		],
+		prompt: "Plan screen reader verification for this interface. Specify which combinations to test, since behaviour differs by reader and browser pairing, and which one or two pairings give the best coverage for our audience. Then define the procedure as tasks rather than element checks: complete the primary journey using the reader and record where you get stuck, because element-level checking misses the failures that only appear in sequence. Focus on what automation cannot see — whether names are meaningful rather than merely present, whether the heading structure conveys the page, whether relationships between labels and controls are correct, and whether state changes are announced.",
+		why: "Task-based testing surfaces the failures that element-level automation cannot see, and meaningful-versus-present labels is the gap that produces technically compliant, unusable pages.",
+		watchOut: "A sighted developer testing with a screen reader has context a real user lacks. Treat it as finding problems, not as proving their absence.",
+		related: [
+			"keyboard-navigation",
+			"focus-management",
+			"accessibility-audit",
+			"exploratory-testing-charter"
+		],
+		tags: [
+			"accessibility",
+			"testing",
+			"frontend",
+			"inclusive design"
+		]
+	},
+	{
+		id: "internationalization",
+		name: "Internationalisation",
+		aka: [
+			"i18n",
+			"localisation readiness",
+			"pluralisation and formatting"
+		],
+		origin: "Software globalisation practice; Unicode and CLDR standards",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Separating translatable text from code is the easy part; the hard parts are grammar, formatting, layout expansion and text that assumes English structure.",
+		useWhen: [
+			"we concatenate sentence fragments and they are untranslatable",
+			"the German text overflows every button",
+			"the date shows as month day year to everyone",
+			"plural handling breaks in languages with more than two forms"
+		],
+		prompt: "Prepare this application for translation. Beyond extracting strings, address the parts that break: sentences assembled from fragments, which must become whole templates with placeholders since word order differs; pluralisation, which needs the full set of categories rather than a singular and a plural; and any grammatical agreement that a placeholder cannot carry. Then cover formatting through locale-aware facilities for dates, numbers, currency, names and addresses rather than our own. Finally cover presentation: layout that tolerates text expanding substantially, right-to-left support, and fonts covering the required scripts. Finish with how translators get the context they need to translate correctly.",
+		why: "Concatenated fragments and naive pluralisation are the two things that make a codebase fundamentally untranslatable, and both look fine until translation begins.",
+		watchOut: "Machine-translated interface text without review produces confident nonsense in exactly the places users need clarity, such as errors and confirmations.",
+		related: [
+			"timezone-handling",
+			"plain-language",
+			"responsive-breakpoints",
+			"accessibility-audit"
+		],
+		tags: [
+			"frontend",
+			"internationalisation",
+			"localisation",
+			"text"
+		]
+	},
+	{
+		id: "timezone-handling",
+		name: "Time Zone Handling",
+		aka: [
+			"storing timestamps",
+			"UTC versus local",
+			"daylight saving bugs"
+		],
+		origin: "Long-standing practice; the tz database and its regular political updates",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Store instants in a single absolute reference and render in the viewer's zone — except for future local events, where the zone identifier must be stored because offsets change.",
+		useWhen: [
+			"the report is off by a day for users in another country",
+			"a recurring meeting shifted by an hour after the clocks changed",
+			"we store local times and cannot compare them",
+			"the daily job ran twice on the day the clocks went back"
+		],
+		prompt: "Review time handling in this system and classify every stored time value by what it represents. An instant that already happened is stored absolutely and rendered per viewer. A future local event needs the zone identifier stored alongside, because the offset for that date may change through political decisions and an offset stored today can become wrong. A date without a time, like a birthday, must not be given one. Report our misclassifications. Then check the boundary cases: day boundaries for reports where the user's day differs from the server's, ambiguous and skipped local times at transitions, and scheduled jobs at times that may occur twice or not at all.",
+		why: "The stored-offset-becomes-wrong problem for future events is the subtle one, and classifying every value by what it represents is what catches all three categories at once.",
+		watchOut: "The time zone database changes several times a year. Systems that embed a copy will disagree with the world until they are updated.",
+		related: [
+			"deterministic-clock",
+			"internationalization",
+			"temporal-data-modeling",
+			"logical-clocks"
+		],
+		tags: [
+			"engineering",
+			"time",
+			"correctness",
+			"internationalisation"
+		]
+	},
+	{
+		id: "third-party-script-governance",
+		name: "Third-Party Script Governance",
+		aka: [
+			"tag management",
+			"vendor script risk",
+			"supply chain in the browser"
+		],
+		origin: "Web performance and security practice",
+		domains: ["engineering", "security"],
+		intents: ["critique", "plan"],
+		oneLiner: "Every external script runs with full access to your page and can slow it, break it, or read anything on it — and marketing usually adds them faster than engineering removes them.",
+		useWhen: [
+			"a vendor script went down and took our checkout with it",
+			"nobody knows what half these tags do or who added them",
+			"our page loads eleven third-party scripts",
+			"an analytics change broke the site with no deploy from us"
+		],
+		prompt: "Audit our third-party scripts. For each, record the owner, the business purpose, the performance cost measured with and without it, and the access it has to page content and user data — noting that a script included directly can read anything on the page including form fields. Then classify by whether it must run during the critical path, could be deferred, or could be removed. Propose the controls: loading strategy per script, a content policy restricting what may be loaded, integrity checks where the vendor supports them, and the process by which a new script is approved rather than added directly. Finish with the failure behaviour when a vendor is slow or down.",
+		why: "Measuring the cost with and without each script gives an evidence base for removal, and the vendor-goes-down failure behaviour is what turns this from a performance concern into an availability one.",
+		watchOut: "A tag manager makes adding scripts a non-engineering action with no review. That convenience is exactly the governance gap.",
+		related: [
+			"csp-configuration",
+			"critical-rendering-path",
+			"supply-chain-provenance",
+			"dependency-weight-budget"
+		],
+		tags: [
+			"frontend",
+			"security",
+			"performance",
+			"governance"
+		]
+	},
+	{
+		id: "csp-configuration",
+		name: "Content Security Policy",
+		aka: [
+			"CSP",
+			"script source restrictions",
+			"nonce-based policies"
+		],
+		origin: "Web security standard; widely deployed since the mid-2010s",
+		domains: ["security", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Declare which sources the browser may load and execute, so an injected script has nowhere to come from even if injection succeeds.",
+		useWhen: [
+			"we want defence against injected scripts beyond output escaping",
+			"our policy allows unsafe inline and therefore does very little",
+			"a compliance requirement asks for a content policy",
+			"we tried to add one and it broke the site"
+		],
+		prompt: "Design a content security policy for this application. Start in report-only mode and collect violations from real traffic, since guessing the required sources is what breaks sites. Then build the policy toward a strict form: nonce or hash based script sources rather than a host allowlist, because an allowlist containing a large content network is easily bypassed. Enumerate what currently requires inline scripts or styles and give the migration for each, since those are the actual work. Cover the other directives that matter — frame ancestors, object sources, base URI and form actions — and finish with the violation reporting endpoint and how a legitimate new source gets added.",
+		why: "Host allowlists containing large shared origins provide much weaker protection than teams assume, and the report-only-first sequence is what makes deployment safe.",
+		watchOut: "A policy with unsafe inline permitted offers almost no protection against the attack it exists to stop. Partial adoption can be worse than none if it creates false confidence.",
+		related: [
+			"xss-prevention",
+			"third-party-script-governance",
+			"cors-configuration",
+			"defense-in-depth"
+		],
+		tags: [
+			"security",
+			"frontend",
+			"browser",
+			"headers"
+		]
+	},
+	{
+		id: "xss-prevention",
+		name: "Cross-Site Scripting Prevention",
+		aka: [
+			"XSS",
+			"output encoding",
+			"sanitisation versus escaping"
+		],
+		origin: "Web security practice; OWASP guidance",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Untrusted content becomes executable when it reaches a context that interprets it — the defence is context-correct encoding at output, not filtering at input.",
+		useWhen: [
+			"we filter script tags on input and I am told that is not enough",
+			"user content is rendered as HTML somewhere in our application",
+			"we use the dangerous render-raw-HTML escape hatch in a few places",
+			"a penetration test found injection in an attribute we thought was safe"
+		],
+		prompt: "Audit this application for injection into rendering contexts. Trace untrusted data to every output point and identify the context each lands in — HTML body, attribute, URL, JavaScript, CSS — since each needs different encoding and the correct one for HTML text is wrong inside an attribute or a URL. Report every place raw HTML is inserted deliberately and what sanitises it, requiring a maintained allowlist-based sanitiser rather than our own filtering. Then cover the second-order case where content is stored safely and rendered unsafely later, and the URL case where a script-scheme link executes. Finish with the framework features that make safe rendering the default.",
+		why: "Context-correct output encoding is the actual defence and input filtering is the common misunderstanding, so tracing to output points by context is what finds the real gaps.",
+		watchOut: "Writing your own sanitiser is a losing game against browser parsing quirks. Use a maintained library and keep it updated.",
+		related: [
+			"csp-configuration",
+			"input-validation-boundary",
+			"trust-boundary",
+			"attack-surface-reduction"
+		],
+		tags: [
+			"security",
+			"frontend",
+			"injection",
+			"web"
+		]
+	},
+	{
+		id: "csrf-protection",
+		name: "Cross-Site Request Forgery Protection",
+		aka: [
+			"CSRF tokens",
+			"SameSite cookies",
+			"state-changing request protection"
+		],
+		origin: "Web security practice; OWASP guidance",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "A browser attaches your cookies to requests another site triggers, so a state-changing endpoint authenticated only by a cookie can be invoked by any page the user visits.",
+		useWhen: [
+			"our form posts are authenticated by a session cookie and nothing else",
+			"someone asked how we prevent request forgery and I did not know",
+			"we moved to a token in a header and I am unsure whether we still need protection",
+			"a state change happens on a request that only reads on paper"
+		],
+		prompt: "Audit this application for request forgery exposure. Enumerate every state-changing endpoint and state what authenticates it, since the vulnerability exists precisely where authentication is ambient — a cookie the browser sends automatically — and does not exist where the caller must supply a credential the attacking page cannot read. Then specify the layered defence: cookie attributes restricting cross-site sending, a per-session token verified on every state-changing request, and verification of the request origin. Cover the endpoints that change state behind a read-shaped method, which the token check often misses. Finish with the interaction between these controls and any legitimate cross-site integration we support.",
+		why: "Framing the vulnerability as ambient authentication explains exactly which endpoints are exposed and why header-token authentication is not, which is the question teams get wrong in both directions.",
+		watchOut: "Cookie attribute defaults have improved but vary by browser and version, and they do not protect same-site subdomains you do not fully control. Layer the defences.",
+		related: [
+			"xss-prevention",
+			"cors-configuration",
+			"idempotent-http-methods",
+			"api-authentication-choice"
+		],
+		tags: [
+			"security",
+			"frontend",
+			"web",
+			"authentication"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/practice.ts
+var practice = [
+	{
+		id: "pair-programming",
+		name: "Pair Programming",
+		aka: ["driver navigator", "working together at one keyboard"],
+		origin: "Extreme Programming; Kent Beck and Ward Cunningham",
+		domains: ["engineering", "career"],
+		intents: ["plan", "explain"],
+		oneLiner: "Two people working on one problem together, with explicit roles, trading raw throughput for fewer defects, faster knowledge transfer and a decision made twice.",
+		useWhen: [
+			"only one person understands this part of the system",
+			"the new joiner is stuck and reluctant to keep asking",
+			"this change is risky and I want a second brain on it in real time",
+			"we tried pairing and it felt like one person watching the other work"
+		],
+		prompt: "Design how we pair on this work. Assign the two roles explicitly and rotate them on a timer, because the most common failure is one person typing while the other watches passively — the navigator has a job, which is thinking one step ahead about tests, edge cases and design, not proofreading syntax. Then choose the tasks worth pairing on: unfamiliar territory, high-risk changes, and knowledge transfer, rather than everything. Specify session length with breaks, since this is more tiring than solo work. Finish with the norms that make it work across experience levels, particularly how the less experienced person gets the keyboard rather than watching.",
+		why: "Naming what the navigator is actually for, and putting the keyboard with the less experienced person, are the two things that make pairing productive rather than performative.",
+		watchOut: "Pairing everything doubles cost on work that carries no risk and no learning. It is a tool for specific situations, not a default mode.",
+		related: [
+			"mob-programming",
+			"bus-factor",
+			"code-review-checklist",
+			"onboarding-ramp"
+		],
+		tags: [
+			"collaboration",
+			"practice",
+			"learning",
+			"quality"
+		]
+	},
+	{
+		id: "mob-programming",
+		name: "Mob Programming",
+		aka: ["ensemble programming", "whole team at one problem"],
+		origin: "Woody Zuill, 2011",
+		domains: ["engineering", "career"],
+		intents: ["plan", "structure"],
+		oneLiner: "The whole team works on one thing at one time, which is expensive per hour and can be the fastest way through a decision nobody can make alone.",
+		useWhen: [
+			"the design decision keeps being relitigated in every review",
+			"the whole team needs to understand this new system",
+			"work keeps blocking on the one person who knows the area",
+			"we have five things in progress and nothing finished"
+		],
+		prompt: "Decide whether this work suits the whole team at once, and be selective, since the cost is the entire team's time. The cases that justify it are a decision needing everyone's agreement, knowledge that must spread quickly, or a critical piece where a defect would be very expensive. Say whether ours qualifies. If it does, specify the mechanics: a rotating typist who does not decide, everyone else contributing at different levels of abstraction, short rotations, and a facilitator watching that quieter people are heard. Set a time limit and a checkpoint to decide whether to continue. Finish with what the team should notice afterwards about which parts were worth doing together.",
+		why: "Making the typist a non-decider is what stops the loudest person driving, and the checkpoint prevents an expensive session running past the point of value.",
+		watchOut: "A session where two people talk and five watch is an expensive meeting. Facilitation is the difference, not the format.",
+		related: [
+			"pair-programming",
+			"psychological-safety",
+			"bus-factor",
+			"architecture-review-forum"
+		],
+		tags: [
+			"collaboration",
+			"practice",
+			"decisions",
+			"learning"
+		]
+	},
+	{
+		id: "bus-factor",
+		name: "Bus Factor",
+		aka: [
+			"truck number",
+			"key person risk",
+			"knowledge concentration"
+		],
+		origin: "Software engineering folklore; formalised in knowledge risk analysis",
+		domains: ["engineering", "career"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "How many people would have to become unavailable before work stops — measured per system, it is usually one and nobody has noticed.",
+		useWhen: [
+			"one person is the only one who understands the billing system",
+			"we cannot let this person take a holiday",
+			"someone left and took critical knowledge with them",
+			"every question about this area goes to the same person"
+		],
+		prompt: "Assess knowledge concentration across our systems using evidence rather than impressions. Use commit history to find areas where one person is the overwhelming author, and combine that with where questions actually go, which the repository does not show. Report the areas where the number is one, weighted by how critical the system is. Then propose remedies matched to the cause — documentation for knowledge that is written down nowhere, pairing or rotation for knowledge that only comes from doing, and simplification where the concentration exists because the system is too complicated for anyone else to learn. Finish with the specific commitment, since this is easy to acknowledge and never act on.",
+		why: "Combining commit authorship with where questions actually go finds the real concentration, and matching the remedy to why the knowledge is concentrated avoids writing documents that do not help.",
+		watchOut: "The concentration is often a symptom of complexity rather than of hoarding. If nobody else can learn it in reasonable time, the system is the problem.",
+		related: [
+			"code-ownership",
+			"onboarding-ramp",
+			"documentation-freshness",
+			"single-point-of-failure-audit"
+		],
+		tags: [
+			"team",
+			"risk",
+			"knowledge",
+			"resilience"
+		]
+	},
+	{
+		id: "onboarding-ramp",
+		name: "Onboarding Ramp",
+		aka: [
+			"time to first commit",
+			"developer onboarding",
+			"ramp-up plan"
+		],
+		origin: "Engineering management practice",
+		domains: ["engineering", "career"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Measure and design how long it takes a new engineer to ship something meaningful, because that time also measures how comprehensible your system is to everyone.",
+		useWhen: [
+			"new joiners take three months to become productive",
+			"the setup instructions do not work and everyone patches them verbally",
+			"people are afraid to make their first change",
+			"we onboard by assigning someone to answer questions ad hoc"
+		],
+		prompt: "Design the onboarding path for a new engineer here. Set the milestones with target times: environment running, first change merged, first change deployed, first on-call shift. Then work backwards from the obstacles, using the most recent joiner's actual experience rather than the intended process — every place they got stuck is a defect in the system, not in them, and the fixes usually help everyone. Specify the first tasks deliberately: small, real, touching the main paths, with a named person available rather than an open invitation to ask. Finish with the practice of having each new joiner improve the onboarding materials as their first contribution, while the friction is still visible.",
+		why: "Treating every point of confusion as a defect in the system rather than a gap in the person is what turns onboarding into an improvement loop that benefits the whole team.",
+		watchOut: "A heavily documented onboarding for a system that is genuinely confusing treats the symptom. Sometimes the honest finding is that the architecture needs simplifying.",
+		related: [
+			"bus-factor",
+			"documentation-freshness",
+			"pair-programming",
+			"developer-experience-metrics"
+		],
+		tags: [
+			"team",
+			"onboarding",
+			"productivity",
+			"documentation"
+		]
+	},
+	{
+		id: "wip-limits",
+		name: "Work in Progress Limits",
+		aka: [
+			"WIP limits",
+			"stop starting start finishing",
+			"kanban limits"
+		],
+		origin: "Lean and kanban practice; David Anderson's Kanban, 2010",
+		domains: ["engineering"],
+		intents: ["prioritize", "plan"],
+		oneLiner: "Cap how many things are in progress at once, because starting more work does not finish more work — it lengthens everything and hides the bottleneck.",
+		useWhen: [
+			"everyone is busy and nothing has shipped for weeks",
+			"we have fourteen things in progress and six people",
+			"work sits waiting for review while everyone starts something new",
+			"context switching is constant and progress feels invisible"
+		],
+		prompt: "Apply flow limits to this team's work. Count what is genuinely in progress including work waiting for review, waiting for deployment and blocked, since those are usually excluded and they are exactly where the queue is. Then set a limit per stage below the current level and specify what happens when it is reached: the team helps finish existing work rather than starting new, which is the whole mechanism and the part that feels wrong at first. Then use the limits diagnostically — the stage that repeatedly hits its limit is the constraint, so name it and address it. Finish with the measure that shows whether this is working, which is completion time rather than utilisation.",
+		why: "Counting waiting-for-review as in progress is what reveals the real queue, and using the blocked stage to identify the constraint is what turns a limit into an improvement.",
+		watchOut: "Limits imposed without the swarm-to-finish behaviour just create idle people who feel unproductive. The response to hitting a limit has to be agreed first.",
+		related: [
+			"lead-time-analysis",
+			"theory-of-constraints",
+			"context-switching-cost",
+			"small-batch-releases"
+		],
+		tags: [
+			"flow",
+			"productivity",
+			"process",
+			"team"
+		]
+	},
+	{
+		id: "context-switching-cost",
+		name: "Context Switching Cost",
+		aka: [
+			"multitasking penalty",
+			"fragmented attention",
+			"project switching"
+		],
+		origin: "Cognitive psychology; applied to knowledge work by Gerald Weinberg",
+		domains: ["engineering", "career"],
+		intents: ["estimate", "diagnose"],
+		oneLiner: "Splitting a person across several efforts costs far more than the arithmetic suggests, because each switch discards mental context that must be rebuilt.",
+		useWhen: [
+			"I am on three projects and making progress on none",
+			"someone thinks half a person on two projects equals one person",
+			"my day is fragmented and the hard work never gets done",
+			"the estimate assumed full-time attention and nobody is full-time on anything"
+		],
+		prompt: "Analyse the switching cost in this arrangement. Estimate the effective capacity when a person is split across efforts, accounting for the reload time on each switch and the fact that deep work requires uninterrupted blocks rather than total hours — then compare against the assumed capacity in our plan and state the gap. Then propose the alternatives in order of effectiveness: sequencing efforts rather than running them concurrently, assigning whole people to fewer things, and consolidating interruptions into defined windows. Where splitting is unavoidable, recommend the least damaging split, which is usually by day rather than within a day.",
+		why: "Making the effective-versus-assumed capacity gap explicit is what lets a team push back on being split, and splitting by day rather than by hour is the practical compromise.",
+		watchOut: "Some fragmentation is genuinely unavoidable in support and on-call roles. The answer there is to protect a portion of time rather than to pretend it can be eliminated.",
+		related: [
+			"wip-limits",
+			"interrupt-management",
+			"lead-time-analysis",
+			"estimation-uncertainty"
+		],
+		tags: [
+			"productivity",
+			"planning",
+			"focus",
+			"team"
+		]
+	},
+	{
+		id: "interrupt-management",
+		name: "Interrupt Management",
+		aka: [
+			"support rotation",
+			"interrupt shield",
+			"protecting focus time"
+		],
+		origin: "Engineering team practice",
+		domains: ["engineering", "career"],
+		intents: ["plan", "structure"],
+		oneLiner: "Route unplanned work through one designated person on rotation, so the interruption cost lands on one person instead of everyone.",
+		useWhen: [
+			"every question goes to the whole team channel and derails several people",
+			"nobody gets a clear block of time to work on anything",
+			"urgent requests always beat planned work",
+			"the same person keeps getting pulled in because they answer fastest"
+		],
+		prompt: "Design an interrupt-handling rotation for this team. Specify the role: one person per period handles all incoming questions, support escalations and small urgent tasks, with no planned project work assigned to them that period — that last part is what makes it work, since a person with both will fail at one. Then define the routing so requesters have one place to go, the triage rule for what the person handles versus escalates, and the handover at rotation. Then use the data: record what comes in, and treat recurring categories as candidates for documentation, automation or a product fix, since the volume is a signal rather than a constant.",
+		why: "Assigning no planned work to the person on rotation is the detail that determines success, and treating interrupt volume as a fixable signal is what shrinks it over time.",
+		watchOut: "A rotation without capacity to fix the causes just distributes the pain fairly forever. Reserve time for the fixes the data suggests.",
+		related: [
+			"context-switching-cost",
+			"on-call-health",
+			"toil-reduction",
+			"wip-limits"
+		],
+		tags: [
+			"team",
+			"productivity",
+			"process",
+			"support"
+		]
+	},
+	{
+		id: "estimation-uncertainty",
+		name: "Estimating with Uncertainty",
+		aka: [
+			"cone of uncertainty",
+			"ranges not points",
+			"confidence intervals in planning"
+		],
+		origin: "Barry Boehm's cone of uncertainty; Steve McConnell on software estimation",
+		domains: ["engineering"],
+		intents: ["estimate", "communicate"],
+		oneLiner: "Early estimates are uncertain by a large factor, so give ranges with a stated confidence and the assumptions that would move them, rather than a single number.",
+		useWhen: [
+			"we gave a number in a meeting and it became a commitment",
+			"our estimates are always optimistic and we never learn",
+			"someone wants a date for work we have barely defined",
+			"the estimate has no error bars and gets treated as precise"
+		],
+		prompt: "Produce an estimate for this work with its uncertainty made explicit. Give a range rather than a point, with a confidence level attached and the specific unknowns that would narrow it — listing what we would have to learn to give a better number is often more useful than the number itself. Then decompose, since estimates of small pieces aggregate better than one estimate of a large thing, and explicitly include the work usually forgotten: review, testing, deployment, documentation, and handling the unknowns discovered midway. Compare against how similar past work actually went rather than against how long the coding seems. Finish with what we would commit to versus what remains a forecast.",
+		why: "Comparing against how similar past work actually went is the single strongest correction for optimism, and separating a commitment from a forecast is what stops a range being read as a date.",
+		watchOut: "A range is often collapsed to its lower bound by whoever hears it. State which end you would plan against and why.",
+		related: [
+			"reference-class-forecasting",
+			"story-slicing",
+			"timeboxed-spike",
+			"context-switching-cost"
+		],
+		tags: [
+			"estimation",
+			"planning",
+			"uncertainty",
+			"communication"
+		]
+	},
+	{
+		id: "story-slicing",
+		name: "Story Slicing",
+		aka: [
+			"vertical slicing",
+			"breaking down work",
+			"thin end-to-end increments"
+		],
+		origin: "Agile practice; patterns from Bill Wake and Richard Lawrence",
+		domains: ["engineering", "product"],
+		intents: ["plan", "structure"],
+		oneLiner: "Split work into pieces that each deliver something end to end, rather than into technical layers that only have value once all of them are finished.",
+		useWhen: [
+			"this story is too big and I do not know how to split it",
+			"we split by layer and nothing works until the last piece lands",
+			"the story has been in progress for three weeks",
+			"we cannot demonstrate anything until everything is done"
+		],
+		prompt: "Slice this work into independently valuable pieces. Avoid splitting by technical layer, since a database slice delivers nothing on its own. Use the patterns that produce genuine slices instead: by workflow step, by business rule variation, by data type, by interface simplicity with a manual step first, by happy path before error handling, and by one user segment before all. Generate several candidate slicings and pick the one where the first slice is smallest while still being genuinely usable. Then state what each slice deliberately does not include and confirm the whole set still adds up. Finish with the slice that would teach us the most if we built it first.",
+		why: "Generating several candidate slicings rather than the first one that occurs to you is what produces a genuinely thin first slice, and naming the most informative one connects slicing to risk.",
+		watchOut: "Slices that are individually shippable but deliver a half-built experience can damage trust with users. Some slices should ship behind a flag.",
+		related: [
+			"walking-skeleton",
+			"small-batch-releases",
+			"estimation-uncertainty",
+			"mvp-riskiest-assumption"
+		],
+		tags: [
+			"planning",
+			"agile",
+			"decomposition",
+			"delivery"
+		]
+	},
+	{
+		id: "timeboxed-spike",
+		name: "Timeboxed Spike",
+		aka: [
+			"research spike",
+			"tracer investigation",
+			"learning task"
+		],
+		origin: "Extreme Programming practice",
+		domains: ["engineering"],
+		intents: ["plan", "estimate"],
+		oneLiner: "When you cannot estimate because you do not know something, buy the knowledge with a fixed-duration investigation that has a defined question and a defined output.",
+		useWhen: [
+			"we cannot estimate this until we know whether that library works",
+			"the research has gone on for two weeks with no conclusion",
+			"we keep debating an approach nobody has tried",
+			"the prototype became the implementation by accident"
+		],
+		prompt: "Define a timeboxed investigation for this unknown. State the question it must answer, the fixed duration, and the deliverable, which is a recommendation with evidence rather than working code — that distinction is what stops a spike becoming an unplanned implementation. Then specify what would make us stop early in either direction: enough evidence to decide, or enough difficulty to conclude the approach is wrong. Say explicitly what happens to any code written, which is normally deletion, and what is kept, which is the written finding. Finish with the decision the answer feeds into and who makes it, so the investigation is not simply interesting.",
+		why: "Naming the deliverable as a recommendation rather than code, and pre-committing to delete the throwaway, is what keeps a spike from silently becoming the production implementation.",
+		watchOut: "Spike code that ships because it works is how prototypes become unmaintainable production systems with nobody having decided that.",
+		related: [
+			"estimation-uncertainty",
+			"proof-of-concept-vs-prototype",
+			"walking-skeleton",
+			"story-slicing"
+		],
+		tags: [
+			"planning",
+			"research",
+			"estimation",
+			"risk"
+		]
+	},
+	{
+		id: "retrospective-facilitation",
+		name: "Retrospective Facilitation",
+		aka: [
+			"sprint retrospective",
+			"team reflection",
+			"prime directive"
+		],
+		origin: "Agile practice; Norm Kerth's Project Retrospectives, 2001",
+		domains: ["engineering", "career"],
+		intents: ["critique", "plan"],
+		oneLiner: "A structured reflection that produces a small number of changes actually made — not a recurring meeting where the same complaints are aired and nothing moves.",
+		useWhen: [
+			"we raise the same problems every fortnight and nothing changes",
+			"the retrospective has become a complaining session",
+			"only the loudest voices contribute",
+			"we generate twenty actions and complete none"
+		],
+		prompt: "Design a retrospective that produces change. Structure it to gather data before interpreting it, since jumping to opinions loses the quieter observations — collect events, facts and feelings first, individually and in writing, so the discussion is not anchored by whoever speaks first. Then converge on one or two changes rather than a list, each with an owner and a check at the next session, because completion rate matters more than idea count. Vary the format to avoid the ritual going stale, and periodically look further back than the last two weeks. Finish with the norms: it is about the system rather than individuals, and what is said stays in the room.",
+		why: "Individual written collection before discussion is what surfaces the observations that group dynamics suppress, and limiting to one or two owned actions is what makes anything actually change.",
+		watchOut: "A retrospective in a team without safety produces polite silence and false consensus. Fix that first or the meeting is worse than nothing.",
+		related: [
+			"psychological-safety",
+			"blameless-postmortem",
+			"corrective-action-tracking",
+			"near-miss-reporting"
+		],
+		tags: [
+			"team",
+			"improvement",
+			"facilitation",
+			"process"
+		]
+	},
+	{
+		id: "psychological-safety",
+		name: "Psychological Safety",
+		aka: [
+			"safe to speak up",
+			"admitting mistakes",
+			"team climate"
+		],
+		origin: "Amy Edmondson, 1999; confirmed as a key factor by Google's Project Aristotle",
+		domains: ["career", "engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "The shared belief that you can admit a mistake, ask a basic question or challenge a decision without being punished — measurable by what people actually do, not by how nice the team is.",
+		useWhen: [
+			"nobody asks questions in reviews or design sessions",
+			"we found out about the problem far too late because nobody raised it",
+			"people say yes in meetings and disagree afterwards",
+			"the junior engineers never push back on anything"
+		],
+		prompt: "Assess this team's climate using observable behaviour rather than sentiment: how often people ask questions revealing they do not know something, how often junior members disagree with senior ones in public, how mistakes are reported and what happens next, and how bad news travels upward. Those behaviours are the measure. Then identify the specific things suppressing them — how errors were responded to recently, whether questions were met with impatience, whether disagreement has ever visibly changed a decision. Propose concrete leader behaviours rather than values statements: admitting one's own mistakes publicly, responding to bad news with curiosity, and visibly changing a decision when challenged.",
+		why: "Measuring by behaviours like public disagreement and error reporting makes an abstract concept assessable, and leader behaviour is the lever that actually moves it.",
+		watchOut: "Safety is not the absence of disagreement or high standards. Teams with both high safety and high standards perform best; comfortable teams with low standards do not.",
+		related: [
+			"blameless-postmortem",
+			"retrospective-facilitation",
+			"near-miss-reporting",
+			"mob-programming"
+		],
+		tags: [
+			"team",
+			"culture",
+			"leadership",
+			"learning"
+		]
+	},
+	{
+		id: "conways-law",
+		name: "Conway's Law",
+		aka: ["organisation mirrors architecture", "inverse Conway manoeuvre"],
+		origin: "Melvin Conway, 1968",
+		domains: ["engineering", "strategy"],
+		intents: ["diagnose", "reframe"],
+		oneLiner: "Systems come to mirror the communication structure of the organisation that builds them — so a structure you cannot change constrains an architecture you want.",
+		useWhen: [
+			"the architecture keeps drifting back toward our team boundaries",
+			"this integration is painful and it is between two departments",
+			"we designed a modular system and it came out as one tangle",
+			"the same interface has three versions because three teams built it"
+		],
+		prompt: "Analyse the fit between our team structure and our intended architecture. Map which teams own which components and where the seams in the system align or fail to align with organisational boundaries — misalignments predict where the integration pain and the duplicated work will be, so name them. Then consider the deliberate inversion: reshaping teams so the communication structure matches the architecture we want, since that is often more effective than trying to build an architecture across an unsuited structure. Say what that would mean here. Finish with the case where the structure cannot change, and what compensating mechanisms would help.",
+		why: "Using structure-architecture misalignment to predict where integration pain will appear turns an observation into a planning tool, and the deliberate inversion is the actionable half.",
+		watchOut: "Reorganising to fit an architecture is disruptive and slow, and if the architecture is wrong you have now made it structural.",
+		related: [
+			"team-topologies",
+			"bounded-context",
+			"cognitive-load-team",
+			"database-per-service"
+		],
+		tags: [
+			"organisation",
+			"architecture",
+			"teams",
+			"strategy"
+		]
+	},
+	{
+		id: "team-topologies",
+		name: "Team Topologies",
+		aka: [
+			"stream-aligned teams",
+			"platform teams",
+			"interaction modes"
+		],
+		origin: "Matthew Skelton and Manuel Pais, 2019",
+		domains: ["engineering", "strategy"],
+		intents: ["structure", "decide"],
+		oneLiner: "Four team types and three interaction modes, arranged so that most teams can deliver end to end without waiting on anyone.",
+		useWhen: [
+			"every feature needs three teams to coordinate",
+			"our platform team is a ticket queue everyone is blocked on",
+			"we have teams organised by technical layer and delivery is slow",
+			"nobody can ship without a handoff"
+		],
+		prompt: "Assess our team structure against the flow-oriented model. Classify each team as stream-aligned, platform, enabling or complicated-subsystem, and check the ratio, since a healthy structure is mostly stream-aligned teams with the others existing to support them. Then examine the interactions: a platform team should provide self-service capability rather than doing work on request, and an enabling team should raise capability and then withdraw rather than becoming permanent. Name where ours are the wrong mode. Finish with the dependencies blocking end-to-end delivery for each stream-aligned team, and what would have to become self-service to remove them.",
+		why: "The platform-as-self-service rather than as ticket queue distinction is the practical change that unblocks delivery, and the mode audit surfaces exactly where handoffs are creating the queue.",
+		watchOut: "Relabelling existing teams without changing how they interact achieves nothing. The interaction modes are the substance, not the names.",
+		related: [
+			"conways-law",
+			"cognitive-load-team",
+			"developer-experience-metrics",
+			"platform-as-product"
+		],
+		tags: [
+			"organisation",
+			"teams",
+			"delivery",
+			"structure"
+		]
+	},
+	{
+		id: "cognitive-load-team",
+		name: "Team Cognitive Load",
+		aka: [
+			"too many systems per team",
+			"domain load",
+			"boundary sizing"
+		],
+		origin: "Team Topologies, drawing on cognitive load theory",
+		domains: ["engineering", "career"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "A team can only hold so much in its collective head — when responsibilities exceed that, quality and speed drop in ways that look like a people problem.",
+		useWhen: [
+			"this team owns eleven services and knows none of them well",
+			"we keep adding responsibilities without removing any",
+			"the team is competent and everything takes longer than it should",
+			"nobody has time to learn any system properly"
+		],
+		prompt: "Assess this team's load. Inventory everything they are responsible for — systems owned, domains understood, technologies operated, stakeholders served, and interrupt sources — and classify the load as intrinsic to the problem, extraneous from accidental complexity such as awkward tooling and deployment friction, or germane, which is the learning that actually adds capability. Extraneous load is the first target because removing it costs nothing in scope. Then, if the load is still too high, propose the options honestly: fewer responsibilities, a platform absorbing some, or simplification. Finish with the observable symptoms we should expect to improve.",
+		why: "Separating extraneous load from intrinsic gives an immediate target that does not require reorganisation, and it usually accounts for more than people expect.",
+		watchOut: "Adding people to an overloaded team raises coordination cost and may not raise capacity. Reducing scope usually works better than growing the team.",
+		related: [
+			"team-topologies",
+			"conways-law",
+			"toil-reduction",
+			"context-switching-cost"
+		],
+		tags: [
+			"team",
+			"workload",
+			"organisation",
+			"sustainability"
+		]
+	},
+	{
+		id: "rfc-process",
+		name: "RFC Process",
+		aka: [
+			"design document review",
+			"technical proposal process",
+			"written design review"
+		],
+		origin: "Internet Engineering Task Force tradition; adopted widely in engineering organisations",
+		domains: ["engineering", "writing"],
+		intents: ["communicate", "decide"],
+		oneLiner: "Circulate a written proposal for comment before building, so disagreement surfaces while it is cheap and the reasoning is recorded.",
+		useWhen: [
+			"we built it and then discovered another team had strong objections",
+			"design decisions are made in unrecorded conversations",
+			"the same architectural debate recurs with new people",
+			"our design documents are written after the fact to satisfy a process"
+		],
+		prompt: "Design a proposal process for us. Define the threshold for what needs one, since requiring it for everything creates a bottleneck and requiring it for nothing loses the benefit — anchor it to reversibility and blast radius. Specify the template covering the problem, the constraints, the options considered with trade-offs, the recommendation, and the open questions the author actively wants opinions on. Then set the mechanics that determine whether it works: a comment period with a deadline, a named decider rather than consensus, and an explicit resolution recorded at the end so it is closed rather than fading. Finish with where the accepted proposals live and how they are found later.",
+		why: "A named decider plus a deadline is what prevents proposals dying in indefinite discussion, and recording the resolution is what stops the debate recurring.",
+		watchOut: "A process where every proposal is approved unchanged means people are writing them after deciding. That is documentation, not review.",
+		related: [
+			"architecture-decision-records",
+			"architecture-review-forum",
+			"disagree-and-commit",
+			"timeboxed-spike"
+		],
+		tags: [
+			"process",
+			"design",
+			"writing",
+			"decisions"
+		]
+	},
+	{
+		id: "architecture-review-forum",
+		name: "Architecture Review Forum",
+		aka: [
+			"design review board",
+			"architecture guild",
+			"advisory review"
+		],
+		origin: "Engineering governance practice",
+		domains: ["engineering"],
+		intents: ["critique", "structure"],
+		oneLiner: "A regular forum where significant designs get scrutiny from outside the team — advisory rather than gating, or it becomes a queue teams route around.",
+		useWhen: [
+			"teams keep solving the same problem in incompatible ways",
+			"the architecture board takes six weeks and everyone bypasses it",
+			"nobody outside the team sees a design until it ships",
+			"we have three message queues because three teams chose independently"
+		],
+		prompt: "Design a review forum that helps rather than blocks. Set the scope by what genuinely benefits from outside scrutiny — cross-cutting choices, new technology adoption, and anything hard to reverse — and let everything else proceed without it. Then make it advisory by default with a small set of decisions that genuinely require agreement, and state which. Specify the mechanics: material circulated in advance so the session is discussion rather than presentation, a diverse group rather than only senior architects, and a written outcome recording advice given and whether it was taken. Finish with the measure of usefulness, which is whether teams choose to bring things voluntarily.",
+		why: "Voluntary attendance is the honest measure of whether a review forum adds value, and making it advisory by default is what keeps it from becoming a bottleneck to bypass.",
+		watchOut: "A forum staffed only by people who no longer write code drifts toward theoretical objections. Include practitioners from the systems concerned.",
+		related: [
+			"rfc-process",
+			"tech-radar",
+			"architecture-decision-records",
+			"change-management-lightweight"
+		],
+		tags: [
+			"process",
+			"architecture",
+			"governance",
+			"collaboration"
+		]
+	},
+	{
+		id: "tech-radar",
+		name: "Technology Radar",
+		aka: [
+			"adopt trial assess hold",
+			"technology governance",
+			"approved technology list"
+		],
+		origin: "ThoughtWorks Technology Radar, 2010",
+		domains: ["engineering", "strategy"],
+		intents: ["decide", "communicate"],
+		oneLiner: "Classify technologies by how much confidence the organisation has in them, so adoption decisions have a shared reference instead of being argued case by case.",
+		useWhen: [
+			"every team picks a different framework for the same job",
+			"we have four programming languages and no policy",
+			"someone wants to introduce a new database and there is no process",
+			"we have an approved list that has not changed in three years"
+		],
+		prompt: "Build a technology classification for our organisation. Use rings expressing confidence and intent — adopt as the default choice, trial for controlled use with a named team, assess for worth exploring, and hold for do not start anything new with this — and be clear that hold does not mean rip out. Populate it from what we actually run, including the things nobody would choose again, since making those visible is half the value. Then define the movement process: what evidence moves something between rings and who decides, so it stays current rather than becoming a stale list. Finish with the exception path for a genuinely justified departure.",
+		why: "Populating from what actually runs, rather than from what people would like to use, is what makes the radar an honest inventory and surfaces the hold items nobody has admitted to.",
+		watchOut: "A list maintained by a central group with no adoption path becomes a rule to circumvent. Teams must be able to move things through trial.",
+		related: [
+			"architecture-review-forum",
+			"build-vs-buy",
+			"vendor-evaluation",
+			"technical-debt-register"
+		],
+		tags: [
+			"strategy",
+			"technology",
+			"governance",
+			"standards"
+		]
+	},
+	{
+		id: "build-vs-buy",
+		name: "Build versus Buy",
+		aka: [
+			"make or buy",
+			"core versus context",
+			"commodity or differentiator"
+		],
+		origin: "Strategy practice; Geoffrey Moore's core and context distinction",
+		domains: ["engineering", "strategy"],
+		intents: ["decide", "estimate"],
+		oneLiner: "Build what differentiates you and buy what does not — then compare on total cost over years rather than on the initial build estimate versus the licence fee.",
+		useWhen: [
+			"we are about to build our own authentication system",
+			"the vendor quote seems expensive and building looks cheap",
+			"we bought a tool and now spend more integrating it than it saved",
+			"someone says we could build this in two weeks"
+		],
+		prompt: "Evaluate building against buying for this capability. First classify it: does this differentiate us with customers, or is it necessary and invisible? That answer dominates, so state it plainly. Then compare on total cost over a realistic horizon rather than initial effort, including for building the ongoing maintenance, security patching, on-call burden and the features you will need later that the vendor already has, and for buying the integration effort, the data migration, the customisation limits and the exit cost. Include the option value of each: how hard it is to change course later. Finish with the hybrid where we buy the commodity and build only the part that differentiates.",
+		why: "Initial build estimates ignore years of maintenance while vendor evaluations ignore integration, so forcing both into a multi-year total is what makes the comparison honest.",
+		watchOut: "Buying something core to your differentiation caps how good it can be, since every competitor can buy the same thing.",
+		related: [
+			"vendor-evaluation",
+			"tech-radar",
+			"total-cost-of-ownership",
+			"opportunity-cost"
+		],
+		tags: [
+			"strategy",
+			"decisions",
+			"cost",
+			"architecture"
+		]
+	},
+	{
+		id: "vendor-evaluation",
+		name: "Vendor Evaluation",
+		aka: [
+			"tool selection",
+			"proof of value",
+			"lock-in assessment"
+		],
+		origin: "Procurement and technology selection practice",
+		domains: ["engineering", "strategy"],
+		intents: ["decide", "critique"],
+		oneLiner: "Evaluate a supplier on how they behave when things go wrong and how hard they are to leave, not only on the feature comparison in the sales deck.",
+		useWhen: [
+			"we are choosing between three tools and the comparison is all features",
+			"we picked a vendor and their support has been useless",
+			"moving off this platform would take a year",
+			"the demo was impressive and the trial was painful"
+		],
+		prompt: "Design an evaluation for these suppliers. Start with must-haves separated from nice-to-haves, and test against our own data and workflow rather than their demonstration, since demos are built to avoid the awkward cases. Then evaluate the dimensions that determine the experience after purchase: support responsiveness and escalation with evidence from existing customers, their reliability history and how they communicate during incidents, the release cadence and how breaking changes are handled, and security posture. Assess exit cost explicitly — can we get our data out in a usable form, and what would migration cost — because that determines our negotiating position at every renewal.",
+		why: "Exit cost determines your leverage at renewal and is almost never assessed at purchase, and testing with your own data is what exposes the gaps a demo hides.",
+		watchOut: "The lowest initial price frequently carries the highest switching cost. Price the whole relationship, including the renewal after the introductory discount.",
+		related: [
+			"build-vs-buy",
+			"total-cost-of-ownership",
+			"tech-radar",
+			"supply-chain-provenance"
+		],
+		tags: [
+			"strategy",
+			"procurement",
+			"decisions",
+			"risk"
+		]
+	},
+	{
+		id: "proof-of-concept-vs-prototype",
+		name: "Proof of Concept versus Prototype",
+		aka: [
+			"spike versus demo",
+			"throwaway versus foundation",
+			"what is this code for"
+		],
+		origin: "Product and engineering practice",
+		domains: ["engineering", "design"],
+		intents: ["decide", "plan"],
+		oneLiner: "Decide in advance whether you are testing feasibility, testing desirability, or building the first version — because each justifies completely different shortcuts.",
+		useWhen: [
+			"the demo we hacked together is now in production",
+			"we spent three weeks polishing something meant to answer one question",
+			"the prototype tested the interface and everyone thinks the backend is done",
+			"nobody knows whether this code is meant to survive"
+		],
+		prompt: "Classify what we are actually building here and set the rules accordingly. A feasibility proof answers can-this-work technically and may have no interface and no error handling. A desirability prototype answers do-people-want-this and may be entirely fake underneath. A first increment is real code and must meet real standards. State which this is, the single question it answers, and the shortcuts explicitly permitted. Then set the disposal rule before starting: for the first two, the code is deleted and only the finding survives, and say who enforces that. Finish with how the result is communicated so nobody mistakes a fake backend for a working one.",
+		why: "Pre-committing to disposal and naming the permitted shortcuts is what prevents the demo becoming production, which is the failure this distinction exists to avoid.",
+		watchOut: "A prototype shown to stakeholders creates an expectation of near-completion regardless of what you say. Manage that at the demonstration, not afterwards.",
+		related: [
+			"timeboxed-spike",
+			"walking-skeleton",
+			"mvp-riskiest-assumption",
+			"technical-debt-register"
+		],
+		tags: [
+			"practice",
+			"prototyping",
+			"planning",
+			"expectations"
+		]
+	},
+	{
+		id: "rewrite-vs-refactor",
+		name: "Rewrite versus Refactor",
+		aka: [
+			"second system effect",
+			"big bang rewrite",
+			"incremental replacement"
+		],
+		origin: "Joel Spolsky's rewrite essay, 2000; Fred Brooks on the second system",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Rewrites are attractive because reading code is harder than writing it, and they usually take far longer than expected while the old system keeps changing.",
+		useWhen: [
+			"the team wants to start again from scratch",
+			"we started a rewrite two years ago and it has not shipped",
+			"the existing system is genuinely built on a dead technology",
+			"every change to the old system takes weeks"
+		],
+		prompt: "Evaluate rewriting against incremental replacement here. Be specific about what is actually wrong, since the answer differs: outdated technology, poor structure, missing tests, wrong domain model, or simply unfamiliarity — and only some of those require replacement. Then price the rewrite realistically, including the behaviour embedded in the old system that nobody has documented, which is where the schedule always goes, and the fact that the old system must keep changing during the transition. Compare against incremental replacement with a strangler approach. If rewriting is genuinely right, define how value ships during it rather than only at the end.",
+		why: "Naming the undocumented accumulated behaviour as the main cost is what makes rewrite estimates honest, and requiring value to ship during the transition is what prevents a two-year invisible project.",
+		watchOut: "The team that wants to rewrite is often the team that would benefit most from understanding the existing system. Unfamiliarity is not a technical reason.",
+		related: [
+			"strangler-fig",
+			"migration-planning",
+			"characterization-tests",
+			"chestertons-fence"
+		],
+		tags: [
+			"engineering",
+			"decisions",
+			"legacy",
+			"risk"
+		]
+	},
+	{
+		id: "migration-planning",
+		name: "Migration Planning",
+		aka: [
+			"system migration",
+			"cutover planning",
+			"dual running"
+		],
+		origin: "Systems engineering practice",
+		domains: ["engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "A migration is a sequence of reversible steps with verification at each, not a cutover — and the hardest part is always the long tail of consumers.",
+		useWhen: [
+			"we are moving to a new system and I do not know where to start",
+			"the migration is ninety percent done and has been for six months",
+			"we cannot turn off the old system because someone still uses it",
+			"the cutover weekend went wrong and we could not go back"
+		],
+		prompt: "Plan this migration as reversible increments. Enumerate every consumer of the old system first, including the ones nobody remembers — scheduled jobs, reports, integrations, and internal tools — since the unknown consumers are what leave it running for years. Then sequence: run both systems with reconciliation between them, move consumers one at a time with the ability to move back, and only then decommission. Specify the verification proving the new system matches the old before each move, and the rollback per step. Finish with the completion definition and the specific plan for the last stragglers, since without a forcing mechanism the old system never turns off.",
+		why: "The consumer inventory and the forcing mechanism for stragglers are what determine whether a migration finishes, and both are usually left until the end when they are hardest.",
+		watchOut: "Running both systems indefinitely doubles the maintenance and gradually becomes the permanent state. Set the decommission date at the start.",
+		related: [
+			"strangler-fig",
+			"system-decommissioning",
+			"shadow-traffic",
+			"reconciliation-jobs"
+		],
+		tags: [
+			"engineering",
+			"migration",
+			"planning",
+			"legacy"
+		]
+	},
+	{
+		id: "system-decommissioning",
+		name: "System Decommissioning",
+		aka: [
+			"turning it off",
+			"sunsetting internal systems",
+			"the long tail of shutdown"
+		],
+		origin: "Operations and portfolio management practice",
+		domains: ["engineering"],
+		intents: ["plan", "prioritize"],
+		oneLiner: "Turning a system off is a project with its own plan — data retention, consumer migration, evidence of disuse, and a reversible sequence.",
+		useWhen: [
+			"we still run a service that we think nobody uses",
+			"the old system costs money and nobody will approve turning it off",
+			"we turned something off and broke a process nobody knew about",
+			"we have twelve systems that are supposedly retired"
+		],
+		prompt: "Plan the shutdown of this system. Start with evidence of use rather than belief: instrument every entry point and observe for a period long enough to catch monthly and quarterly processes, since a system idle for three weeks may be essential at quarter end. Then work through the sequence with reversibility at each step: notify identified consumers, restrict access to a reduced set, disable with a fast path to re-enable, then archive the data according to retention obligations, then remove infrastructure. Specify the observation period between steps. Finish with what must be preserved — data required for legal retention, and enough documentation to answer questions about historic records.",
+		why: "Observing long enough to catch quarterly usage, and staging the shutdown so it can be reversed quickly, is what prevents the outage that makes teams afraid to decommission anything again.",
+		watchOut: "Turning off the system without addressing the data retention obligation can breach a legal requirement that outlives the service by years.",
+		related: [
+			"migration-planning",
+			"data-retention-policy",
+			"dead-code-removal",
+			"deprecation-policy"
+		],
+		tags: [
+			"engineering",
+			"operations",
+			"lifecycle",
+			"cost"
+		]
+	},
+	{
+		id: "security-review-triggers",
+		name: "Security Review Triggers",
+		aka: [
+			"when to involve security",
+			"risk-based review",
+			"security design review"
+		],
+		origin: "Application security practice",
+		domains: ["security", "engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Define the specific change characteristics that require a security review, so it happens by rule at design time rather than by memory just before launch.",
+		useWhen: [
+			"security reviews everything and is a bottleneck",
+			"security saw this two days before launch and had major objections",
+			"we do not know which changes need security involvement",
+			"a change that handled personal data shipped without any review"
+		],
+		prompt: "Define the triggers that require security involvement here. Base them on characteristics rather than on judgement, so the rule can be applied by anyone: new handling of personal or payment data, a change to authentication or authorisation, a new external interface or third-party integration, a new dependency with broad privileges, changes to secrets handling, and anything altering a trust boundary. Then specify the response per trigger, which should scale — a short checklist for most, a full design review for the significant minority — since uniform heavy review is why teams avoid it. Finish with the timing rule: at design, not before launch, and what security owes in return, principally responsiveness.",
+		why: "Characteristic-based triggers make the rule applicable without security judgement, and scaling the response is what keeps reviews from becoming a bottleneck teams route around.",
+		watchOut: "A trigger list that catches almost every change is the same as reviewing everything. Tune it against real changes before adopting it.",
+		related: [
+			"threat-modeling-stride",
+			"operational-readiness-review",
+			"change-management-lightweight",
+			"trust-boundary"
+		],
+		tags: [
+			"security",
+			"process",
+			"review",
+			"risk"
+		]
+	},
+	{
+		id: "developer-experience-metrics",
+		name: "Developer Experience Metrics",
+		aka: [
+			"SPACE framework",
+			"developer productivity measurement",
+			"friction survey"
+		],
+		origin: "SPACE framework, Forsgren and colleagues, 2021; DevEx research",
+		domains: ["engineering"],
+		intents: ["estimate", "diagnose"],
+		oneLiner: "Measure developer effectiveness across several dimensions including how the work feels, because any single metric is gamed and none of them measure output well.",
+		useWhen: [
+			"leadership wants to measure engineering productivity",
+			"someone proposed counting commits or story points per person",
+			"we know things are slow and cannot show it",
+			"we invested in tooling and cannot demonstrate the benefit"
+		],
+		prompt: "Design a way to understand engineering effectiveness here. Combine system data with perception data, since the friction people feel is real and often invisible in the numbers — pair pipeline and lead time measurements with a short recurring survey about the biggest obstacles. Cover several dimensions rather than one: flow and delivery, quality, collaboration, and satisfaction. Then state the two rules that keep it useful: measure at team level rather than individual, because individual measurement changes behaviour destructively, and use it to find friction rather than to compare teams. Finish with the friction inventory it should produce and how items get prioritised as work.",
+		why: "Pairing system metrics with perception data catches the friction that no pipeline metric shows, and the team-not-individual rule is what prevents the measurement doing harm.",
+		watchOut: "Any of these numbers used in performance evaluation will be gamed immediately and permanently, and the underlying signal will be lost.",
+		related: [
+			"dora-metrics",
+			"lead-time-analysis",
+			"toil-reduction",
+			"goodharts-law"
+		],
+		tags: [
+			"engineering",
+			"metrics",
+			"productivity",
+			"measurement"
+		]
+	},
+	{
+		id: "meeting-hygiene",
+		name: "Meeting Hygiene",
+		aka: [
+			"agenda and outcome",
+			"default to no meeting",
+			"meeting cost"
+		],
+		origin: "Management practice; widely codified in remote-first companies",
+		domains: ["career", "engineering"],
+		intents: ["structure", "prioritize"],
+		oneLiner: "A meeting needs a decision to make or a thing to create together — everything else is a document, and the recurring ones are the most expensive.",
+		useWhen: [
+			"my calendar is full and I have no time to do the work",
+			"this meeting has twelve attendees and no agenda",
+			"the recurring meeting has outlived whatever it was for",
+			"decisions get made in meetings that half the affected people miss"
+		],
+		prompt: "Audit these meetings. For each, state the decision it makes or the artefact it produces, and the cost in person-hours per month — a recurring hour with eight people is a substantial ongoing expense that nobody ever re-approves, so make that number visible. Then propose per meeting: keep with a tightened agenda and attendee list, convert to a written update with asynchronous comment, or cancel. For those kept, specify pre-reading circulated in advance, the required attendees separated from the optional, and the written outcome so absentees are not excluded from the decision. Finish with a review date so recurring meetings expire by default.",
+		why: "Costing recurring meetings in person-hours per month makes the expense visible for the first time, and an expiry date is what stops them outliving their purpose.",
+		watchOut: "Cancelling meetings without replacing the coordination they provided pushes the cost into interruptions and missed information.",
+		related: [
+			"async-first-collaboration",
+			"context-switching-cost",
+			"interrupt-management",
+			"rfc-process"
+		],
+		tags: [
+			"team",
+			"productivity",
+			"communication",
+			"process"
+		]
+	},
+	{
+		id: "async-first-collaboration",
+		name: "Asynchronous Collaboration",
+		aka: [
+			"written-first culture",
+			"remote-friendly working",
+			"documentation over meetings"
+		],
+		origin: "Distributed and remote-first company practice",
+		domains: ["career", "engineering"],
+		intents: ["structure", "communicate"],
+		oneLiner: "Default to writing things down where they can be read later, so time zones, focus time and absence stop being obstacles to participating.",
+		useWhen: [
+			"decisions are made in conversations and colleagues elsewhere miss them",
+			"people cannot take focus time because they might miss something",
+			"the team is distributed and everything requires a call",
+			"context lives in chat history nobody can search usefully"
+		],
+		prompt: "Design asynchronous working practices for this team. Classify communication by what it needs: decisions and their rationale need a durable searchable home, coordination needs a channel with expected response times, and genuinely ambiguous or sensitive conversations need real time. Say where each of ours currently happens and where it should. Then set the expectations that make asynchronous work rather than merely slower: response time norms per channel so people know when they must check, a rule that any decision reached synchronously is written up before it is acted on, and an explicit statement of the small set of things that genuinely require everyone at once.",
+		why: "The rule that synchronous decisions must be written up before action is what keeps the written record authoritative, which is the thing that makes asynchronous participation real rather than second-class.",
+		watchOut: "Asynchronous by default without response norms produces slow decisions and anxiety about whether anyone has read anything. The norms are the substance.",
+		related: [
+			"meeting-hygiene",
+			"rfc-process",
+			"architecture-decision-records",
+			"documentation-freshness"
+		],
+		tags: [
+			"team",
+			"communication",
+			"remote",
+			"process"
+		]
+	},
+	{
+		id: "interview-loop-design",
+		name: "Interview Loop Design",
+		aka: [
+			"hiring process design",
+			"structured interviews",
+			"signal per stage"
+		],
+		origin: "Hiring research on structured interviews; industry practice",
+		domains: ["career", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Design each stage to gather a specific signal that no other stage gathers, with consistent questions and a rubric, because unstructured interviews mostly measure similarity to the interviewer.",
+		useWhen: [
+			"every interviewer asks whatever they feel like",
+			"we cannot explain why we rejected that candidate",
+			"our process takes six hours and three stages test the same thing",
+			"the debrief is a conversation about whether people liked them"
+		],
+		prompt: "Design a hiring loop for this role. Start from the attributes that actually predict success in it, then assign each to exactly one stage, since duplicated signal wastes everyone's time and gaps go unnoticed. Specify per stage the questions or exercise, the rubric with described levels rather than a numeric score, and what would be disqualifying. Then design the debrief to reduce bias: written independent assessments submitted before discussion so nobody is anchored, and evidence quoted rather than impressions. Finish with the candidate experience, which is also a hiring signal in the other direction, including total time required and how quickly they get an answer.",
+		why: "Independent written assessments before discussion is the single most effective bias reduction in a debrief, and mapping attributes to exactly one stage is what removes redundant hours.",
+		watchOut: "A rubric applied by interviewers who have not calibrated on real examples produces consistent-looking scores that mean different things per interviewer.",
+		related: [
+			"hiring-work-sample",
+			"engineering-levels",
+			"psychological-safety",
+			"star-method"
+		],
+		tags: [
+			"hiring",
+			"process",
+			"career",
+			"assessment"
+		]
+	},
+	{
+		id: "hiring-work-sample",
+		name: "Work Sample Assessment",
+		aka: ["take-home versus pairing exercise", "realistic task interview"],
+		origin: "Selection research; work sample tests are among the most predictive methods",
+		domains: ["career", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Ask candidates to do a small version of the actual job, because performance on realistic work predicts far better than puzzles or recall of algorithms.",
+		useWhen: [
+			"our interview tests algorithms and the job is nothing like that",
+			"we hired someone who interviewed brilliantly and could not do the work",
+			"the take-home exercise takes candidates a whole weekend",
+			"strong candidates drop out during our process"
+		],
+		prompt: "Design a work sample for this role. Derive it from a real task the person would do, reduced to something completable in a strictly bounded time, and state that bound as a maximum rather than a suggestion — unbounded exercises select for available time rather than ability. Then choose the format with the trade stated: a collaborative session shows how someone works with others and how they think aloud, while an independent exercise shows what they produce with time to think but risks unequal effort. Specify the evaluation rubric before anyone sits it, and what candidates are told about the criteria, since a fair exercise is one they can prepare for.",
+		why: "A hard time bound and a pre-written rubric are what make work samples fair and comparable, and stating the criteria to candidates removes the guessing that advantages insiders.",
+		watchOut: "A lengthy unpaid exercise excludes candidates with caring responsibilities or another job, which narrows your pool along lines unrelated to ability.",
+		related: [
+			"interview-loop-design",
+			"engineering-levels",
+			"worked-example-fading",
+			"psychological-safety"
+		],
+		tags: [
+			"hiring",
+			"assessment",
+			"career",
+			"fairness"
+		]
+	},
+	{
+		id: "engineering-levels",
+		name: "Engineering Levels",
+		aka: [
+			"career ladder",
+			"level expectations",
+			"scope and impact"
+		],
+		origin: "Engineering management practice; published ladders from several companies",
+		domains: ["career"],
+		intents: ["communicate", "decide"],
+		oneLiner: "Describe levels by the scope someone operates at and the ambiguity they resolve, not by years of experience or technical depth alone.",
+		useWhen: [
+			"nobody knows what is expected at the next level",
+			"promotion decisions feel arbitrary and inconsistent",
+			"our ladder describes seniority as knowing more technologies",
+			"two people at the same level are doing completely different jobs"
+		],
+		prompt: "Define or review our level expectations. Frame each level by scope of impact and by the ambiguity a person handles independently — one task, one system, one team, several teams — since that framing scales while a list of technical skills does not. Give observable behaviours per level rather than adjectives, so evidence can be produced. Then handle the two things ladders get wrong: describing the individual contributor track as a shadow of the management track rather than as its own progression, and confusing tenure with level. Finish with how evidence is gathered and how the ladder is calibrated across teams so a level means the same thing everywhere.",
+		why: "Scope and ambiguity scale as a framing where technical skill lists do not, and observable behaviours are what make promotion decisions evidence-based rather than reputational.",
+		watchOut: "A ladder used to justify decisions already made becomes a source of cynicism. It only works if evidence genuinely determines outcomes.",
+		related: [
+			"brag-document",
+			"interview-loop-design",
+			"psychological-safety",
+			"sbi-feedback"
+		],
+		tags: [
+			"career",
+			"progression",
+			"expectations",
+			"management"
+		]
+	},
+	{
+		id: "brag-document",
+		name: "Brag Document",
+		aka: [
+			"impact log",
+			"accomplishments file",
+			"evidence for review"
+		],
+		origin: "Julia Evans, 2019",
+		domains: ["career"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Keep a running record of what you did and what changed because of it, because at review time nobody remembers and the invisible work disappears first.",
+		useWhen: [
+			"I cannot remember what I did six months ago",
+			"my review focused on last month and ignored the rest of the year",
+			"the work I am proudest of was invisible to my manager",
+			"I find it difficult to talk about my own contributions"
+		],
+		prompt: "Help me build an impact record. Structure each entry as what I did, why it mattered and what changed as a result, with the outcome quantified where possible — the change is the part that matters and the part people omit. Prompt me for the categories that are systematically forgotten: work that prevented a problem rather than fixed one, reviews and mentoring, documentation and tooling that made others faster, and things I stopped or simplified. Then help me phrase contributions factually rather than either inflating or minimising them, and identify where I have a gap against the expectations for my level so it can be addressed rather than discovered at review.",
+		why: "Prompting specifically for prevention, enablement and simplification captures exactly the work that leaves no artefact and is therefore invisible at review time.",
+		watchOut: "A list of activities without outcomes reads as busyness. The connection to what changed is what makes an entry worth having.",
+		related: [
+			"engineering-levels",
+			"star-method",
+			"sbi-feedback",
+			"developer-experience-metrics"
+		],
+		tags: [
+			"career",
+			"evidence",
+			"review",
+			"communication"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/platform.ts
+var platform = [
+	{
+		id: "platform-as-product",
+		name: "Platform as a Product",
+		aka: [
+			"internal developer platform",
+			"paved road",
+			"platform team as product team"
+		],
+		origin: "Team Topologies and platform engineering practice",
+		domains: ["engineering"],
+		intents: ["reframe", "plan"],
+		oneLiner: "Treat the internal platform as something teams choose to use rather than are forced onto, which makes adoption the measure and usability the requirement.",
+		useWhen: [
+			"teams work around our platform instead of using it",
+			"the platform team is a ticket queue everyone waits on",
+			"we built a deployment system nobody likes",
+			"adoption was mandated and people comply minimally"
+		],
+		prompt: "Assess our internal platform as a product. Identify the users, which are engineering teams, and what job they are hiring the platform to do — usually shipping safely without learning the infrastructure underneath. Then measure the things a product would measure: adoption when it is optional, time from nothing to a running service, and where people work around it, since workarounds are the clearest feature requests you will get. Apply the design rule that makes platforms adopted: the paved path must be genuinely easier than doing it yourself, not merely mandated. Finish with the escape hatch for teams with legitimate needs the platform does not serve, and how those needs feed the roadmap.",
+		why: "Optional adoption is the honest measure of whether a platform is useful, and treating workarounds as feature requests turns resistance into a roadmap.",
+		watchOut: "A platform that mandates without being easier taxes every team and accumulates resentment that outlasts the technology.",
+		related: [
+			"golden-path-templates",
+			"team-topologies",
+			"developer-experience-metrics",
+			"self-service-guardrails"
+		],
+		tags: [
+			"platform",
+			"developer experience",
+			"adoption",
+			"organisation"
+		]
+	},
+	{
+		id: "golden-path-templates",
+		name: "Golden Path",
+		aka: [
+			"paved road",
+			"service templates",
+			"scaffolding with defaults"
+		],
+		origin: "Netflix paved road; Spotify golden path",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Provide one well-supported way to build and run a service, with the right defaults baked in, so doing the correct thing takes less effort than improvising.",
+		useWhen: [
+			"every service is configured differently and none are quite right",
+			"new services take two weeks to get logging and monitoring in place",
+			"security requirements are met inconsistently across teams",
+			"each team reinvents the same deployment setup"
+		],
+		prompt: "Design a supported path for creating a service here. Specify what the template provides from the first commit: build and deployment pipeline, health checks, structured logging, metrics and tracing, secret handling, dependency scanning, and ownership metadata — since anything not provided by default will be missing in half our services. Then address the maintenance problem, which is what kills templates: generated code diverges immediately and cannot be updated centrally, so specify what is generated once versus what is consumed as a versioned shared component. Finish with the deviation policy: how a team departs when justified, and what support they lose by doing so.",
+		why: "The generated-versus-consumed split determines whether improvements ever reach existing services, and it is the difference between a template and a platform.",
+		watchOut: "A path that only suits one kind of service pushes everyone else off it entirely. Cover the common cases well rather than all cases badly.",
+		related: [
+			"platform-as-product",
+			"self-service-guardrails",
+			"operational-readiness-review",
+			"pipeline-as-code"
+		],
+		tags: [
+			"platform",
+			"templates",
+			"standards",
+			"developer experience"
+		]
+	},
+	{
+		id: "self-service-guardrails",
+		name: "Self-Service with Guardrails",
+		aka: [
+			"policy as code",
+			"safe defaults",
+			"preventive controls"
+		],
+		origin: "Cloud platform engineering practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "decide"],
+		oneLiner: "Let teams provision what they need without approval, inside boundaries enforced automatically — so speed and control stop being a trade-off.",
+		useWhen: [
+			"every infrastructure change needs a ticket to the platform team",
+			"someone created a publicly accessible storage bucket",
+			"we control risk by requiring approval and it is a bottleneck",
+			"teams are blocked for days waiting for a database to be created"
+		],
+		prompt: "Design guardrails that let teams self-serve safely. Distinguish preventive controls, which make an unsafe configuration impossible, from detective controls, which find it afterwards, and prefer the first for anything genuinely dangerous — public data exposure, unencrypted storage, unrestricted network access, missing ownership tags. List which of ours belong in each category. Then define what is freely self-serviceable inside those boundaries, what requires a conversation, and what is prohibited. Specify the exception path with an owner and an expiry. Finish with the feedback quality: a blocked action must explain what was wrong and what to do instead, or teams will simply file tickets again.",
+		why: "Explaining what to do instead when a guardrail blocks something is what preserves self-service, since an unexplained denial sends the team straight back to the ticket queue.",
+		watchOut: "Guardrails that only detect after the fact mean the exposure existed. For anything involving data exposure, prevention is the only acceptable control.",
+		related: [
+			"platform-as-product",
+			"infrastructure-as-code",
+			"iam-policy-design",
+			"least-privilege"
+		],
+		tags: [
+			"platform",
+			"security",
+			"automation",
+			"governance"
+		]
+	},
+	{
+		id: "immutable-infrastructure",
+		name: "Immutable Infrastructure",
+		aka: [
+			"no in-place updates",
+			"replace not patch",
+			"cattle not pets"
+		],
+		origin: "Cloud infrastructure practice; term popularised by Chad Fowler, 2013",
+		domains: ["engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "Never modify a running server — build a new image and replace it, so what is running always matches what was built and tested.",
+		useWhen: [
+			"two servers that should be identical behave differently",
+			"somebody logged in and changed something and nobody knows what",
+			"rebuilding a machine from scratch does not produce the same result",
+			"configuration drift means we cannot trust any environment"
+		],
+		prompt: "Move this infrastructure toward replace-rather-than-modify. Identify everything currently changed in place — package installs, configuration edits, manual fixes, agents installed after provisioning — and move each into the image build or into runtime configuration supplied at start. Then address the things that genuinely cannot be immutable: persistent data, and any state accumulated by a running instance, so specify where that lives and how it survives replacement. Finish with the operational consequences: no more logging in to fix things, which requires that diagnosis happens through telemetry, and a replacement path fast enough that rebuilding is the natural response to a problem.",
+		why: "The no-more-logging-in consequence is the real change, and it only works if telemetry is good enough to diagnose without a shell, which has to be true before adopting the discipline.",
+		watchOut: "Making infrastructure immutable while leaving the deployment slow means every trivial change becomes expensive, and people will start editing in place again.",
+		related: [
+			"infrastructure-as-code",
+			"container-image-hygiene",
+			"artifact-immutability",
+			"reproducible-builds"
+		],
+		tags: [
+			"platform",
+			"infrastructure",
+			"consistency",
+			"operations"
+		]
+	},
+	{
+		id: "container-image-hygiene",
+		name: "Container Image Hygiene",
+		aka: [
+			"minimal base images",
+			"image layers",
+			"distroless"
+		],
+		origin: "Container security and performance practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "critique"],
+		oneLiner: "Everything in the image is attack surface, download time and something to patch — most images contain a whole operating system to run one process.",
+		useWhen: [
+			"our images are one and a half gigabytes",
+			"the vulnerability scanner reports two hundred issues in the base image",
+			"the image contains a compiler and a package manager in production",
+			"pulling images is the slowest part of scaling up"
+		],
+		prompt: "Review these container images. Report the size and its composition by layer, then apply the reductions: multi-stage builds so build tooling never reaches the final image, a minimal base containing only what the process needs, and removal of package managers, shells and debugging tools from production images — noting the trade, since a shell-less image is harder to debug and that has to be answered with telemetry. Then order layers so rarely-changing dependencies cache well. Finish with the supply chain requirements: pinned base image digests rather than moving tags, a rebuild cadence for base image patches, and running as a non-root user.",
+		why: "Pinning base images by digest and defining a rebuild cadence is what keeps them both reproducible and patched, which are usually treated as conflicting goals.",
+		watchOut: "A pinned base image never rebuilt accumulates unpatched vulnerabilities. Pinning without a rebuild schedule trades one risk for another.",
+		related: [
+			"immutable-infrastructure",
+			"patch-management",
+			"vulnerability-triage",
+			"build-cache-strategy"
+		],
+		tags: [
+			"platform",
+			"containers",
+			"security",
+			"performance"
+		]
+	},
+	{
+		id: "container-resource-limits",
+		name: "Container Resource Limits",
+		aka: [
+			"requests and limits",
+			"CPU throttling",
+			"out of memory kills"
+		],
+		origin: "Container orchestration practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Requests decide where a workload is placed and limits decide when it is throttled or killed — setting them badly causes latency and restarts that look like application bugs.",
+		useWhen: [
+			"the container keeps getting killed and we do not know why",
+			"the application is slow and CPU usage looks low",
+			"we set limits by guessing and nobody has revisited them",
+			"the node is full but the workloads on it are idle"
+		],
+		prompt: "Set resource requests and limits for this workload from measurement rather than guesswork. Explain the asymmetry that governs the decision: exceeding a memory limit means the process is killed, while exceeding a CPU limit means throttling that shows up as latency with no obvious error — which is why unexplained slowness with low apparent usage is usually throttling. Derive requests from typical usage and limits from peak plus headroom, using observed distributions. Then check the runtime interaction, since a managed runtime that sizes its heap from the host rather than the limit will be killed regardless of the setting. Finish with the monitoring for throttling and near-limit memory.",
+		why: "CPU throttling presenting as inexplicable latency is the diagnosis teams miss for months, and runtimes reading host memory instead of the container limit is the cause of most mysterious kills.",
+		watchOut: "Setting limits equal to requests everywhere wastes capacity, while omitting limits lets one workload starve its neighbours. The right answer differs by workload class.",
+		related: [
+			"workload-scheduling",
+			"garbage-collection-tuning",
+			"rightsizing-resources",
+			"bulkhead-isolation"
+		],
+		tags: [
+			"platform",
+			"containers",
+			"resources",
+			"diagnosis"
+		]
+	},
+	{
+		id: "workload-scheduling",
+		name: "Workload Scheduling",
+		aka: [
+			"affinity and anti-affinity",
+			"bin packing",
+			"disruption budgets"
+		],
+		origin: "Cluster orchestration practice",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Control where workloads run and how they are moved, so redundant instances do not land on the same machine and maintenance does not take a service down.",
+		useWhen: [
+			"all three replicas were on the node that failed",
+			"a routine node upgrade caused an outage",
+			"our batch jobs are starving the user-facing services",
+			"the cluster is full and scaling is not helping"
+		],
+		prompt: "Design placement rules for these workloads. Specify anti-affinity so replicas of one service spread across failure domains, since co-located replicas mean redundancy that does not survive a single machine or rack failure. Then set disruption budgets so voluntary operations such as upgrades cannot remove more instances than the service can lose, which is what makes routine maintenance safe. Add priority and preemption so latency-sensitive work displaces batch under pressure rather than queueing behind it. Finish with the trade-off: strict placement rules reduce packing efficiency and can leave workloads unschedulable, so state where we should be strict and where best-effort is enough.",
+		why: "Anti-affinity and disruption budgets together are what make redundancy real, and both are absent by default so redundancy is nominal until they are configured.",
+		watchOut: "Over-constrained placement leaves workloads pending with no obvious error while the cluster appears to have capacity.",
+		related: [
+			"container-resource-limits",
+			"bulkhead-isolation",
+			"cell-based-architecture",
+			"autoscaling-policy"
+		],
+		tags: [
+			"platform",
+			"orchestration",
+			"availability",
+			"scheduling"
+		]
+	},
+	{
+		id: "stateful-workloads",
+		name: "Stateful Workloads on Orchestrators",
+		aka: [
+			"databases in containers",
+			"persistent volumes",
+			"stateful sets"
+		],
+		origin: "Container orchestration practice",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Running stateful systems on an orchestrator built around disposable instances demands stable identity, attached storage and careful failure handling — or a managed service instead.",
+		useWhen: [
+			"we want to run our database on the same cluster as everything else",
+			"a node was replaced and the data volume did not follow",
+			"the orchestrator restarted our database mid-transaction",
+			"someone is proposing running a data store ourselves"
+		],
+		prompt: "Assess running this stateful system on our cluster. Confront the mismatch directly: orchestrators assume instances are interchangeable and replaceable, while this system needs stable identity, its own storage, ordered startup and controlled shutdown. State what our orchestrator provides for each and what remains our responsibility, particularly failover, backup, and the behaviour when the cluster decides to move an instance. Then compare against a managed service on total operational cost including expertise, on-call burden and the consequences of getting recovery wrong. Recommend one, and if self-hosting, specify the operator or automation that encodes the recovery procedures.",
+		why: "Naming the orchestrator-assumption mismatch explicitly is what surfaces the work that remains yours, which is where teams underestimate self-hosting a data store.",
+		watchOut: "The failure modes here are data loss rather than downtime. The bar for operational maturity is much higher than for stateless workloads.",
+		related: [
+			"workload-scheduling",
+			"backup-restore-testing",
+			"polyglot-persistence",
+			"total-cost-of-ownership"
+		],
+		tags: [
+			"platform",
+			"databases",
+			"containers",
+			"operations"
+		]
+	},
+	{
+		id: "autoscaling-policy",
+		name: "Autoscaling Policy",
+		aka: [
+			"horizontal scaling rules",
+			"scale-out triggers",
+			"scaling lag"
+		],
+		origin: "Cloud operations practice",
+		domains: ["engineering"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Automatic scaling responds after the load arrives, so the metric, the thresholds and the time to become useful determine whether it helps or oscillates.",
+		useWhen: [
+			"traffic spiked and the new instances arrived after the incident",
+			"the cluster scales up and down repeatedly every few minutes",
+			"we scale on CPU and our bottleneck is something else",
+			"autoscaling is on and we still fall over under load"
+		],
+		prompt: "Design a scaling policy for this service. Choose the metric that actually reflects saturation for this workload — often queue depth or concurrent requests rather than CPU — and justify it. Then account for the total time from the signal to a useful instance, including instance start, application warm-up and readiness, since that lag determines how much headroom must be maintained; show the arithmetic. Specify separate scale-up and scale-down behaviour with cool-down to prevent oscillation, being aggressive up and conservative down. Then set the bounds and what happens at the maximum, and identify the downstream dependencies that do not scale with us and will break first.",
+		why: "Scaling lag determines required headroom, and the downstream dependency that does not scale is what turns successful autoscaling into an outage somewhere else.",
+		watchOut: "Autoscaling hides capacity problems until you hit an account quota or a downstream limit, at which point you have no time left to react.",
+		related: [
+			"capacity-planning",
+			"cold-start-optimization",
+			"quota-management",
+			"connection-pooling"
+		],
+		tags: [
+			"platform",
+			"scaling",
+			"cloud",
+			"capacity"
+		]
+	},
+	{
+		id: "rightsizing-resources",
+		name: "Rightsizing",
+		aka: [
+			"instance sizing",
+			"over-provisioning",
+			"utilisation review"
+		],
+		origin: "Cloud cost management practice",
+		domains: ["engineering"],
+		intents: ["estimate", "prioritize"],
+		oneLiner: "Match allocated resources to actual usage, which usually means shrinking, since defaults are generous and nobody revisits a size that works.",
+		useWhen: [
+			"our average CPU utilisation across the fleet is eight percent",
+			"we sized this for a launch three years ago",
+			"the cloud bill grows faster than our traffic",
+			"nobody knows why this instance is so large"
+		],
+		prompt: "Analyse resource allocation against actual usage. For each significant workload, compare allocated against observed usage at several percentiles over a period long enough to include peaks and seasonal patterns, since sizing on the average causes failures and sizing on the maximum wastes most of the money. Recommend the size with the headroom justified by the peak-to-typical ratio and the scaling lag. Then check the dimension that is usually wrong: workloads sized on memory that are actually CPU constrained or vice versa, which means a different instance family rather than a different size. Finish with the review cadence and automation to prevent drift.",
+		why: "Choosing the wrong instance family is a bigger and more common error than choosing the wrong size, and it only shows up when you compare usage across dimensions.",
+		watchOut: "Rightsizing to the observed peak leaves nothing for an unusual event. Keep headroom proportional to how fast you can add capacity.",
+		related: [
+			"cloud-cost-attribution",
+			"capacity-planning",
+			"container-resource-limits",
+			"autoscaling-policy"
+		],
+		tags: [
+			"platform",
+			"cost",
+			"cloud",
+			"efficiency"
+		]
+	},
+	{
+		id: "spot-capacity-strategy",
+		name: "Interruptible Capacity",
+		aka: [
+			"spot instances",
+			"preemptible workloads",
+			"discounted capacity"
+		],
+		origin: "Cloud provider pricing models",
+		domains: ["engineering"],
+		intents: ["decide", "plan"],
+		oneLiner: "Deeply discounted capacity that can be reclaimed at short notice — excellent for interruption-tolerant work and dangerous for anything that cannot checkpoint.",
+		useWhen: [
+			"our batch processing costs far more than it should",
+			"we moved jobs onto the cheap reclaimable machines and they keep failing",
+			"the finance team is asking why compute costs so much",
+			"we want the discount and are unsure what can safely use it"
+		],
+		prompt: "Assess which of our workloads can use interruptible capacity. The criterion is whether the work can be interrupted and resumed without loss, so classify ours: batch jobs that checkpoint, stateless workers with requeueable tasks, and build agents are usually suitable, while anything holding session state or a long uncheckpointed computation is not. For the suitable ones, specify the interruption handling — the notice period, what must be saved or returned to the queue in that window, and the fallback to on-demand capacity when interruptible is unavailable. Then diversify across instance types and zones so a single capacity shortage does not remove everything at once. Finish with the realistic saving.",
+		why: "Using the interruption notice window properly and diversifying across capacity pools are what make this reliable, and both are skipped by teams that simply switch the setting on.",
+		watchOut: "Interruptible capacity can be reclaimed en masse when demand rises, which is often exactly when your traffic is also high.",
+		related: [
+			"rightsizing-resources",
+			"cloud-cost-attribution",
+			"graceful-shutdown",
+			"workload-scheduling"
+		],
+		tags: [
+			"platform",
+			"cost",
+			"cloud",
+			"batch"
+		]
+	},
+	{
+		id: "serverless-tradeoffs",
+		name: "Serverless Trade-offs",
+		aka: [
+			"functions as a service",
+			"managed runtime",
+			"no servers to manage"
+		],
+		origin: "Cloud platform practice; AWS Lambda, 2014",
+		domains: ["engineering"],
+		intents: ["decide", "explain"],
+		oneLiner: "Paying per invocation with no capacity to manage suits spiky and event-driven work, and imposes limits on duration, concurrency, state and local debugging.",
+		useWhen: [
+			"our traffic is spiky and we pay for idle capacity all day",
+			"someone wants to rewrite everything as functions",
+			"our function times out on the largest inputs",
+			"local development and testing has become painful"
+		],
+		prompt: "Evaluate a managed function runtime for this workload. Match it against the shape it suits — spiky or infrequent, event-driven, short-lived, stateless — and state whether ours fits. Then enumerate the constraints that will bite: maximum execution duration, cold start latency for user-facing paths, concurrency limits and how they interact with downstream capacity such as database connections, package size, and the difficulty of reproducing the environment locally. Compare cost at our actual volume, since per-invocation pricing crosses over to being more expensive at sustained high load — show that crossover. Finish with the operational differences in debugging and tracing.",
+		why: "The cost crossover point and the concurrency-versus-database-connections interaction are the two things that make this decision concrete rather than ideological.",
+		watchOut: "Function concurrency can scale far faster than your database can accept connections, turning a traffic spike into a database outage.",
+		related: [
+			"cold-start-optimization",
+			"connection-pooling",
+			"total-cost-of-ownership",
+			"autoscaling-policy"
+		],
+		tags: [
+			"platform",
+			"serverless",
+			"cloud",
+			"architecture"
+		]
+	},
+	{
+		id: "cold-start-optimization",
+		name: "Cold Start Optimisation",
+		aka: [
+			"function initialisation latency",
+			"provisioned concurrency",
+			"warm instances"
+		],
+		origin: "Serverless operations practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "The first request to a new instance pays initialisation cost that later requests do not, and the users who pay it are a fixed proportion of your traffic.",
+		useWhen: [
+			"some requests take three seconds and most take fifty milliseconds",
+			"the slow requests seem random with no pattern",
+			"our function is fast in testing and slow for real users",
+			"the first request after a quiet period always times out"
+		],
+		prompt: "Reduce initialisation cost for this workload. Break the cold start into its parts — platform provisioning, runtime start, dependency loading, and our own initialisation such as configuration fetches and connection setup — and measure each, because our own initialisation is usually the largest and the only part we control. Then attack it: defer work not needed for the first request, cache configuration, avoid heavy dependency graphs, and consider a runtime with faster startup. Then evaluate keeping instances warm against its cost and whether it actually eliminates the problem at scale-up. Finish with the proportion of requests affected, which decides how much this matters.",
+		why: "Measuring the proportion of requests that hit a cold start converts an anecdote into a prioritisation decision, and our own initialisation being the dominant term is the actionable finding.",
+		watchOut: "Provisioned warm capacity removes the discount that made the platform attractive. At that point compare honestly against always-running instances.",
+		related: [
+			"serverless-tradeoffs",
+			"jit-warmup",
+			"tail-latency",
+			"autoscaling-policy"
+		],
+		tags: [
+			"platform",
+			"serverless",
+			"latency",
+			"performance"
+		]
+	},
+	{
+		id: "session-affinity",
+		name: "Session Affinity",
+		aka: [
+			"sticky sessions",
+			"server affinity",
+			"stateless servers"
+		],
+		origin: "Load balancing practice",
+		domains: ["engineering"],
+		intents: ["decide", "diagnose"],
+		oneLiner: "Routing a user consistently to one instance solves local state and creates uneven load, awkward deployments and failures when that instance goes away.",
+		useWhen: [
+			"users get logged out when we deploy",
+			"the load is uneven across instances and we cannot see why",
+			"the shopping cart empties when a request hits a different server",
+			"we cannot scale down because instances hold user sessions"
+		],
+		prompt: "Assess whether we need sticky routing here. First identify what state is held locally and whether it could be externalised or held by the client instead, since removing the need for affinity is almost always better than configuring it — say what that would take. If affinity is genuinely required, such as for long-lived connections, specify the mechanism and its failure behaviour: what happens when the target instance is removed during a deploy or a scale-down, and whether the user notices. Then address the consequences: uneven load distribution, the difficulty of draining an instance, and how a session survives a rolling update.",
+		why: "Framing affinity as a symptom of local state, with the cost of externalising it stated, usually shows the sticky routing was avoidable at less cost than living with it.",
+		watchOut: "Affinity concentrates the impact of losing one instance onto a specific subset of users, which makes the failure look sporadic and hard to diagnose.",
+		related: [
+			"read-your-writes",
+			"graceful-shutdown",
+			"zero-downtime-deployment",
+			"consistent-hashing"
+		],
+		tags: [
+			"platform",
+			"load balancing",
+			"state",
+			"deployment"
+		]
+	},
+	{
+		id: "workload-placement",
+		name: "Workload Placement",
+		aka: [
+			"edge versus region",
+			"data locality",
+			"where should this run"
+		],
+		origin: "Distributed infrastructure practice",
+		domains: ["engineering"],
+		intents: ["decide", "estimate"],
+		oneLiner: "Where code runs relative to its users and its data determines latency and cost — and moving compute to the edge without its data usually makes things slower.",
+		useWhen: [
+			"users on another continent have a much worse experience",
+			"we moved logic to the edge and it got slower",
+			"the data residency requirement means we need regional deployments",
+			"we cannot decide whether to run this close to users or close to the database"
+		],
+		prompt: "Decide where each part of this system should run. Classify by what it needs: work depending on a single authoritative data store belongs near that store, work depending only on the request belongs near the user, and cacheable content belongs at the edge. Then compute the latency for each placement including the round trips to data, since edge compute that calls back to a distant database is slower than doing everything centrally — show that arithmetic. Layer in the constraints: data residency requirements, cost of cross-region transfer, and operational complexity per additional location. Finish with the smallest set of locations meeting the requirement.",
+		why: "The edge-compute-with-central-data arithmetic is the specific analysis that prevents an expensive architectural mistake that sounds obviously good.",
+		watchOut: "Each additional region multiplies deployment, monitoring and consistency work. The operational cost rises faster than the latency benefit.",
+		related: [
+			"cdn-edge-caching",
+			"multi-region-failover",
+			"data-transfer-cost",
+			"latency-numbers"
+		],
+		tags: [
+			"platform",
+			"latency",
+			"architecture",
+			"cloud"
+		]
+	},
+	{
+		id: "data-transfer-cost",
+		name: "Data Transfer Cost",
+		aka: [
+			"egress charges",
+			"cross-zone traffic",
+			"network cost surprises"
+		],
+		origin: "Cloud pricing practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "estimate"],
+		oneLiner: "Moving bytes between zones, regions and out to the internet is charged asymmetrically, and the architecture decides the bill more than the traffic volume does.",
+		useWhen: [
+			"the network line on our cloud bill is enormous and unexplained",
+			"we split services across zones for resilience and costs tripled",
+			"serving files directly from storage is costing more than we expected",
+			"nobody can tell which service generates the transfer charges"
+		],
+		prompt: "Analyse our data transfer costs. Map the traffic flows and price each by category, since the rates differ by orders of magnitude: within a zone, between zones, between regions, and out to the internet. Then find the architectural causes rather than the volume causes — chatty service-to-service calls crossing zone boundaries, replicas placed for resilience that also multiply traffic, logs and metrics shipped out of the region, and large responses served without caching. For each, give the remedy: zone-aware routing that prefers a local instance, compression, caching at the edge, and keeping high-volume paths within one boundary. Finish with the attribution needed to see this per service.",
+		why: "Cross-zone chattiness is the usual dominant cause and is invisible in application metrics, so mapping flows by cost category is what makes it findable.",
+		watchOut: "Optimising away cross-zone traffic can undo the resilience it was providing. Distinguish redundancy traffic from avoidable chatter.",
+		related: [
+			"cloud-cost-attribution",
+			"workload-placement",
+			"compression-tradeoffs",
+			"observability-cost-control"
+		],
+		tags: [
+			"platform",
+			"cost",
+			"networking",
+			"cloud"
+		]
+	},
+	{
+		id: "cloud-cost-attribution",
+		name: "Cloud Cost Attribution",
+		aka: [
+			"showback and chargeback",
+			"cost tagging",
+			"FinOps"
+		],
+		origin: "FinOps practice",
+		domains: ["engineering", "strategy"],
+		intents: ["diagnose", "prioritize"],
+		oneLiner: "You cannot manage a bill nobody owns — attribute spend to teams, services and customers so the people who can change it can see it.",
+		useWhen: [
+			"the cloud bill went up and nobody knows which team caused it",
+			"engineering costs are a single line item to finance",
+			"we do not know what serving our largest customer actually costs",
+			"cost reduction efforts stall because nobody owns any of it"
+		],
+		prompt: "Build cost attribution for our infrastructure. Start with the tagging or account structure required, and confront the shared costs directly, since they are the hard part: clusters, databases and networks serving many services need an allocation method, so choose one and state its bias. Then decide between showback, where teams see their costs, and chargeback, where they carry them, with the behavioural consequence of each. Then add the metric that makes cost meaningful — cost per unit of business value such as per customer or per transaction — because absolute cost rising is expected when usage grows. Finish with who reviews it and how often.",
+		why: "Unit cost per transaction or customer is what turns a rising bill into a judgement about efficiency, and the shared-cost allocation choice is what makes the numbers credible to the teams receiving them.",
+		watchOut: "Chargeback without control over the underlying architecture makes teams accountable for costs they cannot change, which produces resentment rather than savings.",
+		related: [
+			"rightsizing-resources",
+			"total-cost-of-ownership",
+			"data-transfer-cost",
+			"observability-cost-control"
+		],
+		tags: [
+			"platform",
+			"cost",
+			"accountability",
+			"cloud"
+		]
+	},
+	{
+		id: "total-cost-of-ownership",
+		name: "Total Cost of Ownership",
+		aka: [
+			"TCO",
+			"lifetime cost",
+			"the cost after the build"
+		],
+		origin: "Procurement and asset management practice",
+		domains: ["engineering", "strategy"],
+		intents: ["estimate", "decide"],
+		oneLiner: "Count everything a system costs over its life — build, run, patch, support, migrate and eventually retire — because the build is usually the smallest part.",
+		useWhen: [
+			"we compared building against buying on the build estimate alone",
+			"the cheap option turned out to be expensive to operate",
+			"nobody counted the ongoing engineering time in the business case",
+			"we are choosing between two architectures and only comparing effort"
+		],
+		prompt: "Model the lifetime cost of these options over a realistic horizon. Include the categories that get missed: ongoing engineering time for maintenance and dependency upgrades, on-call burden expressed in hours and in retention risk, infrastructure at projected scale rather than today, support and training, the cost of the expertise required, and eventual migration or decommissioning. Express engineering time in money so it competes properly with licence fees. Then state the sensitivity: which assumption, if wrong by a factor of two, changes the answer — usually the growth rate or the maintenance load — and how confident we are in it.",
+		why: "Converting engineering time into money is what makes build-versus-buy comparable at all, and naming the assumption that would flip the answer is what makes the model honest.",
+		watchOut: "Long-horizon models look precise and rest on a growth assumption that is a guess. Present ranges and revisit when the assumption is testable.",
+		related: [
+			"build-vs-buy",
+			"vendor-evaluation",
+			"cloud-cost-attribution",
+			"opportunity-cost"
+		],
+		tags: [
+			"cost",
+			"decisions",
+			"strategy",
+			"estimation"
+		]
+	},
+	{
+		id: "quota-management",
+		name: "Quota and Limit Management",
+		aka: [
+			"service limits",
+			"account quotas",
+			"hitting the ceiling"
+		],
+		origin: "Cloud operations practice",
+		domains: ["engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Every cloud service has limits you did not choose, and discovering one during an incident is the worst possible time, because raising it can take days.",
+		useWhen: [
+			"autoscaling stopped at a number nobody configured",
+			"we hit an API rate limit during our busiest hour",
+			"we could not create instances during a failover",
+			"a limit increase request took three days to approve"
+		],
+		prompt: "Inventory the limits that could constrain this system. Cover the categories that bite: instance and core counts per region, addresses and network resources, connections and rate limits on managed services, storage volumes and throughput, and the request rates of the control plane itself, which is what fails during a mass recovery. For each, record the current limit, our current usage, and the lead time to raise it. Then set monitoring with alerts at a proportion of each limit, giving enough warning to raise it before it binds. Finish with the failover scenario specifically, where we would need capacity in a region we do not normally use at full scale.",
+		why: "Control plane rate limits during mass recovery, and unraised quotas in the failover region, are the two limit failures that turn a recoverable incident into a long one.",
+		watchOut: "Limits are often per region and per account. Verifying capacity where you normally run says nothing about where you would fail over to.",
+		related: [
+			"capacity-planning",
+			"autoscaling-policy",
+			"multi-region-failover",
+			"rate-limiting-algorithms"
+		],
+		tags: [
+			"platform",
+			"cloud",
+			"capacity",
+			"operations"
+		]
+	},
+	{
+		id: "multi-account-boundaries",
+		name: "Account and Project Boundaries",
+		aka: [
+			"multi-account strategy",
+			"environment isolation",
+			"blast radius by account"
+		],
+		origin: "Cloud architecture practice; provider landing zone guidance",
+		domains: ["engineering", "security"],
+		intents: ["structure", "decide"],
+		oneLiner: "Separate cloud accounts or projects are the strongest isolation boundary available, limiting blast radius, quota contention and permission scope in one move.",
+		useWhen: [
+			"a mistake in a test environment affected production",
+			"everything runs in one account and permissions are unmanageable",
+			"we cannot tell which spend belongs to which environment",
+			"a compromised credential would have access to everything"
+		],
+		prompt: "Design our account structure. Separate at minimum by environment, and consider further separation by team or product for blast radius and cost clarity, stating what each boundary buys — isolation of failure, isolation of compromise, separate quotas, and clean cost attribution. Then address what it costs, since that is where these designs are underestimated: cross-account access patterns, shared services such as networking and logging, and the consistent baseline that must be applied to every account automatically. Specify how a new account is created with that baseline already in place. Finish with the exceptions, particularly anything that must remain central and how it is protected.",
+		why: "The automated baseline for new accounts is what determines whether an account structure stays consistent, and without it the boundaries become an inconsistent sprawl.",
+		watchOut: "Too many accounts without automation multiplies the surface to configure, monitor and audit, and inconsistency between them is itself a security risk.",
+		related: [
+			"self-service-guardrails",
+			"blast-radius",
+			"iam-policy-design",
+			"cloud-cost-attribution"
+		],
+		tags: [
+			"platform",
+			"cloud",
+			"isolation",
+			"security"
+		]
+	},
+	{
+		id: "network-segmentation",
+		name: "Network Segmentation",
+		aka: [
+			"microsegmentation",
+			"security groups",
+			"east-west traffic control"
+		],
+		origin: "Network security practice",
+		domains: ["security", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Restrict which systems can reach which, so a compromise in one place cannot freely explore everything else on the network.",
+		useWhen: [
+			"anything in our network can connect to the database",
+			"we have a firewall at the perimeter and nothing inside",
+			"an attacker who got a foothold could reach everything",
+			"we do not know what talks to what"
+		],
+		prompt: "Design segmentation for this environment. Start from the actual communication map, discovered from traffic data rather than from architecture diagrams, since undocumented dependencies are what break segmentation rollouts. Then define the segments and the allowed flows between them, defaulting to deny and permitting only observed necessary paths, with particular attention to data stores which should accept connections only from their own services. Specify the rollout: monitor mode first to find what would break, then enforce segment by segment. Finish with the maintenance question — how a new legitimate flow is added without a ticket queue, since friction there leads to permissive rules being added just in case.",
+		why: "Discovering the real communication map from traffic rather than diagrams is what prevents an outage on enforcement day, and the add-a-flow process determines whether the rules stay tight.",
+		watchOut: "Segmentation rules that are painful to change accumulate broad exceptions, and a policy full of wide allowances provides less protection than it appears to.",
+		related: [
+			"zero-trust",
+			"multi-account-boundaries",
+			"least-privilege",
+			"defense-in-depth"
+		],
+		tags: [
+			"security",
+			"networking",
+			"platform",
+			"isolation"
+		]
+	},
+	{
+		id: "iam-policy-design",
+		name: "Access Policy Design",
+		aka: [
+			"IAM policies",
+			"role design",
+			"permission boundaries"
+		],
+		origin: "Cloud identity and access management practice",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Design roles around what a workload or person actually does, and use guardrails to cap what any policy can grant, because permissions only ever accumulate.",
+		useWhen: [
+			"everything runs with administrator permissions because scoping was hard",
+			"we granted broad access to fix an incident and never revoked it",
+			"nobody can say what this role can actually do",
+			"a service account has permissions nobody can justify"
+		],
+		prompt: "Review and redesign these access policies. Derive each role from the actions actually used, taken from access logs rather than from what someone thought would be needed, since observed usage is usually a small fraction of what is granted. Report the gap per role. Then apply the structural controls: a ceiling that no policy can exceed regardless of what is attached, separation between human and workload identities, and conditions restricting where and when a permission applies. Address the temporary grant problem with time-bounded elevation rather than permanent broad roles. Finish with the review process: unused permissions removed on a schedule, since without it entitlements only grow.",
+		why: "Deriving roles from access logs makes least privilege concrete rather than aspirational, and a permission ceiling limits the damage of any future over-broad policy.",
+		watchOut: "Overly tight policies produce failures far from the cause and at inconvenient times, which pushes people toward broad grants. Tighten with monitoring first.",
+		related: [
+			"least-privilege",
+			"identity-federation",
+			"break-glass-access",
+			"self-service-guardrails"
+		],
+		tags: [
+			"security",
+			"access control",
+			"cloud",
+			"platform"
+		]
+	},
+	{
+		id: "identity-federation",
+		name: "Identity Federation",
+		aka: [
+			"single sign-on",
+			"workload identity",
+			"no long-lived credentials"
+		],
+		origin: "Identity management practice; SAML and OpenID Connect",
+		domains: ["security", "engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Have systems trust a central identity provider and issue short-lived credentials, so access follows a person or workload identity rather than a stored secret.",
+		useWhen: [
+			"someone left and we are hunting for accounts to disable",
+			"our pipeline uses a long-lived key stored in settings",
+			"each system has its own user list",
+			"we cannot enforce multi-factor authentication consistently"
+		],
+		prompt: "Plan identity federation for our systems. Cover both cases separately: human access, where the goal is one identity source so joining and leaving are handled in one place and stronger authentication is enforced centrally, and workload access, where the goal is short-lived credentials issued on the basis of the workload's own identity rather than a stored key. For each system, note what it supports and what remains. Then confront the concentration risk: the identity provider becomes critical, so specify what happens when it is unavailable and the break-glass path. Finish with the leaving process and how you verify no independent local accounts remain.",
+		why: "Workload identity replacing stored keys eliminates an entire class of leaked-credential incidents, and it is the half of federation that is usually left undone after the human single sign-on project.",
+		watchOut: "Federating everything makes the identity provider a total single point of failure. The emergency access path must be designed and tested before you need it.",
+		related: [
+			"api-authentication-choice",
+			"credential-rotation",
+			"secrets-management",
+			"break-glass-access"
+		],
+		tags: [
+			"security",
+			"identity",
+			"platform",
+			"authentication"
+		]
+	},
+	{
+		id: "credential-rotation",
+		name: "Credential Rotation",
+		aka: [
+			"key rotation",
+			"rotating without downtime",
+			"dual credentials"
+		],
+		origin: "Security operations practice",
+		domains: ["security", "engineering"],
+		intents: ["plan", "structure"],
+		oneLiner: "Rotating a secret without downtime requires supporting two valid credentials at once — design that in, or rotation becomes an outage nobody is willing to schedule.",
+		useWhen: [
+			"this key has not been changed in four years",
+			"rotating the credential requires a coordinated restart of everything",
+			"we know we should rotate and nobody wants to be the one who breaks it",
+			"a credential leaked and we could not rotate quickly"
+		],
+		prompt: "Design rotation for these credentials. The enabling property is overlap, so specify how two credentials can be valid simultaneously for each type — a second active key, a grace period on the old one, or a signing key set with several accepted keys — since without overlap rotation is a synchronised change and therefore an outage. Then define the sequence: issue new, distribute, verify usage has moved with telemetry showing the old one is idle, then revoke. Automate it and run it frequently, because a rotation exercised monthly works in an emergency while an annual one does not. Finish with the emergency procedure and how long a forced rotation would actually take.",
+		why: "Verifying the old credential is idle before revoking is the step that makes rotation safe, and frequent automated rotation is what makes emergency rotation possible.",
+		watchOut: "Credentials copied into places nobody tracks — scripts, personal machines, third-party tools — will break on rotation. Discovery is part of the work.",
+		related: [
+			"secrets-management",
+			"identity-federation",
+			"secrets-in-ci",
+			"blast-radius"
+		],
+		tags: [
+			"security",
+			"credentials",
+			"operations",
+			"automation"
+		]
+	},
+	{
+		id: "tls-certificate-lifecycle",
+		name: "Certificate Lifecycle",
+		aka: [
+			"expired certificate outages",
+			"automated renewal",
+			"certificate inventory"
+		],
+		origin: "Public key infrastructure operations practice",
+		domains: ["security", "engineering"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Certificates expire on a known date and still cause outages, because renewal is manual, the inventory is incomplete, or the alert went to someone who left.",
+		useWhen: [
+			"the site went down because a certificate expired",
+			"nobody knows how many certificates we have or where",
+			"renewal is a calendar reminder owned by one person",
+			"the internal service certificates are all self-signed and untracked"
+		],
+		prompt: "Design certificate management for our estate. Start with discovery, since the inventory is always incomplete: scan externally and internally to find everything presenting a certificate, including internal service-to-service, load balancers, message brokers, databases and devices. Then automate renewal wherever the protocol allows, and for the remainder assign an owning team rather than an individual and monitor expiry independently of the renewal mechanism, so a silent automation failure is still caught. Set alerting far enough ahead to act. Finish with the cases that break automation — pinned certificates, embedded devices, and third parties holding our certificates — and the manual procedure for each.",
+		why: "Monitoring expiry independently of the renewal automation is what catches the silent failure, which is how outages happen even in fully automated estates.",
+		watchOut: "Internal and service-to-service certificates cause as many outages as public ones and are far less likely to be inventoried or monitored.",
+		related: [
+			"single-point-of-failure-audit",
+			"credential-rotation",
+			"dns-management",
+			"zero-trust"
+		],
+		tags: [
+			"security",
+			"operations",
+			"availability",
+			"certificates"
+		]
+	},
+	{
+		id: "dns-management",
+		name: "DNS Management",
+		aka: [
+			"domain records",
+			"TTL strategy",
+			"dangling records"
+		],
+		origin: "Internet operations practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "DNS is a single point of failure, a change with a long propagation tail, and a security exposure when records point at resources you no longer own.",
+		useWhen: [
+			"we changed a record and half our users still went to the old address",
+			"somebody took over a subdomain we forgot about",
+			"the domain renewal was missed and everything went down",
+			"we cannot fail over quickly because our record lifetimes are long"
+		],
+		prompt: "Review our DNS setup. Cover three areas. First availability: registrar account security and renewal, nameserver redundancy, and who is able to make changes. Second operations: record lifetimes chosen deliberately, since a long one delays every change and a short one increases lookup load, and lowering it before a planned migration must happen well in advance to be effective. Third security: an inventory of records, particularly ones pointing at cloud resources that may have been deleted, since those allow someone else to claim the address and serve content from our domain. Finish with change control, because a bad record change is one of the fastest total outages available.",
+		why: "Dangling records pointing at released cloud resources are a widespread and quiet exposure, and the lower-the-lifetime-in-advance point is what makes planned migrations actually work.",
+		watchOut: "Resolvers and clients frequently ignore short record lifetimes, so propagation is slower and less predictable than the configuration suggests.",
+		related: [
+			"service-discovery",
+			"multi-region-failover",
+			"tls-certificate-lifecycle",
+			"attack-surface-reduction"
+		],
+		tags: [
+			"platform",
+			"networking",
+			"availability",
+			"security"
+		]
+	},
+	{
+		id: "vulnerability-triage",
+		name: "Vulnerability Triage",
+		aka: [
+			"CVE prioritisation",
+			"exploitability assessment",
+			"scanner output management"
+		],
+		origin: "Application security operations practice",
+		domains: ["security", "engineering"],
+		intents: ["prioritize", "diagnose"],
+		oneLiner: "Scanners report far more than anyone can fix, so triage on whether the vulnerable code is reachable and exposed, not on the severity score alone.",
+		useWhen: [
+			"the scanner reports four hundred issues and we fix none of them",
+			"we spend weeks on high-severity findings in code that never runs",
+			"a genuinely exploitable issue was buried in the noise",
+			"nobody owns the scanner output"
+		],
+		prompt: "Design a triage process for our scanner findings. Rank by exploitability in our context rather than by score: is the vulnerable function actually called, is the component exposed to untrusted input, is there a known exploit in the wild, and what would compromise cost given where it runs. That combination reorders the list dramatically compared with severity alone, so show the reordering. Then define the response times per tier and the acceptance path for findings we will not fix, with an owner and a documented reason. Finish with the reduction that beats triage: reducing what we ship at all, since fewer components means fewer findings.",
+		why: "Reachability and exposure reorder a scanner list far more usefully than severity, and it is the analysis that lets a team credibly not fix most findings.",
+		watchOut: "A vulnerability in a component that is not currently reachable can become reachable with an unrelated code change. Accepted findings need re-evaluation, not permanent dismissal.",
+		related: [
+			"patch-management",
+			"sbom-generation",
+			"static-analysis-adoption",
+			"supply-chain-provenance"
+		],
+		tags: [
+			"security",
+			"prioritisation",
+			"dependencies",
+			"operations"
+		]
+	},
+	{
+		id: "patch-management",
+		name: "Patch Management",
+		aka: [
+			"staying current",
+			"patch cadence",
+			"emergency patching"
+		],
+		origin: "Systems administration and security operations practice",
+		domains: ["security", "engineering"],
+		intents: ["plan", "prioritize"],
+		oneLiner: "A routine patching cadence is what makes emergency patching possible, because a system years behind cannot be updated quickly when it must be.",
+		useWhen: [
+			"a critical vulnerability was announced and patching took two weeks",
+			"we are several major versions behind on the operating system",
+			"patching is manual and gets skipped when we are busy",
+			"nobody knows which systems have been patched"
+		],
+		prompt: "Design our patching approach. Separate routine cadence from emergency response, since they need different mechanisms. For routine, specify the frequency per layer — base images, operating system, runtime, dependencies — and how it is automated with verification, favouring frequent small updates because falling behind is what makes future patching hard. For emergency, define the process end to end: how we learn of an advisory, how we determine exposure using our component inventory, the target time by severity, and the accelerated path with reduced approval. Then rehearse it against a recent real advisory and report how long each step actually took.",
+		why: "Rehearsing against a real past advisory exposes where the hours actually go, which is usually in determining exposure rather than in applying the patch.",
+		watchOut: "Automated patching without automated verification can roll a breaking change across the fleet. The rollback path matters as much as the update path.",
+		related: [
+			"vulnerability-triage",
+			"dependency-update-automation",
+			"container-image-hygiene",
+			"sbom-generation"
+		],
+		tags: [
+			"security",
+			"operations",
+			"maintenance",
+			"process"
+		]
+	},
+	{
+		id: "telemetry-pipeline",
+		name: "Telemetry Pipeline",
+		aka: [
+			"observability data pipeline",
+			"collector architecture",
+			"vendor-neutral instrumentation"
+		],
+		origin: "Observability engineering practice; OpenTelemetry collector model",
+		domains: ["engineering"],
+		intents: ["structure", "plan"],
+		oneLiner: "Route telemetry through a pipeline you control, so filtering, redaction, sampling and destination are configuration rather than a code change in every service.",
+		useWhen: [
+			"changing our monitoring vendor would mean editing every service",
+			"we cannot filter sensitive fields without redeploying everything",
+			"each team ships telemetry differently to different places",
+			"a telemetry backend outage caused application problems"
+		],
+		prompt: "Design a telemetry pipeline for our estate. Specify the collection layer between applications and backends and what it does: buffering so a backend outage does not affect applications, redaction of sensitive fields centrally, sampling policy applied consistently, enrichment with deployment and ownership metadata, and routing so one signal can go to several destinations. Then address the pipeline's own reliability — what happens when it is unavailable or saturated, since telemetry must never be able to take down the application it observes, so specify the drop-rather-than-block behaviour. Finish with the instrumentation standard in applications that keeps them independent of the destination.",
+		why: "Central redaction and the never-block-the-application rule are the two properties that make a pipeline worth operating, and both are impossible when services report directly to a vendor.",
+		watchOut: "The pipeline becomes critical infrastructure with its own capacity and failure modes. It needs monitoring that does not depend on itself.",
+		related: [
+			"observability-cost-control",
+			"log-sampling",
+			"structured-logging",
+			"data-classification"
+		],
+		tags: [
+			"platform",
+			"observability",
+			"infrastructure",
+			"privacy"
+		]
+	},
+	{
+		id: "green-software",
+		name: "Green Software",
+		aka: [
+			"carbon-aware computing",
+			"energy efficiency",
+			"sustainable engineering"
+		],
+		origin: "Green Software Foundation; carbon-aware computing research",
+		domains: ["engineering", "strategy"],
+		intents: ["decide", "estimate"],
+		oneLiner: "Reduce the emissions of running software through efficiency, better utilisation, and shifting flexible work to times and places where the electricity is cleaner.",
+		useWhen: [
+			"we have a sustainability commitment and no idea how software contributes",
+			"our fleet runs at eight percent utilisation around the clock",
+			"someone asked for the carbon footprint of our platform",
+			"we want to reduce emissions without harming the product"
+		],
+		prompt: "Assess the environmental footprint of this system and what would reduce it. Break it into the three levers: energy efficiency, meaning less computation per unit of work; hardware efficiency, meaning higher utilisation so fewer machines are needed and manufacturing impact is amortised; and carbon awareness, meaning shifting flexible workloads to times or regions with cleaner electricity. Quantify each roughly for us. Then note the strong overlap with cost, since most of these reduce the bill as well, which is the argument that gets them prioritised. Finish with the measurement approach and the honest limits of the available data.",
+		why: "The overlap between carbon reduction and cost reduction is what makes this actionable in most organisations, and separating the three levers stops it collapsing into vague intent.",
+		watchOut: "Emissions figures from providers are estimates with wide uncertainty and inconsistent methodology. Use them for direction, not for precise claims.",
+		related: [
+			"rightsizing-resources",
+			"cloud-cost-attribution",
+			"workload-placement",
+			"spot-capacity-strategy"
+		],
+		tags: [
+			"sustainability",
+			"cost",
+			"platform",
+			"strategy"
+		]
+	},
+	{
+		id: "password-storage",
+		name: "Password Storage",
+		aka: [
+			"password hashing",
+			"slow hashes",
+			"salting and peppering"
+		],
+		origin: "Applied cryptography practice; OWASP password storage guidance",
+		domains: ["security", "engineering"],
+		intents: ["structure", "critique"],
+		oneLiner: "Store passwords under a deliberately slow, salted, memory-hard hash designed for the purpose, so a stolen database does not immediately become a list of credentials.",
+		useWhen: [
+			"we hash passwords with a fast general-purpose algorithm",
+			"someone suggested encrypting passwords rather than hashing them",
+			"we are building authentication ourselves and I want to get this right",
+			"our hashing parameters were set years ago and never revisited"
+		],
+		prompt: "Review credential storage here. Confirm the algorithm is one designed for passwords with a work factor tuned so verification takes a deliberate fraction of a second on our hardware, and state the parameters with the reasoning rather than copying defaults. Then check the surrounding requirements: a unique salt per credential stored alongside, comparison in constant time, and a migration path that upgrades a stored hash on next successful login so parameters can be raised without forcing a reset. Then cover the policy points that matter more than composition rules — length over complexity, checking against known breached passwords, and rate limiting attempts. Finish with what must never be logged.",
+		why: "The upgrade-on-login migration is what lets work factors rise over time without a mass reset, and it is the piece that is almost never built in at the start.",
+		watchOut: "Building authentication yourself means owning reset flows, session handling and enumeration defences too. A managed identity provider is usually the better answer.",
+		related: [
+			"identity-federation",
+			"credential-rotation",
+			"secrets-management",
+			"audit-logging"
+		],
+		tags: [
+			"security",
+			"authentication",
+			"cryptography",
+			"credentials"
+		]
+	}
+];
+//#endregion
+//#region src/data/concepts/mlsystems.ts
+var mlSystems = [
+	{
+		id: "training-serving-skew",
+		name: "Training-Serving Skew",
+		aka: [
+			"feature skew",
+			"offline online mismatch",
+			"transform drift"
+		],
+		origin: "Google's Rules of Machine Learning; production ML practice",
+		domains: ["engineering", "data"],
+		intents: ["diagnose", "structure"],
+		oneLiner: "The model performs worse in production than in evaluation because the features it receives at serving time are computed differently from those it was trained on.",
+		useWhen: [
+			"the model scored well offline and performs badly for real users",
+			"the training pipeline and the serving code compute features separately",
+			"a feature definition changed and only one side was updated",
+			"we cannot explain the gap between our evaluation and reality"
+		],
+		prompt: "Diagnose skew between training and serving for this model. Compare the two paths feature by feature: how each is computed, from what source, with what defaults for missing values, and with what data available at the moment of computation — the last is the subtle one, since training may use values that did not exist yet at serving time. Then propose the structural fix, which is a single implementation used by both paths rather than two implementations kept in agreement by discipline. Where that is impossible, specify the continuous comparison: log serving-time feature values and compare their distributions against training data, and alert on divergence.",
+		why: "Shared feature computation is the only durable fix, and logging serving features for distribution comparison is what detects skew before the metrics degrade visibly.",
+		watchOut: "Skew can appear without any code change, when an upstream data source changes its format, timing or default behaviour.",
+		related: [
+			"feature-store",
+			"data-drift-detection",
+			"model-monitoring",
+			"reproducible-training"
+		],
+		tags: [
+			"machine learning",
+			"production",
+			"features",
+			"diagnosis"
+		]
+	},
+	{
+		id: "data-leakage",
+		name: "Data Leakage",
+		aka: [
+			"target leakage",
+			"train-test contamination",
+			"too good to be true results"
+		],
+		origin: "Machine learning methodology; Kaufman and colleagues, 2012",
+		domains: ["data", "engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Information available in training but not at prediction time inflates evaluation scores and produces a model that fails completely in production.",
+		useWhen: [
+			"the model gets ninety-nine percent accuracy and I do not believe it",
+			"performance collapsed when we deployed",
+			"one feature dominates and I am not sure why it is available",
+			"we split the data randomly and the records are related"
+		],
+		prompt: "Audit this modelling setup for leakage. Check the classic sources in order: features computed from data that only exists after the outcome, features derived from the target however indirectly, preprocessing such as scaling or imputation fitted on the whole dataset before splitting, and a split that separates rows but not entities or time — grouped or temporal data split randomly leaks between folds. For each feature, state whether its value would genuinely be available at the moment of prediction, which is the decisive test. Then recommend the correct split strategy for our data, and say what the honest performance estimate looks like once leakage is removed.",
+		why: "The would-this-value-exist-at-prediction-time test catches most leakage in one pass, and the split-by-entity-or-time issue is what silently inflates results on data people assume is independent.",
+		watchOut: "Leakage often enters through a feature that is genuinely available but only because of an operational quirk that will change. Check why it is available, not just that it is.",
+		related: [
+			"training-serving-skew",
+			"offline-online-metric-gap",
+			"reproducible-training",
+			"confounders-check"
+		],
+		tags: [
+			"machine learning",
+			"evaluation",
+			"methodology",
+			"correctness"
+		]
+	},
+	{
+		id: "feature-store",
+		name: "Feature Store",
+		aka: [
+			"feature platform",
+			"online and offline feature serving",
+			"point-in-time correctness"
+		],
+		origin: "Uber Michelangelo, 2017; now a standard component category",
+		domains: ["data", "engineering"],
+		intents: ["structure", "decide"],
+		oneLiner: "A shared system for defining, computing and serving features to both training and inference, whose main value is point-in-time correctness and reuse.",
+		useWhen: [
+			"every model reimplements the same features slightly differently",
+			"our training data accidentally used values from after the event",
+			"a feature works in the notebook and not in the service",
+			"someone is proposing a feature platform and I need the actual criteria"
+		],
+		prompt: "Assess whether a shared feature platform is justified here, and be specific rather than accepting the category as obviously good. The two properties that matter are one definition serving both training and inference, and point-in-time correct retrieval so a training example only sees values that existed at its timestamp — explain what building that correctly requires, since it is the hard part and the reason ad hoc joins produce leakage. Then weigh against the cost: another system to operate, and a coupling between teams. Recommend based on how many models and teams share features, since with one model the platform is overhead.",
+		why: "Point-in-time correctness is the property that prevents a whole class of leakage and is genuinely hard to build ad hoc, so it is the criterion that decides whether the platform earns its cost.",
+		watchOut: "Adopting a feature platform without solving the online serving latency for your actual feature set can add a hop that the model budget cannot afford.",
+		related: [
+			"training-serving-skew",
+			"data-leakage",
+			"temporal-data-modeling",
+			"reproducible-training"
+		],
+		tags: [
+			"machine learning",
+			"data platform",
+			"features",
+			"architecture"
+		]
+	},
+	{
+		id: "labeling-quality",
+		name: "Labelling Quality",
+		aka: [
+			"annotation guidelines",
+			"inter-annotator agreement",
+			"label noise"
+		],
+		origin: "Supervised learning practice; annotation methodology from linguistics and vision",
+		domains: ["data"],
+		intents: ["structure", "critique"],
+		oneLiner: "A model cannot be more consistent than its labels, so measure annotator agreement and treat disagreement as evidence the task definition is ambiguous.",
+		useWhen: [
+			"the model is confused about exactly the cases our annotators disagreed on",
+			"we have labels and no idea how reliable they are",
+			"two annotators labelled the same items differently and nobody noticed",
+			"the guideline is one sentence and everyone interprets it differently"
+		],
+		prompt: "Design a labelling process for this task. Write the guideline as decision rules with worked examples including the hard cases, since ambiguity in the guideline appears directly as noise in the model. Then measure agreement by having multiple annotators label an overlapping sample, and treat systematic disagreement as a specification defect to fix rather than as annotator error — that reframing is what improves the data. Specify the adjudication process for disagreements and the ongoing quality checks including planted items with known answers. Finish with the label error audit: sample the existing labels and estimate the error rate, since it bounds achievable model performance.",
+		why: "Treating annotator disagreement as evidence of an ambiguous task rather than as annotator error is what turns quality measurement into an improvement loop.",
+		watchOut: "High agreement can mean the guideline encodes a shared bias rather than that the labels are correct. Agreement is necessary, not sufficient.",
+		related: [
+			"data-quality-checks",
+			"fairness-auditing",
+			"human-in-the-loop-review",
+			"data-leakage"
+		],
+		tags: [
+			"machine learning",
+			"data quality",
+			"annotation",
+			"methodology"
+		]
+	},
+	{
+		id: "reproducible-training",
+		name: "Reproducible Training",
+		aka: [
+			"experiment tracking",
+			"lineage for models",
+			"can we rebuild this model"
+		],
+		origin: "ML engineering practice",
+		domains: ["engineering", "data"],
+		intents: ["structure", "plan"],
+		oneLiner: "Being able to rebuild a model exactly requires versioning the data, the code, the configuration and the environment together — any one missing and you cannot.",
+		useWhen: [
+			"the model in production was trained by someone who has left",
+			"we cannot reproduce the results from three months ago",
+			"we do not know which data version produced this model",
+			"an auditor asked how a decision was made and we could not answer"
+		],
+		prompt: "Establish reproducibility for our training. Enumerate what must be captured for a training run: the code commit, the data snapshot or query with a version rather than a live table, all hyperparameters and configuration, the environment including library versions and hardware, and the random seeds. Then be honest about the limits — some operations are nondeterministic on parallel hardware, so state where bit-exact reproduction is impossible and what statistical equivalence we can promise instead. Specify what is recorded per run and where. Finish with the audit question the setup must answer: given a prediction, identify the model, the data it was trained on, and who approved its deployment.",
+		why: "Data versioning is the component people omit, and distinguishing bit-exact from statistically equivalent reproduction is what makes the claim honest under scrutiny.",
+		watchOut: "Training against a live table rather than a snapshot means the run can never be reproduced, even with everything else captured perfectly.",
+		related: [
+			"model-registry-versioning",
+			"data-lineage",
+			"reproducible-builds",
+			"feature-store"
+		],
+		tags: [
+			"machine learning",
+			"reproducibility",
+			"lineage",
+			"governance"
+		]
+	},
+	{
+		id: "model-registry-versioning",
+		name: "Model Registry",
+		aka: [
+			"model versioning",
+			"model lineage",
+			"promotion of models"
+		],
+		origin: "MLOps practice",
+		domains: ["engineering", "data"],
+		intents: ["structure", "plan"],
+		oneLiner: "Treat a trained model as a versioned artefact with metadata, approval state and lineage, so deploying, comparing and rolling back are ordinary operations.",
+		useWhen: [
+			"nobody knows which model version is currently serving",
+			"we cannot roll back to the previous model quickly",
+			"the model file was copied to a server by hand",
+			"we have no record of what each model was evaluated against"
+		],
+		prompt: "Design model artefact management for us. Specify what each registered version carries: the artefact itself, the training run reference, the evaluation results against a named dataset version, the intended use and known limitations, and the approval state. Then define the promotion path from candidate to production with the gate criteria, mirroring how code is promoted, and the rollback procedure with the previous version retained and immediately deployable. Then address the two ML-specific parts: comparing a candidate against the incumbent on the same evaluation set, and the retention policy for old models given that reproducing a prediction from a past decision may be required.",
+		why: "Requiring an evaluation against a named dataset version with each registration is what makes candidate-versus-incumbent comparison meaningful rather than a comparison of two differently-measured numbers.",
+		watchOut: "A registry that records artefacts but not the data version behind them cannot answer the questions that matter during an incident or an audit.",
+		related: [
+			"reproducible-training",
+			"model-rollout-strategy",
+			"artifact-immutability",
+			"model-monitoring"
+		],
+		tags: [
+			"machine learning",
+			"mlops",
+			"versioning",
+			"governance"
+		]
+	},
+	{
+		id: "offline-online-metric-gap",
+		name: "Offline-Online Metric Gap",
+		aka: ["why the A/B test disagreed with the evaluation", "proxy metric mismatch"],
+		origin: "Applied machine learning and experimentation practice",
+		domains: ["data", "engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "A model that scores better offline frequently performs no better or worse in a live test, because the offline metric is a proxy measured on a biased sample.",
+		useWhen: [
+			"the new model was better on every offline metric and the test was flat",
+			"our accuracy improved and the business metric did not",
+			"we keep shipping models that do not move anything",
+			"the evaluation data comes from what the old model chose to show"
+		],
+		prompt: "Explain the gap between our offline evaluation and the live result for this model. Work through the standard causes: the offline metric is a proxy for a business outcome and the relationship is weak, the evaluation data was collected under the current model so it is biased toward what that model already surfaces, the improvement is real but too small to detect at our traffic, or the model changed user behaviour in a way the offline evaluation cannot represent. Determine which applies here with evidence. Then recommend the corrections: counterfactual evaluation accounting for the logging policy, a better-correlated proxy validated against past experiments, and the decision rule for when offline results justify a live test.",
+		why: "Feedback bias in evaluation data collected under the incumbent model is the cause teams most often miss, and validating the proxy against past experiments is what makes offline gates trustworthy.",
+		watchOut: "Chasing offline metric improvements without periodically validating the proxy leads to a long series of models that improve a number nobody cares about.",
+		related: [
+			"data-leakage",
+			"feedback-loop-effects",
+			"ranking-evaluation",
+			"model-rollout-strategy"
+		],
+		tags: [
+			"machine learning",
+			"evaluation",
+			"experimentation",
+			"metrics"
+		]
+	},
+	{
+		id: "ranking-evaluation",
+		name: "Ranking Evaluation",
+		aka: [
+			"NDCG and precision at k",
+			"relevance judgements",
+			"search quality measurement"
+		],
+		origin: "Information retrieval research",
+		domains: ["data", "engineering"],
+		intents: ["estimate", "critique"],
+		oneLiner: "Measuring a ranked list requires deciding what counts as relevant, how much position matters, and how to handle the results nobody has judged.",
+		useWhen: [
+			"we changed the ranking and cannot tell whether it is better",
+			"every relevance improvement is somebody's opinion",
+			"clicks say one thing and our judges say another",
+			"we do not know what metric to use for search quality"
+		],
+		prompt: "Design evaluation for this ranking system. Choose the metric from what users do: a single-answer lookup, a browse task and a comprehensive search need different measures, so state ours and pick accordingly with position weighting justified rather than defaulted. Then address the two hard problems. First, judgements: how relevance is defined, graded rather than binary where appropriate, and how agreement between judges is checked. Second, unjudged results, since a new ranking surfaces items nobody has assessed and treating them as irrelevant systematically penalises change — specify the pooling or sampling that handles it. Finish with how implicit signals such as clicks are used given their strong position bias.",
+		why: "Unjudged results being scored as irrelevant systematically penalises exactly the changes you want to evaluate, and it is the flaw that makes naive offline ranking evaluation misleading.",
+		watchOut: "Click data is heavily biased by position and by what the current system shows. Using it as ground truth entrenches the existing ranking.",
+		related: [
+			"offline-online-metric-gap",
+			"full-text-search-design",
+			"feedback-loop-effects",
+			"labeling-quality"
+		],
+		tags: [
+			"machine learning",
+			"search",
+			"evaluation",
+			"metrics"
+		]
+	},
+	{
+		id: "model-rollout-strategy",
+		name: "Model Rollout Strategy",
+		aka: [
+			"shadow mode for models",
+			"champion challenger",
+			"gradual model release"
+		],
+		origin: "Production machine learning practice",
+		domains: ["engineering", "data"],
+		intents: ["plan", "structure"],
+		oneLiner: "Release a model like any other change — shadow first, then a small share of traffic, with the metrics and the abort criteria decided in advance.",
+		useWhen: [
+			"we swapped the model and quality dropped for everyone at once",
+			"we cannot tell whether the new model is better in production",
+			"the new model was fine on average and terrible for one segment",
+			"rolling back a model takes a redeploy and an hour"
+		],
+		prompt: "Design the rollout for this model. Stage it: shadow mode where the candidate scores real traffic without its output being used, so we compare predictions and latency without risk; then a small share of live traffic; then progressive increase. Specify what is compared at each stage — prediction agreement with the incumbent, the business metric, latency and cost — and the segment breakdown, since an aggregate improvement can hide a serious regression for a subgroup, which is the failure that damages trust. Set the abort criteria and the rollback, which should be a configuration change rather than a deployment. Finish with the monitoring that continues after full rollout.",
+		why: "Segment-level comparison during rollout catches the subgroup regression that aggregate metrics hide, and shadow mode gives latency and cost evidence before any user is affected.",
+		watchOut: "Shadow mode doubles inference cost and load on any downstream feature lookups. That capacity has to be planned rather than discovered.",
+		related: [
+			"canary-release",
+			"shadow-traffic",
+			"model-monitoring",
+			"model-registry-versioning"
+		],
+		tags: [
+			"machine learning",
+			"deployment",
+			"rollout",
+			"risk"
+		]
+	},
+	{
+		id: "model-monitoring",
+		name: "Model Monitoring",
+		aka: [
+			"production model observability",
+			"prediction monitoring",
+			"silent degradation"
+		],
+		origin: "MLOps practice",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "A degrading model raises no errors and returns confident answers, so monitoring must watch inputs, outputs and outcomes rather than availability.",
+		useWhen: [
+			"the model has been getting worse for months and nobody noticed",
+			"our dashboards are green and the predictions are poor",
+			"we only find out about quality problems from customer complaints",
+			"the ground truth arrives weeks later and we do not use it"
+		],
+		prompt: "Design monitoring for this model in production. Cover three layers: inputs, watching feature distributions and missing-value rates against the training distribution; outputs, watching the prediction distribution and confidence, since a shift there is detectable immediately and needs no labels; and outcomes, comparing predictions against ground truth as it arrives, which is the real measure but is delayed. State the delay for us and what we watch in the meantime. Then break every measure down by segment, because aggregate stability hides subgroup degradation. Finish with the alert design: what pages, what opens an investigation, and the runbook for a suspected quality problem.",
+		why: "Output distribution monitoring gives an immediate signal without waiting for labels, which is what closes the gap created by delayed ground truth.",
+		watchOut: "Ground truth that arrives only for cases the model acted on is a biased sample, so the measured performance can look stable while overall quality falls.",
+		related: [
+			"data-drift-detection",
+			"training-serving-skew",
+			"anomaly-detection-alerting",
+			"feedback-loop-effects"
+		],
+		tags: [
+			"machine learning",
+			"monitoring",
+			"production",
+			"quality"
+		]
+	},
+	{
+		id: "data-drift-detection",
+		name: "Drift Detection",
+		aka: [
+			"covariate shift",
+			"concept drift",
+			"distribution monitoring"
+		],
+		origin: "Machine learning research on distribution shift; production practice",
+		domains: ["data", "engineering"],
+		intents: ["diagnose", "plan"],
+		oneLiner: "Distinguish the input distribution changing from the relationship between inputs and outcome changing, because only the second necessarily makes the model wrong.",
+		useWhen: [
+			"the drift alert fires constantly and we ignore it",
+			"our model was trained before a market change and may be stale",
+			"the inputs look different and I do not know if that matters",
+			"nobody can say when we should retrain"
+		],
+		prompt: "Design drift detection for this model. Separate the two phenomena explicitly: inputs shifting, which may be harmless if the learned relationship still holds, and the relationship itself changing, which degrades performance regardless of the inputs — and note that the second usually requires outcome data to detect. Choose the statistical test per feature type with a threshold that accounts for sample size, since with enough traffic any test will find a significant difference and that is why drift alerts get ignored. Then connect detection to action: what triggers investigation, what triggers retraining, and what triggers a rollback, since detection without a defined response accomplishes nothing.",
+		why: "Separating covariate shift from concept drift determines whether an alert matters, and thresholds accounting for sample size are what stop high-traffic systems from alerting constantly.",
+		watchOut: "Automated retraining triggered by drift can chase a temporary anomaly into the model. Retraining needs the same rollout discipline as any other change.",
+		related: [
+			"model-monitoring",
+			"training-serving-skew",
+			"anomaly-detection-alerting",
+			"feedback-loop-effects"
+		],
+		tags: [
+			"machine learning",
+			"monitoring",
+			"drift",
+			"retraining"
+		]
+	},
+	{
+		id: "feedback-loop-effects",
+		name: "Feedback Loops in Models",
+		aka: [
+			"self-fulfilling predictions",
+			"runaway feedback",
+			"model influences its own data"
+		],
+		origin: "Sculley and colleagues, Hidden Technical Debt in Machine Learning Systems, 2015",
+		domains: ["data", "engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "When a model's outputs shape the data it later trains on, small biases amplify and the system converges on its own assumptions rather than on reality.",
+		useWhen: [
+			"our recommendations have narrowed to the same few items",
+			"the fraud model flags a group more, so we investigate them more, so we find more",
+			"we only have outcome data for the cases the model approved",
+			"two models in our system seem to be influencing each other"
+		],
+		prompt: "Trace the feedback paths around this model. Identify where its outputs affect what data is subsequently collected — what is shown, what is approved, what gets investigated — and describe the amplification each creates over repeated cycles. Then look for the hidden path where another model consumes this one's output, creating coupling nobody owns. For each loop, propose the intervention: a proportion of randomised or exploratory decisions to keep unbiased data flowing, counterfactual logging of what would have happened, and evaluation against a held-out population unaffected by the model. Finish with the monitoring that would detect narrowing or amplification before it becomes visible externally.",
+		why: "Deliberate exploration to keep unbiased data flowing is the structural remedy, and it has to be designed in because every incentive at serving time argues against it.",
+		watchOut: "These loops can encode and amplify a bias affecting a specific group, turning a small initial disparity into a large one over months.",
+		related: [
+			"fairness-auditing",
+			"offline-online-metric-gap",
+			"model-monitoring",
+			"goodharts-law"
+		],
+		tags: [
+			"machine learning",
+			"feedback loops",
+			"bias",
+			"systems"
+		]
+	},
+	{
+		id: "fairness-auditing",
+		name: "Fairness Auditing",
+		aka: [
+			"disparate impact analysis",
+			"subgroup performance",
+			"bias evaluation"
+		],
+		origin: "Algorithmic fairness research; Barocas, Hardt and Narayanan",
+		domains: ["data", "engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Measure performance and error types separately for each affected group, knowing that the several definitions of fairness are mathematically incompatible and one must be chosen deliberately.",
+		useWhen: [
+			"the model works well overall and badly for one group",
+			"we removed the sensitive attribute and assumed that made it fair",
+			"someone asked whether our model is biased and I do not know how to answer",
+			"a regulator is asking about disparate impact"
+		],
+		prompt: "Design a fairness assessment for this system. Start by naming the affected groups and the harm being tested for, since fairness is meaningless without specifying with respect to what. Then measure per group, separating error types, because equal overall accuracy can hide very different false positive and false negative rates, and those have different consequences for the people affected. Explain that the common definitions cannot all hold at once and recommend which matters here based on the harm. Then address the correlated-features point, since removing a sensitive attribute does not remove the information when other features proxy for it. Finish with the mitigations and their costs.",
+		why: "The incompatibility of fairness definitions means one must be chosen from the harm, and the proxy-features point corrects the widespread belief that dropping an attribute is sufficient.",
+		watchOut: "A model can meet every statistical fairness criterion and still be deployed in a way that causes harm. The measurement is about the model, not the system around it.",
+		related: [
+			"feedback-loop-effects",
+			"labeling-quality",
+			"human-in-the-loop-review",
+			"model-monitoring"
+		],
+		tags: [
+			"machine learning",
+			"fairness",
+			"evaluation",
+			"ethics"
+		]
+	},
+	{
+		id: "human-in-the-loop-review",
+		name: "Human in the Loop",
+		aka: [
+			"review queues",
+			"confidence thresholds",
+			"automation with escalation"
+		],
+		origin: "Applied machine learning and decision system practice",
+		domains: ["engineering", "design"],
+		intents: ["structure", "decide"],
+		oneLiner: "Automate the confident cases and route the rest to people, which requires a threshold justified by the cost of each error type and a review process that stays sustainable.",
+		useWhen: [
+			"the model is right most of the time and the mistakes are expensive",
+			"our review queue has grown beyond what the team can handle",
+			"reviewers approve everything because the volume is too high",
+			"we cannot decide where to set the automation threshold"
+		],
+		prompt: "Design the division of labour between the model and human reviewers. Set the threshold from the asymmetric cost of the two error types rather than from a round confidence number, and show the resulting volume at each candidate threshold against our review capacity — that comparison is the real constraint. Then design the review experience so it produces good decisions: the information a reviewer needs, the model's reasoning where available, and the time realistically available per item. Then address rubber-stamping, which is the standard failure at high volume, with measurement of override rates. Finish with the loop back: reviewer decisions as labels, and the sampling of automated decisions to check the threshold is still right.",
+		why: "Comparing volume at each threshold against actual review capacity is what makes the threshold decision real, and override-rate measurement is what detects rubber-stamping before it becomes invisible automation.",
+		watchOut: "A reviewer shown the model's answer first tends to agree with it, so the human check provides less independent verification than it appears to.",
+		related: [
+			"fairness-auditing",
+			"labeling-quality",
+			"model-monitoring",
+			"defect-triage-matrix"
+		],
+		tags: [
+			"machine learning",
+			"automation",
+			"process",
+			"decisions"
+		]
+	},
+	{
+		id: "inference-cost-optimization",
+		name: "Inference Cost and Latency",
+		aka: [
+			"serving efficiency",
+			"batching and quantisation",
+			"model serving budget"
+		],
+		origin: "Production machine learning engineering practice",
+		domains: ["engineering"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "Serving cost and latency are usually dominated by a few choices — model size, batching, precision, and caching — and each trades quality for money in a measurable way.",
+		useWhen: [
+			"our inference bill is larger than the rest of our infrastructure",
+			"the model adds three hundred milliseconds to every request",
+			"we cannot afford to run this model at full traffic",
+			"someone suggested a smaller model and we do not know what we would lose"
+		],
+		prompt: "Reduce serving cost and latency for this model. Break the current cost per request into its parts — feature retrieval, preprocessing, model execution, and network — since teams often optimise the model when feature lookup dominates. Then evaluate the levers with the quality cost of each measured rather than assumed: a smaller or distilled model, reduced numeric precision, batching requests with its latency implication, caching results for repeated inputs, and hardware choice. Present each as a quality-versus-cost point so the trade is explicit. Finish with the cheapest lever of all, which is not calling the model when a rule or a cached answer suffices.",
+		why: "Attributing cost across feature retrieval and preprocessing rather than assuming the model dominates is what directs effort correctly, and presenting quality-versus-cost points makes the trade a decision rather than a guess.",
+		watchOut: "Batching improves throughput and adds waiting time to every request. On an interactive path that can cost more in experience than it saves in money.",
+		related: [
+			"batching-amortization",
+			"percentile-latency",
+			"cloud-cost-attribution",
+			"model-rollout-strategy"
+		],
+		tags: [
+			"machine learning",
+			"cost",
+			"latency",
+			"serving"
+		]
+	},
+	{
+		id: "llm-evaluation-harness",
+		name: "LLM Evaluation Harness",
+		aka: [
+			"prompt regression testing",
+			"eval sets for language models",
+			"model-graded evaluation"
+		],
+		origin: "Applied language model practice",
+		domains: ["engineering", "data"],
+		intents: ["critique", "structure"],
+		oneLiner: "Language model behaviour changes with every prompt edit and model version, so you need a graded evaluation set that runs like a test suite.",
+		useWhen: [
+			"we changed the prompt to fix one case and broke three others",
+			"we upgraded the model version and cannot tell what changed",
+			"quality assessment is one person trying a few examples",
+			"the output looks fine and we have no way to compare two versions"
+		],
+		prompt: "Build an evaluation harness for this language model feature. Assemble a dataset covering the real distribution plus the failure cases we have seen, since regression cover for known failures is the highest-value part. Then define grading per case type: exact or structural checks where the output is constrained, and a rubric with a model as judge where it is open-ended — for the latter, validate the judge against human ratings on a sample, because an unvalidated judge is an opinion generator. Account for nondeterminism by running multiple samples and reporting distributions. Finish with the workflow: run on every prompt or model change, compare against the current baseline, and report which cases moved in each direction.",
+		why: "Validating a model-as-judge against human ratings is the step that makes automated grading trustworthy, and per-case movement reporting is what turns an aggregate score into an actionable diff.",
+		watchOut: "An evaluation set that never changes gets optimised against, and the feature improves on the set while getting no better in reality. Refresh it from production failures.",
+		related: [
+			"llm-guardrails",
+			"retrieval-grounding",
+			"rubric-grading",
+			"regression-benchmarking"
+		],
+		tags: [
+			"machine learning",
+			"llm",
+			"evaluation",
+			"testing"
+		]
+	},
+	{
+		id: "retrieval-grounding",
+		name: "Retrieval Grounding",
+		aka: [
+			"RAG",
+			"retrieval-augmented generation",
+			"citation and provenance"
+		],
+		origin: "Lewis and colleagues, retrieval-augmented generation, 2020",
+		domains: ["engineering", "data"],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Supply relevant source material with the question and require answers to be traceable to it, so quality becomes a retrieval problem you can measure.",
+		useWhen: [
+			"the assistant confidently states things that are not in our documentation",
+			"answers are correct in general and wrong about our specifics",
+			"we cannot tell where an answer came from",
+			"we built retrieval augmentation and the answers did not improve"
+		],
+		prompt: "Design grounded answering for this system, treating retrieval quality as the primary variable since generation cannot recover from material that does not contain the answer. Specify chunking and how it preserves the context a passage needs to be interpretable alone, the retrieval method including where keyword matching beats semantic similarity for identifiers and exact terms, and reranking. Then measure retrieval separately from generation, since a combined score cannot tell you which is failing — define the retrieval metric against a judged set. Then require citation to specific passages, and specify the behaviour when nothing relevant is retrieved, which must be declining to answer rather than answering anyway.",
+		why: "Measuring retrieval separately from generation is what makes the system debuggable, and defining the nothing-relevant behaviour is what prevents confident answers with no basis.",
+		watchOut: "Semantic similarity retrieves passages that are topically related and factually irrelevant. Exact identifiers, codes and names usually need lexical matching alongside.",
+		related: [
+			"llm-guardrails",
+			"full-text-search-design",
+			"llm-evaluation-harness",
+			"ranking-evaluation"
+		],
+		tags: [
+			"machine learning",
+			"llm",
+			"retrieval",
+			"grounding"
+		]
+	},
+	{
+		id: "llm-guardrails",
+		name: "Language Model Guardrails",
+		aka: [
+			"output validation for LLMs",
+			"prompt injection defence",
+			"constrained generation"
+		],
+		origin: "Applied language model security and reliability practice",
+		domains: ["engineering", "security"],
+		intents: ["structure", "critique"],
+		oneLiner: "Treat model output as untrusted input and model input as attacker-influenced, because instructions embedded in retrieved content will be followed unless the architecture prevents it.",
+		useWhen: [
+			"a user got the assistant to ignore its instructions",
+			"the model returned malformed output and our parser crashed",
+			"content we retrieved contained instructions and the model obeyed them",
+			"we are giving the model access to tools and I am nervous"
+		],
+		prompt: "Design controls around this language model feature. Treat output as untrusted: validate structure against a schema with a retry or fallback path, and never pass generated text into a query, a shell, a template or a browser context without the same escaping any untrusted input would get. Then treat input as attacker-influenced, since retrieved documents and user content can carry instructions — explain that prompt wording alone is not a boundary, and that the real control is limiting what the system can do, so specify the permissions available during a request and require confirmation for anything consequential. Finish with the logging needed to investigate a suspected manipulation.",
+		why: "Treating generated output as untrusted input closes the injection paths that prompt instructions cannot, and constraining available permissions is the only durable defence against instructions in retrieved content.",
+		watchOut: "Guardrails implemented as instructions in the prompt can be talked around. Anything that must not happen has to be prevented outside the model.",
+		related: [
+			"retrieval-grounding",
+			"input-validation-boundary",
+			"least-privilege",
+			"llm-evaluation-harness"
+		],
+		tags: [
+			"machine learning",
+			"llm",
+			"security",
+			"reliability"
+		]
+	}
+];
+//#endregion
 //#region src/data/concepts/index.ts
 var CONCEPTS = [
 	...framing,
@@ -4532,7 +21196,21 @@ var CONCEPTS = [
 	...research,
 	...strategy,
 	...design,
-	...steering
+	...steering,
+	...testing,
+	...patterns,
+	...distributed,
+	...reliability,
+	...performance,
+	...dataSystems,
+	...apis,
+	...concurrency,
+	...delivery,
+	...codecraft,
+	...frontend,
+	...practice,
+	...platform,
+	...mlSystems
 ];
 var CONCEPTS_BY_ID = new Map(CONCEPTS.map((c) => [c.id, c]));
 function getConcept(id) {
@@ -4607,7 +21285,7 @@ function composePrompt(input, picks) {
 * Why not a real embedding model: the site has no backend and no API key, and
 * the CSP is `connect-src 'self'`, so there is nowhere to send a query to be
 * embedded and nothing to download a model from. A transformer would also be
-* tens of megabytes for a corpus of 119 documents. LSA fits in a few hundred
+* tens of megabytes for a corpus of 619 documents. LSA fits in a few hundred
 * lines, runs in milliseconds, stays entirely in the browser, and — unlike a
 * pretrained model — its notion of similarity is derived from this vocabulary
 * rather than from the open web.
@@ -4616,7 +21294,10 @@ function composePrompt(input, picks) {
 * columns L2-normalised. `A = U S V'`. Documents are far fewer than terms, so
 * rather than decomposing `A` we decompose the small document gram matrix
 * `G = A'A = V S^2 V'`, which is symmetric positive semi-definite and only
-* 119x119. Jacobi rotations give `V` and `S` exactly, and `U = A V S^-1`
+* as wide as the corpus. Below a few hundred documents Jacobi rotations give
+* `V` and `S` exactly; above that the whole spectrum costs seconds to compute
+* and all but the leading dimensions are discarded anyway, so subspace
+* iteration takes the leading ones directly. `U = A V S^-1`
 * recovers the term vectors. Both documents and queries are then projected
 * onto `U` — `A'U = V S` for documents, `q'U` for a query — so the two live in
 * the same basis and cosine between them means something.
@@ -4627,6 +21308,20 @@ var MAX_DIMS = 48;
 var SPECTRUM_FLOOR = 1e-6;
 /** Cyclic Jacobi converges well inside this for a matrix of our size. */
 var MAX_SWEEPS = 60;
+/**
+* Document count above which the exact decomposition stops being affordable.
+*
+* Jacobi computes the whole spectrum, which costs a cubic pass per sweep. At
+* 119 documents that is a few milliseconds; at 619 it is nine seconds of
+* blocked main thread, and we throw away all but the leading `maxDims`
+* directions anyway. Below this bound the exact path is kept, so a small
+* corpus decomposes bit-identically to how it always has.
+*/
+var EXACT_MAX_DOCS = 200;
+/** Extra block columns beyond the dimensions kept, for subspace accuracy. */
+var OVERSAMPLE = 10;
+/** Power iterations applied before extraction. Two is the usual sufficiency. */
+var POWER_ITERATIONS = 2;
 /** Inverse document frequency, matched to the BM25 index so the two agree. */
 function idf(df, n) {
 	return Math.log(1 + (n - df + .5) / (df + .5));
@@ -4636,7 +21331,7 @@ function idf(df, n) {
 *
 * Chosen over the usual randomised range-finder because it is deterministic:
 * identical input gives bit-identical output, so rankings do not drift between
-* loads and the tests can assert on them. At n = 119 it costs a few
+* loads and the tests can assert on them. At a few hundred documents it costs a few
 * milliseconds, which buys nothing back by being approximate.
 *
 * `a` is mutated. Returns eigenvalues alongside eigenvectors held as columns
@@ -4686,6 +21381,94 @@ function jacobiEigen(a, n) {
 		vectors: v
 	};
 }
+/**
+* Deterministic block of starting vectors.
+*
+* A randomised range finder needs a random block, and a random block would
+* make rankings drift between page loads. A fixed linear congruential sequence
+* gives the same statistical spread with none of the drift, so identical input
+* still yields bit-identical output.
+*/
+function deterministicBlock(rows, cols) {
+	const block = new Float64Array(rows * cols);
+	let state = 49734321;
+	for (let i = 0; i < block.length; i++) {
+		state = Math.imul(state, 1664525) + 1013904223 >>> 0;
+		block[i] = state / 4294967296 - .5;
+	}
+	return block;
+}
+/** Orthonormalise the columns of a rows x cols matrix in place, by modified Gram-Schmidt. */
+function orthonormalise(m, rows, cols) {
+	for (let j = 0; j < cols; j++) {
+		for (let k = 0; k < j; k++) {
+			let dot = 0;
+			for (let i = 0; i < rows; i++) dot += m[i * cols + j] * m[i * cols + k];
+			for (let i = 0; i < rows; i++) m[i * cols + j] -= dot * m[i * cols + k];
+		}
+		let norm = 0;
+		for (let i = 0; i < rows; i++) norm += m[i * cols + j] * m[i * cols + j];
+		norm = Math.sqrt(norm);
+		if (norm > 1e-12) for (let i = 0; i < rows; i++) m[i * cols + j] /= norm;
+		else for (let i = 0; i < rows; i++) m[i * cols + j] = 0;
+	}
+}
+/** Dense symmetric `g` (n x n) times `block` (n x cols), into a fresh n x cols matrix. */
+function gramTimesBlock(g, n, block, cols) {
+	const out = new Float64Array(n * cols);
+	for (let i = 0; i < n; i++) {
+		const rowOffset = i * n;
+		const outOffset = i * cols;
+		for (let k = 0; k < n; k++) {
+			const weight = g[rowOffset + k];
+			if (weight === 0) continue;
+			const blockOffset = k * cols;
+			for (let j = 0; j < cols; j++) out[outOffset + j] += weight * block[blockOffset + j];
+		}
+	}
+	return out;
+}
+/**
+* The leading `k` eigenpairs of a symmetric positive semi-definite matrix,
+* by subspace iteration against a deterministic starting block.
+*
+* Returns the same shape `jacobiEigen` does — eigenvectors as columns of a
+* row-major n x n matrix — with the columns past `k` left at zero and their
+* eigenvalues at zero, so the spectrum filter downstream discards them without
+* needing to know which path produced the result.
+*/
+function leadingEigenpairs(a, n, k) {
+	const block = Math.min(n, k + OVERSAMPLE);
+	let q = deterministicBlock(n, block);
+	orthonormalise(q, n, block);
+	for (let iteration = 0; iteration <= POWER_ITERATIONS; iteration++) {
+		q = gramTimesBlock(a, n, q, block);
+		orthonormalise(q, n, block);
+	}
+	const aq = gramTimesBlock(a, n, q, block);
+	const t = new Float64Array(block * block);
+	for (let p = 0; p < block; p++) for (let r = p; r < block; r++) {
+		let sum = 0;
+		for (let i = 0; i < n; i++) sum += q[i * block + p] * aq[i * block + r];
+		t[p * block + r] = sum;
+		t[r * block + p] = sum;
+	}
+	const small = jacobiEigen(t, block);
+	const values = new Float64Array(n);
+	const vectors = new Float64Array(n * n);
+	for (let j = 0; j < block; j++) {
+		values[j] = small.values[j];
+		for (let i = 0; i < n; i++) {
+			let sum = 0;
+			for (let p = 0; p < block; p++) sum += q[i * block + p] * small.vectors[p * block + j];
+			vectors[i * n + j] = sum;
+		}
+	}
+	return {
+		values,
+		vectors
+	};
+}
 function l2Normalise(vec) {
 	let sum = 0;
 	for (let i = 0; i < vec.length; i++) sum += vec[i] * vec[i];
@@ -4730,7 +21513,7 @@ function buildSemanticSpace(documents, maxDims = MAX_DIMS) {
 			gram[b.doc * n + a.doc] += product;
 		}
 	}
-	const { values, vectors } = jacobiEigen(gram, n);
+	const { values, vectors } = n <= EXACT_MAX_DOCS ? jacobiEigen(gram, n) : leadingEigenpairs(gram, n, Math.min(maxDims, n));
 	const order = [...values.keys()].sort((a, b) => values[b] - values[a]);
 	const largest = values[order[0]] ?? 0;
 	const kept = order.filter((j) => values[j] > largest * SPECTRUM_FLOOR).slice(0, Math.min(maxDims, n));
@@ -5992,13 +22775,15 @@ var EXPANSION_INDEX = (() => {
 	}
 	return index;
 })();
+var DIGIT = /^[0-9]$/;
 /** Split raw text into normalised, stopword-filtered, stemmed tokens. */
 function tokenizeDetailed(input) {
 	const out = [];
 	for (const word of input.toLowerCase().replace(/[’']/g, "").split(/[^a-z0-9]+/)) {
 		if (!word) continue;
 		const normalized = SPELLING[word] ?? word;
-		if (normalized.length < 2 || STOPWORDS.has(normalized)) continue;
+		if (STOPWORDS.has(normalized)) continue;
+		if (normalized.length < 2 && !DIGIT.test(normalized)) continue;
 		const term = stem(normalized);
 		if (term) out.push({
 			term,

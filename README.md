@@ -61,8 +61,8 @@ where a technique would contradict something you asked for, and not at all when 
 good match. A skill that finds a technique for everything, because it is a skill about techniques,
 would make every request slightly worse.
 
-The plugin is three files — `SKILL.md`, one dependency-free bundle of `src/` carrying all 119
-concepts and the ranking, and a shim that puts `magic-words` on the Bash tool's path. No
+The plugin is three files — `SKILL.md`, one dependency-free bundle of `src/` carrying the whole
+corpus and the ranking, and a shim that puts `magic-words` on the Bash tool's path. No
 dependencies, no install step, no network. That last file is why the skill never has to guess where
 it was installed; it just runs the command, which also means you have it:
 
@@ -99,10 +99,10 @@ plugins/magic-words/
 ```
 
 `.claude/skills/magic-words` is a symlink into the plugin, so this repository uses the same skill it
-publishes and there is no second copy of a 256 kB bundle to keep in step. `npm test` checks that
-the symlink resolves, that the manifests agree about the plugin's name, that the source path exists,
-and that both scripts are executable — none of which any other test here would notice, and all of
-which are invisible until somebody runs `/plugin install` and nothing happens.
+publishes and there is no second copy of a megabyte-plus bundle to keep in step. `npm test` checks
+that the symlink resolves, that the manifests agree about the plugin's name, that the source path
+exists, and that both scripts are executable — none of which any other test here would notice, and
+all of which are invisible until somebody runs `/plugin install` and nothing happens.
 
 ## The index
 
@@ -180,26 +180,36 @@ previous thread.
 
 | 10 rambles, 20 problems in them | covered |
 | --- | --- |
-| one query, top 1 | 50.0% |
-| one query, top 3 | 90.0% |
-| triaged, top 3 | **95.0%** |
+| one query, top 1 | 40.0% |
+| one query, top 3 | 75.0% |
+| triaged, top 3 | **85.0%** |
+
+Both of those fell when the corpus went from 119 concepts to 619 — the ramble set was written
+against the smaller index and every query now competes with five times as many documents, exactly
+as the held-out numbers above did. The gap between them widened, which is the part this section is
+about: splitting is worth more, not less, as the index grows.
 
 Two constants in there earned their comments by losing. The whole-input reading competes with the
 per-thread readings **at par**: a correction for thread length looks obviously necessary — a short
-query scores higher against a perfect lexical match than a long one does — and costs coverage at
-every value above 1.15. What matters is only that the whole-input reading is in the pool at all;
-dropping it costs 15 points, because a paragraph often states its real problem across a boundary
-rather than inside one clause.
+query scores higher against a perfect lexical match than a long one does — and upweighting the
+whole-input reading loses coverage at every value from 1.35 up. Discounting it to 0.8 currently
+covers one problem more than parity does, which is one case in twenty and not enough to move a
+constant on; at 119 concepts 0.8, 1 and 1.15 were tied. What matters, and does not move, is that
+the whole-input reading is in the pool at all: dropping it costs 10 points, because a paragraph
+often states its real problem across a boundary rather than inside one clause.
 
-And confidence is `looseMatch` and nothing else. A score threshold, swept over all 131
-single-problem cases, turns out to be the same signal approached from the other end: by the time a
-cutoff separates anything it has already excluded every loose pick, and adding the lexical test on
-top changes nothing. What is left is one coverage-for-precision dial. `looseMatch` sits at the
-coverage end — 95.4% of picks called confident and 79.2% of those right against a 76.3% baseline,
-while the 4.6% it holds back are right 16.7% of the time. A cutoff of 2.0 sits at the other end:
-89.4% right, silent about 28% of picks. Coverage wins here because a pick is always shown by name
-next to the user's own words and is trivially ignored, while a pick withheld is the product not
-happening.
+And confidence is `looseMatch` and nothing else. `npm run bench` sweeps the obvious alternative, a
+threshold on the merged score, over all 131 single-problem cases. `looseMatch` sits at the coverage
+end of that trade: 94.7% of picks called confident, 70.2% of those right against a 66.4% baseline,
+and the 5.3% it holds back right **none** of the time. A cutoff of 2.0 sits at the other end: 84.8%
+right, silent about 30% of picks.
+
+At 119 concepts those two were nearly the same signal, and a cutoff high enough to matter had
+already excluded every loose pick. At 619 they have separated, and the cutoff now buys real
+precision for real coverage. It is still not the trade to take: a pick is always shown by name next
+to the user's own words and is trivially ignored, while a pick withheld is the product not
+happening — and `looseMatch` still identifies a bucket that is wrong every single time, which is
+the thing worth being sure about.
 
 ### Why not a real embedding model
 

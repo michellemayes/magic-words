@@ -44,21 +44,22 @@ export interface Pick {
    * the concept, so the ranking is resting on the latent space alone — and
    * nothing else. The obvious alternative, a threshold on the merged score, is
    * swept in `npm run bench` against all 131 single-problem cases, and the two
-   * turn out to be nearly the same signal: by the time a cutoff is high enough
-   * to matter it has already excluded every loose pick, and adding the lexical
-   * test on top of it changes nothing.
+   * mark the ends of one coverage-for-precision trade. `looseMatch` sits at the
+   * coverage end: 94.7% of picks called strong, 70.2% of those right against a
+   * 66.4% baseline, and the 5.3% it holds back right none of the time at all. A
+   * cutoff of 2.0 sits at the other: 84.8% right, silent about 30% of picks.
    *
-   * What is left is a straight coverage-for-precision trade along one axis.
-   * `looseMatch` sits at the coverage end — 95.4% of picks called strong, 79.2%
-   * of those right against a 76.3% baseline, and the 4.6% it holds back are
-   * right 16.7% of the time. A cutoff of 2.0 sits at the other end: 89.4% right,
-   * but silent about 28% of picks.
+   * At 119 concepts these were nearly the same signal — a cutoff high enough to
+   * matter had already excluded every loose pick, and adding the lexical test on
+   * top of it changed nothing. At 619 they have come apart, and the cutoff now
+   * buys a real 15 points of precision for a real 25 of coverage.
    *
-   * The coverage end is the right one here, because of what silence costs. A
+   * The coverage end is still the right one, because of what silence costs. A
    * pick called strong is shown by name with the user's own words next to it and
    * is trivially ignored; a pick withheld is the entire product not happening.
    * Precision would matter more than this if anything acted on a pick without
-   * the user seeing it, and nothing does.
+   * the user seeing it, and nothing does. What `looseMatch` is doing here is the
+   * part worth keeping either way: it finds the bucket that is wrong every time.
    */
   confidence: Confidence
 }
@@ -233,16 +234,21 @@ function capThreads(threads: string[]): string[] {
  * every one of your four words appearing is a perfect match in a way that every
  * one of your forty words appearing never is — so the reading of the whole
  * paragraph should presumably be given a thumb on the scale. `npm run bench`
- * sweeps it and the thumb costs coverage: 0.8 to 1.15 all cover 95% of the
- * problems in the ramble set, and by 1.35 a weak whole-input result has started
- * displacing a strong thread's answer (90%). Nothing above 1.15 wins anything
- * back, and which pick leads is unchanged across the whole range.
+ * sweeps it and the thumb costs coverage: from 1.35 up, a weak whole-input
+ * result starts displacing a strong thread's answer, and by 2 the ramble set
+ * has lost 10 points and is doing no better than not splitting at all.
  *
- * What does matter is that the whole-input reading is in the pool at all.
- * Dropping it (weight 0, threads only) costs 15 points of coverage, because a
- * paragraph often states its real problem across a boundary rather than inside
- * one clause. So both readings compete, at par, and the knob stays only because
- * the sweep is the evidence for it not existing.
+ * The other direction is live but thin. Discounting the whole-input reading to
+ * 0.8 currently covers one problem more than parity does — one case in twenty,
+ * on a set of twenty, which is not enough to move a constant on. It was a
+ * three-way tie at 119 concepts and it may be a real effect at 619; it needs
+ * more rambles to say, not a smaller p-value on these.
+ *
+ * What does matter, and has not moved, is that the whole-input reading is in
+ * the pool at all. Dropping it (weight 0, threads only) costs 10 points of
+ * coverage, because a paragraph often states its real problem across a boundary
+ * rather than inside one clause. So both readings compete, at par, and the knob
+ * stays because the sweep is the evidence for it.
  */
 const WHOLE_INPUT_WEIGHT = 1
 

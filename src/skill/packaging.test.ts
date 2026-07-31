@@ -104,9 +104,9 @@ describe('the magic-words plugin', () => {
 
   /**
    * The repository's own `.claude/skills/magic-words` is a symlink into the
-   * plugin, so contributors get the skill without a second copy of a 256 kB
-   * bundle to keep in step. A broken symlink is silent — the skill simply
-   * stops existing — so it is checked rather than trusted.
+   * plugin, so contributors get the skill without a second copy of a bundle
+   * that is now well over a megabyte to keep in step. A broken symlink is
+   * silent — the skill simply stops existing — so it is checked, not trusted.
    */
   it('is the same skill this repository uses on itself', () => {
     expect(realpathSync(join(ROOT, '.claude/skills/magic-words'))).toBe(
