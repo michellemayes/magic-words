@@ -303,13 +303,19 @@ export interface Token {
   original: string
 }
 
+const DIGIT = /^[0-9]$/
+
 /** Split raw text into normalised, stopword-filtered, stemmed tokens. */
 export function tokenizeDetailed(input: string): Token[] {
   const out: Token[] = []
   for (const word of input.toLowerCase().replace(/[’']/g, '').split(/[^a-z0-9]+/)) {
     if (!word) continue
     const normalized = SPELLING[word] ?? word
-    if (normalized.length < 2 || STOPWORDS.has(normalized)) continue
+    if (STOPWORDS.has(normalized)) continue
+    // A lone letter is noise; a lone digit is not. Dropping it collapsed the
+    // alias "5 whys" to the single token "why", which any concept mentioning
+    // "why" matched just as well — so the alias identified nothing.
+    if (normalized.length < 2 && !DIGIT.test(normalized)) continue
     const term = stem(normalized)
     if (term) out.push({ term, original: word })
   }
