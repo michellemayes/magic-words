@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Domain, Intent } from '../data/types'
 import { DOMAIN_LABELS, DOMAINS, INTENTS, INTENT_HINTS, INTENT_LABELS } from '../data/types'
 
@@ -54,11 +54,25 @@ export function SearchForm({
   const [domains, setDomains] = useState<Domain[]>(initial.domains)
   const [intents, setIntents] = useState<Intent[]>(initial.intents)
 
+  // Purely the flourish on the button. Results are synchronous — this is not a
+  // loading state and must never gate them, so it is set and forgotten.
+  const [casting, setCasting] = useState(false)
+  const castTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(castTimer.current), [])
+
   const empty = !text.trim() && !domains.length && !intents.length
+
+  const cast = () => {
+    setCasting(true)
+    window.clearTimeout(castTimer.current)
+    castTimer.current = window.setTimeout(() => setCasting(false), 700)
+  }
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!empty) onSubmit({ text, domains, intents })
+    if (empty) return
+    cast()
+    onSubmit({ text, domains, intents })
   }
 
   return (
@@ -120,7 +134,10 @@ export function SearchForm({
       </div>
 
       <div className="actions">
-        <button type="submit" className="primary" disabled={empty}>
+        <button type="submit" className={casting ? 'primary casting' : 'primary'} disabled={empty}>
+          <span className="cast-glyph" aria-hidden="true">
+            ✦
+          </span>
           Find the magic words
         </button>
         {!empty && (
@@ -151,6 +168,7 @@ export function SearchForm({
                 setText(ex.text)
                 setDomains(ex.domains)
                 setIntents(ex.intents)
+                cast()
                 onSubmit(ex)
               }}
             >

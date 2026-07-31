@@ -38,37 +38,51 @@ const SPELLING: Record<string, string> = {
  * Colloquial term -> corpus vocabulary. Expansion terms are scored at a reduced
  * weight so a literal match always outranks an inferred one.
  *
- * Keys are matched post-stemming, so list the stem people actually type.
+ * Keys are ordinary words, not stems. They used to be stems, written by hand to
+ * match what the stemmer produces — and fourteen of them were wrong, so they sat
+ * in the table looking maintained while matching nothing. `estim` never fired
+ * because "estimate" stems to `estimat`; `hallucin` never fired because
+ * "hallucinating" stems to `hallucinat`. The keys are now stemmed by the same
+ * function as the corpus and the query (see EXPANSION_INDEX below), which makes
+ * that whole class of silent failure impossible rather than merely tested for.
+ *
+ * Where several spellings of an idea stem apart — "flaky" and "flakiness" do —
+ * list them both. Duplicate keys landing on one stem merge their targets.
  */
 const EXPANSIONS: Record<string, string[]> = {
   // Being stuck
   stuck: ['blocked', 'impasse', 'unclear', 'debug'],
-  block: ['stuck', 'constraint', 'bottleneck'],
+  blocked: ['stuck', 'constraint', 'bottleneck'],
+  blocker: ['stuck', 'constraint', 'bottleneck'],
   lost: ['unclear', 'orient', 'stuck'],
-  overwhelm: ['prioritize', 'scope', 'structure'],
-  confus: ['unclear', 'ambiguous', 'structure'],
+  overwhelmed: ['prioritize', 'scope', 'structure'],
+  confused: ['unclear', 'ambiguous', 'structure'],
+  confusing: ['unclear', 'ambiguous', 'structure'],
   mess: ['structure', 'unclear', 'organize'],
 
   // Vagueness and abstraction
-  vagu: ['ambiguous', 'unclear', 'abstract', 'altitude'],
-  fuzzi: ['ambiguous', 'unclear', 'abstract'],
-  gener: ['generic', 'bland', 'obvious', 'default'],
+  vague: ['ambiguous', 'unclear', 'abstract', 'altitude'],
+  fuzzy: ['ambiguous', 'unclear', 'abstract'],
+  fuzziness: ['ambiguous', 'unclear', 'abstract'],
+  generic: ['generic', 'bland', 'obvious', 'default'],
+  general: ['generic', 'bland', 'obvious', 'default'],
   bland: ['generic', 'obvious', 'creativity'],
-  obviou: ['generic', 'default', 'anchor'],
+  obvious: ['generic', 'default', 'anchor'],
   broad: ['abstract', 'scope', 'altitude'],
   abstract: ['altitude', 'concrete', 'ladder'],
 
   // AI / model steering
   ai: ['prompt', 'model', 'llm'],
   llm: ['prompt', 'model', 'ai'],
-  claud: ['prompt', 'model', 'ai'],
+  claude: ['prompt', 'model', 'ai'],
   chatgpt: ['prompt', 'model', 'ai'],
   gpt: ['prompt', 'model', 'ai'],
   agent: ['prompt', 'model', 'ai', 'coding'],
   chatbot: ['prompt', 'model', 'ai'],
   prompt: ['steer', 'model', 'ai'],
   output: ['format', 'response', 'answer'],
-  hallucin: ['accuracy', 'evidence', 'verify', 'confident'],
+  hallucinate: ['accuracy', 'evidence', 'verify', 'confident'],
+  hallucination: ['accuracy', 'evidence', 'verify', 'confident'],
 
   // Problems with work product
   bug: ['debug', 'failure', 'defect', 'troubleshoot'],
@@ -76,61 +90,71 @@ const EXPANSIONS: Record<string, string[]> = {
   error: ['failure', 'debug', 'incident'],
   broken: ['failure', 'debug', 'incident'],
   fail: ['failure', 'debug', 'risk'],
-  outag: ['incident', 'postmortem', 'failure', 'production'],
+  outage: ['incident', 'postmortem', 'failure', 'production'],
   slow: ['performance', 'latency', 'bottleneck', 'throughput'],
-  flaki: ['intermittent', 'debug', 'reliability'],
-  regress: ['bisect', 'debug', 'broke'],
+  flaky: ['intermittent', 'debug', 'reliability'],
+  flakiness: ['intermittent', 'debug', 'reliability'],
+  regressed: ['bisect', 'debug', 'broke'],
+  regression: ['bisect', 'debug', 'broke'],
 
   // Product & planning
   roadmap: ['prioritization', 'planning', 'sequencing'],
   backlog: ['prioritization', 'planning', 'scope'],
-  featur: ['product', 'scope', 'prioritization'],
+  feature: ['product', 'scope', 'prioritization'],
   ticket: ['requirements', 'acceptance', 'scope'],
   sprint: ['planning', 'scope', 'agile'],
-  estim: ['estimation', 'forecast', 'sizing'],
-  deadlin: ['schedule', 'date', 'sequencing', 'scope'],
-  lat: ['schedule', 'estimation', 'slip'],
-  scop: ['requirements', 'prioritization', 'cutting'],
+  estimate: ['estimation', 'forecast', 'sizing'],
+  estimation: ['estimation', 'forecast', 'sizing'],
+  deadline: ['schedule', 'date', 'sequencing', 'scope'],
+  late: ['schedule', 'estimation', 'slip'],
+  scope: ['requirements', 'prioritization', 'cutting'],
   launch: ['release', 'risk', 'readiness'],
   mvp: ['scope', 'validation', 'minimum'],
 
   // People & org
   boss: ['leadership', 'executive', 'stakeholder'],
-  manag: ['leadership', 'stakeholder', 'feedback'],
+  manager: ['leadership', 'stakeholder', 'feedback'],
+  managing: ['leadership', 'stakeholder', 'feedback'],
+  management: ['leadership', 'stakeholder', 'feedback'],
   exec: ['leadership', 'executive', 'stakeholder'],
+  executive: ['leadership', 'executive', 'stakeholder'],
   leadership: ['executive', 'stakeholder', 'alignment'],
-  stakehold: ['leadership', 'alignment', 'communication'],
+  stakeholder: ['leadership', 'alignment', 'communication'],
   team: ['collaboration', 'alignment', 'leadership'],
-  meet: ['decision', 'alignment', 'facilitation'],
-  argu: ['disagreement', 'conflict', 'debate'],
-  disagr: ['conflict', 'debate', 'alignment'],
+  meeting: ['decision', 'alignment', 'facilitation'],
+  arguing: ['disagreement', 'conflict', 'debate'],
+  argument: ['disagreement', 'conflict', 'debate'],
+  disagree: ['conflict', 'debate', 'alignment'],
+  disagreement: ['conflict', 'debate', 'alignment'],
   conflict: ['disagreement', 'feedback', 'communication'],
   coworker: ['colleague', 'feedback', 'conflict'],
-  colleagu: ['feedback', 'conflict', 'communication'],
-  hir: ['interview', 'career', 'evaluation'],
-  promot: ['career', 'interview', 'review'],
-  intervi: ['career', 'interview'],
+  colleague: ['feedback', 'conflict', 'communication'],
+  hiring: ['interview', 'career', 'evaluation'],
+  promoted: ['career', 'interview', 'review'],
+  promotion: ['career', 'interview', 'review'],
+  interview: ['career', 'interview', 'evaluation'],
 
   // Writing & communication
   email: ['writing', 'communication', 'brevity'],
   slack: ['writing', 'communication', 'brevity'],
   doc: ['writing', 'document', 'structure'],
-  writ: ['writing', 'communication', 'clarity'],
+  writing: ['writing', 'communication', 'clarity'],
   present: ['communication', 'narrative', 'audience'],
   deck: ['presentation', 'narrative', 'communication'],
   pitch: ['narrative', 'persuasion', 'communication'],
   explain: ['explanation', 'clarity', 'audience', 'teaching'],
   jargon: ['clarity', 'audience', 'plain'],
-  ramb: ['brevity', 'structure', 'concise'],
+  ramble: ['brevity', 'structure', 'concise'],
+  rambling: ['brevity', 'structure', 'concise'],
   long: ['brevity', 'concise', 'structure'],
-  bor: ['narrative', 'engagement', 'story'],
+  boring: ['narrative', 'engagement', 'story'],
 
   // Decisions
-  decid: ['decision', 'choice', 'trade-off'],
-  decis: ['choice', 'trade-off', 'criteria'],
-  choos: ['decision', 'choice', 'criteria'],
+  decide: ['decision', 'choice', 'trade-off'],
+  decision: ['choice', 'trade-off', 'criteria'],
+  choose: ['decision', 'choice', 'criteria'],
   option: ['alternative', 'choice', 'decision'],
-  tradeof: ['trade-off', 'criteria', 'decision'],
+  tradeoff: ['trade-off', 'criteria', 'decision'],
   risk: ['failure', 'uncertainty', 'mitigation'],
   wrong: ['failure', 'mistake', 'critique'],
 
@@ -139,7 +163,8 @@ const EXPANSIONS: Record<string, string[]> = {
   understand: ['understanding', 'explanation', 'learning'],
   remember: ['memory', 'retention', 'recall'],
   forget: ['memory', 'retention', 'recall'],
-  studi: ['learning', 'retention', 'practice'],
+  study: ['learning', 'retention', 'practice'],
+  studying: ['learning', 'retention', 'practice'],
   teach: ['teaching', 'explanation', 'learning'],
   onboard: ['learning', 'orientation', 'documentation'],
 
@@ -149,9 +174,9 @@ const EXPANSIONS: Record<string, string[]> = {
   data: ['analytics', 'evidence', 'measurement'],
   chart: ['analytics', 'measurement'],
   test: ['experiment', 'validation', 'evidence'],
-  experi: ['experiment', 'validation', 'test'],
+  experiment: ['experiment', 'validation', 'test'],
   churn: ['retention', 'cohort', 'analytics'],
-  retent: ['cohort', 'analytics', 'churn'],
+  retention: ['cohort', 'analytics', 'churn'],
   conversion: ['funnel', 'analytics', 'journey'],
   funnel: ['journey', 'analytics', 'dropoff'],
 
@@ -159,16 +184,18 @@ const EXPANSIONS: Record<string, string[]> = {
   legacy: ['migration', 'refactoring', 'modernization', 'old'],
   monolith: ['architecture', 'service', 'decomposition'],
   monolithic: ['architecture', 'service', 'decomposition'],
-  microservic: ['architecture', 'service', 'boundaries', 'distributed'],
-  coupl: ['dependency', 'architecture', 'modularity', 'boundaries'],
+  microservice: ['architecture', 'service', 'boundaries', 'distributed'],
+  coupled: ['dependency', 'architecture', 'modularity', 'boundaries'],
+  coupling: ['dependency', 'architecture', 'modularity', 'boundaries'],
   refactor: ['restructure', 'architecture', 'cleanup', 'migration'],
   spaghetti: ['coupling', 'structure', 'architecture', 'tangled'],
-  testabl: ['testing', 'dependency', 'isolation', 'architecture'],
+  testable: ['testing', 'dependency', 'isolation', 'architecture'],
+  testability: ['testing', 'dependency', 'isolation', 'architecture'],
   mock: ['testing', 'dependency', 'isolation'],
-  rewrit: ['migration', 'legacy', 'incremental', 'architecture'],
-  boilerplat: ['abstraction', 'structure', 'ceremony'],
+  rewrite: ['migration', 'legacy', 'incremental', 'architecture'],
+  boilerplate: ['abstraction', 'structure', 'ceremony'],
   framework: ['architecture', 'dependency', 'coupling'],
-  databas: ['persistence', 'data', 'schema'],
+  database: ['persistence', 'data', 'schema'],
   sql: ['persistence', 'database', 'query'],
   orm: ['persistence', 'database', 'entity'],
   schema: ['model', 'data', 'structure'],
@@ -176,21 +203,23 @@ const EXPANSIONS: Record<string, string[]> = {
   apis: ['interface', 'contract', 'boundaries'],
   endpoint: ['api', 'interface', 'client'],
   layer: ['architecture', 'boundaries', 'structure'],
-  modul: ['architecture', 'boundaries', 'structure'],
-  interfac: ['abstraction', 'contract', 'boundaries'],
+  module: ['architecture', 'boundaries', 'structure'],
+  modular: ['architecture', 'boundaries', 'structure'],
+  interface: ['abstraction', 'contract', 'boundaries'],
   deploy: ['operations', 'release', 'environment'],
   config: ['environment', 'deployment', 'operations'],
   configuration: ['environment', 'deployment', 'operations'],
-  scal: ['scalability', 'performance', 'throughput'],
+  scale: ['scalability', 'performance', 'throughput'],
+  scaling: ['scalability', 'performance', 'throughput'],
   frontend: ['ui', 'client', 'interface'],
   backend: ['service', 'api', 'server'],
 
   // Security & privacy
-  secur: ['security', 'hardening', 'threat', 'access'],
+  secure: ['security', 'hardening', 'threat', 'access'],
   security: ['hardening', 'threat', 'access', 'protection'],
-  insecur: ['security', 'vulnerability', 'hardening'],
+  insecure: ['security', 'vulnerability', 'hardening'],
   permission: ['access control', 'privilege', 'authorization'],
-  privileg: ['access control', 'permissions', 'escalation'],
+  privilege: ['access control', 'permissions', 'escalation'],
   admin: ['privilege', 'access control', 'permissions'],
   access: ['permissions', 'privilege', 'authorization'],
   auth: ['authentication', 'authorization', 'identity'],
@@ -205,45 +234,67 @@ const EXPANSIONS: Record<string, string[]> = {
   hack: ['attack', 'compromise', 'threat'],
   attack: ['threat', 'adversary', 'exploit'],
   exploit: ['attack', 'vulnerability', 'threat'],
-  vulnerabl: ['weakness', 'exploit', 'security'],
+  vulnerable: ['weakness', 'exploit', 'security'],
   vulnerability: ['weakness', 'exploit', 'security'],
-  compromis: ['breach', 'attack', 'containment'],
+  compromise: ['breach', 'attack', 'containment'],
   malicious: ['attack', 'adversary', 'abuse'],
-  abus: ['attack', 'adversary', 'misuse'],
+  abuse: ['attack', 'adversary', 'misuse'],
   inject: ['validation', 'input', 'boundaries'],
   injection: ['validation', 'input', 'boundaries'],
-  sanitis: ['validation', 'input', 'encoding'],
-  sanitiz: ['validation', 'input', 'encoding'],
+  sanitise: ['validation', 'input', 'encoding'],
+  sanitize: ['validation', 'input', 'encoding'],
   encrypt: ['confidentiality', 'security', 'data'],
   encryption: ['confidentiality', 'security', 'data'],
   audit: ['compliance', 'logging', 'controls'],
-  complianc: ['audit', 'controls', 'regulation'],
+  compliance: ['audit', 'controls', 'regulation'],
   gdpr: ['privacy', 'retention', 'data'],
   privacy: ['data', 'retention', 'minimization'],
   pii: ['privacy', 'data', 'sensitive'],
-  firewal: ['network', 'perimeter', 'security'],
+  firewall: ['network', 'perimeter', 'security'],
   vpn: ['network', 'perimeter', 'access'],
   dependency: ['supply chain', 'package', 'library'],
-  packag: ['dependency', 'supply chain', 'library'],
+  package: ['dependency', 'supply chain', 'library'],
 
   // Design
   ux: ['usability', 'design', 'experience'],
   ui: ['interface', 'design', 'usability'],
-  usabl: ['usability', 'heuristic', 'interface'],
+  usable: ['usability', 'heuristic', 'interface'],
+  usability: ['usability', 'heuristic', 'interface'],
   design: ['interface', 'usability', 'critique'],
-  wirefram: ['design', 'interface', 'prototype'],
+  wireframe: ['design', 'interface', 'prototype'],
 
   // Emotional / meta signals worth routing on
-  anxiou: ['risk', 'uncertainty', 'pre-mortem'],
-  worri: ['risk', 'uncertainty', 'failure'],
-  nervou: ['risk', 'uncertainty', 'caution'],
-  frustrat: ['stuck', 'conflict', 'friction'],
-  procrastin: ['prioritization', 'timebox', 'focus'],
-  busi: ['prioritization', 'focus', 'delegation'],
-  circl: ['stuck', 'decision', 'relitigate'],
+  anxious: ['risk', 'uncertainty', 'pre-mortem'],
+  worried: ['risk', 'uncertainty', 'failure'],
+  nervous: ['risk', 'uncertainty', 'caution'],
+  frustrated: ['stuck', 'conflict', 'friction'],
+  procrastinate: ['prioritization', 'timebox', 'focus'],
+  procrastination: ['prioritization', 'timebox', 'focus'],
+  busy: ['prioritization', 'focus', 'delegation'],
+  business: ['prioritization', 'focus', 'delegation'],
+  circles: ['stuck', 'decision', 'relitigate'],
   repeat: ['recurring', 'root', 'systemic'],
   again: ['recurring', 'root', 'systemic'],
 }
+
+/**
+ * The table above, re-keyed by stem so lookups can be done on the same tokens
+ * the query produces. Built once at load; several words may share a stem, in
+ * which case their targets merge.
+ */
+const EXPANSION_INDEX: Map<string, string[]> = (() => {
+  const index = new Map<string, string[]>()
+  for (const [word, targets] of Object.entries(EXPANSIONS)) {
+    const key = stem(SPELLING[word] ?? word)
+    const existing = index.get(key)
+    if (existing) {
+      for (const t of targets) if (!existing.includes(t)) existing.push(t)
+    } else {
+      index.set(key, [...targets])
+    }
+  }
+  return index
+})()
 
 export interface Token {
   /** The indexed form. */
@@ -303,7 +354,7 @@ export function expand(tokens: string[]): string[] {
   const out = new Set<string>()
   const literal = new Set(tokens)
   for (const t of tokens) {
-    const extra = EXPANSIONS[t]
+    const extra = EXPANSION_INDEX.get(t)
     if (!extra) continue
     for (const e of extra) {
       for (const st of tokenize(e)) {

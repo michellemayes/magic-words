@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { getConcept } from './data/concepts'
-import { search } from './lib/search'
+import { search, warmSemanticSpace } from './lib/search'
 import { useRoute } from './lib/router'
 import { ConceptCard } from './components/ConceptCard'
 import { SearchForm, type FormValue } from './components/SearchForm'
@@ -11,6 +11,23 @@ const EMPTY: FormValue = { text: '', domains: [], intents: [] }
 
 export default function App() {
   const [route, navigate] = useRoute()
+
+  /**
+   * The latent space takes about 40ms to build. That is worth paying, but not
+   * before first paint — so it is built in the first idle slot instead. Anyone
+   * arriving on the home page will have spent several seconds reading and
+   * typing before they search, by which point it is long since ready; only a
+   * deep link straight into a search pays for it inline.
+   */
+  useEffect(() => {
+    const idle = window.requestIdleCallback
+    if (idle) {
+      const handle = idle(() => warmSemanticSpace(), { timeout: 2000 })
+      return () => window.cancelIdleCallback?.(handle)
+    }
+    const timer = window.setTimeout(warmSemanticSpace, 200)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const results = useMemo(() => {
     if (route.name !== 'search') return []
@@ -146,9 +163,14 @@ function SearchResults({
       </div>
 
       <ConceptCard
+        // Keyed on the concept so a new search remounts the card and the name
+        // is conjured again; re-running the same search leaves it alone.
+        key={best.concept.id}
         concept={best.concept}
         matchedTerms={best.exactNameMatch ? undefined : best.matchedTerms}
+        looseMatch={best.looseMatch}
         eyebrow={best.exactNameMatch ? 'You asked for this one' : 'Closest match'}
+        conjure
         onOpenConcept={onOpenConcept}
       />
 
