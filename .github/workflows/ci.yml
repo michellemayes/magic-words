@@ -18,3 +18,25 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+      # The skill ships a bundle of src/, checked in so that the skill
+      # directory works with no install step. Rebuilding it here is what stops
+      # that copy drifting from the code it was built from.
+      - run: npm run build:skill
+      - name: Skill bundle is up to date
+        run: |
+          git diff --exit-code -- .claude/skills || {
+            echo '::error::.claude/skills is stale — run `npm run build:skill` and commit the result'
+            exit 1
+          }
+
+      # A bundle can be current and still not run: the entry picks up a browser
+      # global, node rejects the output format, a flag regresses. Cheap to
+      # check, and otherwise invisible until somebody installs the skill.
+      - name: Skill runs
+        run: |
+          node .claude/skills/magic-words/magic-words.mjs \
+            "the plan looks solid and nobody is objecting before we commit real money" \
+            < /dev/null | grep -q 'Pre-mortem'
+          node .claude/skills/magic-words/magic-words.mjs --show least-privilege < /dev/null | grep -q 'Least Privilege'
+          node .claude/skills/magic-words/magic-words.mjs --list < /dev/null | grep -qE '[0-9]+ concepts'

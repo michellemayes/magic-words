@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:skill": "node scripts/build-skill.mjs",
+    "skill": "node .claude/skills/magic-words/magic-words.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

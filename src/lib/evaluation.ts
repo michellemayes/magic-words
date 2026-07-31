@@ -24,6 +24,89 @@ export interface RetrievalCase {
   expect: string[]
 }
 
+/**
+ * Stream-of-consciousness cases for `triage()`, which cuts an input into the
+ * problems it contains and answers each one.
+ *
+ * These are built by joining phrasings whose single-query behaviour is already
+ * measured above, the way someone would actually run them together in one
+ * message. That is deliberate and it is a limitation worth stating: it means
+ * this set measures *splitting and merging* — does each strand still get its own
+ * word once it is buried in a paragraph — and not retrieval quality, which the
+ * cases above already cover. A ramble built from queries the ranker cannot
+ * answer would fail here for reasons that have nothing to do with triage.
+ */
+export interface RambleCase {
+  input: string
+  /** One entry per problem in the input; any id in the entry counts as found. */
+  expect: string[][]
+  /** Expected number of threads, where the split is unambiguous. */
+  threads?: number
+}
+
+export const RAMBLE_CASES: RambleCase[] = [
+  {
+    input:
+      'ok so the deploy went out on friday and the site is slow and I have no idea which service to look at. and then when we sat down to write it up it turned into everyone blaming the new person. also I have to send the exec team a summary and my document buries the point so they stop reading',
+    expect: [
+      ['observability-triage', 'hypothesis-driven-debugging', 'root-cause-fishbone'],
+      ['blameless-postmortem'],
+      ['pyramid-principle', 'bluf'],
+    ],
+    threads: 3,
+  },
+  {
+    input:
+      'there is a class in this old service that looks completely pointless and I want to rip it out but honestly I am nervous. and the rewrite we started to replace the whole thing has been going for two years and shipped nothing',
+    expect: [['chestertons-fence'], ['strangler-fig']],
+  },
+  {
+    input:
+      'everyone on the team has admin because it was easier that way and there is an api key sitting in the repo that was never rotated',
+    expect: [['least-privilege'], ['secrets-management']],
+  },
+  {
+    input:
+      'the backlog is all P0 and the loudest stakeholder always wins. and when we do settle something it comes back up two weeks later because nobody knows who actually decides',
+    expect: [['rice-scoring', 'moscow', 'eisenhower-matrix'], ['decision-roles-daci']],
+  },
+  {
+    input:
+      'claude keeps giving me answers that are generic and could apply to anyone, and then when I ask for a table it writes me an essay',
+    expect: [['interview-me-first'], ['output-contract']],
+  },
+  {
+    // The control. One problem, said once — triage must not turn this into a
+    // committee of three concepts.
+    input: 'the plan looks solid and nobody is objecting before we commit real money',
+    expect: [['pre-mortem']],
+    threads: 1,
+  },
+  {
+    input:
+      'users drop off somewhere in the signup flow and I cannot tell where. also the metric has been flat for a month but I think something is happening underneath it',
+    expect: [['user-journey-mapping'], ['cohort-analysis']],
+  },
+  {
+    input:
+      'I need to give a colleague difficult feedback without it getting personal, plus I am preparing for a job interview myself and my answers ramble',
+    expect: [['sbi-feedback', 'nonviolent-communication'], ['star-method']],
+  },
+  {
+    input:
+      'our estimate feels optimistic because we always run over on time — and separately I cannot tell which of these tasks is the one actually controlling the date',
+    expect: [['reference-class-forecasting'], ['critical-path']],
+  },
+  {
+    input:
+      'the agent keeps editing the wrong files and ignoring our conventions. oh and it fixes whatever I complain about in the first attempt instead of trying something else',
+    expect: [
+      ['negative-space-prompting', 'context-priming'],
+      ['sample-and-compare'],
+    ],
+  },
+]
+
 export const TUNING_CASES: RetrievalCase[] = [
   { query: 'my problem statement is too narrow and we jumped straight to a solution', expect: ['abstraction-laddering'] },
   { query: 'we keep fixing the same thing over and over and it comes back', expect: ['five-whys'] },
