@@ -253,4 +253,117 @@ export const communication: Concept[] = [
     related: ['bluf', 'sbi-feedback', 'pyramid-principle'],
     tags: ['interview', 'career', 'resume', 'promotion', 'self review'],
   },
+
+  {
+    id: 'world-bible',
+    name: 'World Bible',
+    aka: ['story bible', 'series bible', 'lore document', 'canon document', 'show bible'],
+    origin: 'Television writers\' rooms and long-running fiction series',
+    domains: ['writing', 'meta'],
+    intents: ['structure', 'steer'],
+    oneLiner:
+      'One canonical reference for the facts, rules, characters and tone of an invented world, written down before the drafting so every chapter, episode or session draws from the same source.',
+    useWhen: [
+      'the characters keep changing personality between chapters',
+      'it forgot how the magic system works halfway through',
+      'details in my novel contradict each other',
+      'every new chat about my story starts from scratch',
+      'I am building a fantasy setting and cannot keep track of it',
+      'the timeline of my story does not add up',
+      'a game world where the lore keeps drifting',
+    ],
+    prompt:
+      'Before we write any more scenes, build a world bible for this project and treat it as canon from now on. Sections: premise and tone in a paragraph; the rules of the world, stated as constraints with their costs and limits, because unlimited powers break stories; a character sheet for each major character covering want, fear, voice, and what they know and when they learned it; places; a dated timeline of events; and an open-questions list for anything not yet decided. Draw only from what I have already written, and flag every contradiction you find rather than silently picking a side. When we draft later, check each scene against the bible and tell me before you add anything new to canon.',
+    variants: [
+      {
+        label: 'For a long-running AI project, not fiction',
+        prompt:
+          'Write a project bible I can paste at the top of every new session: the fixed decisions and why, the vocabulary we use and what each term means, the conventions to follow, the things we have tried and rejected, and the open questions. Keep it to what a newcomer must know to avoid contradicting past work, and nothing else.',
+      },
+    ],
+    why:
+      'A model has no memory across sessions and a weak grip on details from far back in a long context, so continuity drifts unless the canon is written down and handed back. Naming it a bible tells the model it is authoritative, not a suggestion, and the "flag contradictions, do not resolve them" instruction keeps the author in charge of canon.',
+    watchOut:
+      'Bibles grow until nobody reads them. Keep the pasted version short and put the long-form lore in a separate reference, or the important constraints get buried.',
+    related: ['style-sheet', 'continuity-pass', 'voice-profile', 'context-priming'],
+    tags: ['fiction', 'worldbuilding', 'consistency', 'creative writing', 'canon', 'lore'],
+  },
+
+  {
+    id: 'style-sheet',
+    name: 'Editorial Style Sheet',
+    aka: ['copyeditor style sheet', 'house style', 'spelling and usage sheet'],
+    origin: 'Book publishing copyediting practice',
+    domains: ['writing'],
+    intents: ['structure', 'steer'],
+    oneLiner:
+      'A running per-document list of every spelling, capitalisation, hyphenation, number and naming decision, so the same choice is made the same way every time.',
+    useWhen: [
+      'the same name is spelled three different ways in the draft',
+      'is it e-mail or email, we keep switching',
+      'the document mixes British and American spelling',
+      'numbers are sometimes words and sometimes digits',
+      'several people wrote parts of this and it reads inconsistent',
+    ],
+    prompt:
+      'Build an editorial style sheet for this document before editing it. Go through the text and record every decision that has more than one defensible answer: spelling variants, capitalisation of terms and titles, hyphenation and compound words, how numbers, dates and units are written, abbreviations and when they are first expanded, product and proper names, and serial comma. Where the text is inconsistent, list each variant with a count and recommend one, noting which I must decide. Then apply the sheet and give me the list of changes grouped by rule, not a line-by-line diff.',
+    why:
+      'Asked to "make it consistent", a model normalises some instances and misses others because it never commits to the rule. Writing the sheet first turns a vague polish into a checklist it applies mechanically, and the counts surface choices the author did not know they were making.',
+    watchOut:
+      'A style sheet records choices; it does not make prose good. Run it last, after structural edits, or it gets rebuilt every time a section moves.',
+    related: ['world-bible', 'plain-language', 'continuity-pass'],
+    tags: ['editing', 'copyediting', 'consistency', 'style guide', 'writing'],
+  },
+
+  {
+    id: 'continuity-pass',
+    name: 'Continuity Pass',
+    aka: ['continuity edit', 'consistency check', 'continuity error hunt'],
+    origin: 'Film script supervision and manuscript editing',
+    domains: ['writing'],
+    intents: ['critique', 'diagnose'],
+    oneLiner:
+      'A dedicated read that checks only whether facts, timelines and character knowledge agree across the whole work, separate from any edit for quality.',
+    useWhen: [
+      'a reader said a character knew something before they could have',
+      'the eye colour changed in chapter nine',
+      'I rewrote the middle and now the ending does not line up',
+      'the dates in the report disagree with each other',
+      'check that nothing in this long draft contradicts itself',
+    ],
+    prompt:
+      'Do a continuity pass on this draft and nothing else: do not comment on style or pacing. Track every stated fact about people, places, objects, dates, durations and numbers, and every point where a character learns something. Report each conflict with both locations quoted, what disagrees, and which version the rest of the text supports. Separately list timeline problems, such as travel that takes impossible time or events out of order, and knowledge problems, where someone acts on information they have not yet received. Rank by how noticeable each would be to a reader.',
+    why:
+      'Mixed into a general edit, contradictions lose out to style notes, because style is visible in every paragraph and a contradiction needs two distant passages held in mind at once. A single-purpose pass with quoted locations forces the model to actually cross-reference.',
+    watchOut:
+      'Deliberate inconsistency, such as an unreliable narrator or a character lying, will be flagged. Tell it which contradictions are intentional.',
+    related: ['world-bible', 'style-sheet', 'self-critique-loop'],
+    tags: ['editing', 'fiction', 'consistency', 'timeline', 'review'],
+  },
+
+  {
+    id: 'voice-profile',
+    name: 'Voice Profile',
+    aka: ['style profile', 'writing fingerprint', 'tone of voice guide', 'brand voice'],
+    origin: 'Brand voice guidelines and stylometry',
+    domains: ['writing', 'meta'],
+    intents: ['steer', 'structure'],
+    oneLiner:
+      'Extract an explicit description of how someone writes from real samples, then write to that description instead of to "sound like me".',
+    useWhen: [
+      'it does not sound like me',
+      'the draft reads like a robot wrote it',
+      'ghostwriting for my boss and it sounds nothing like them',
+      'our blog posts all sound different depending on who wrote them',
+      'I want it to write the way I write',
+    ],
+    prompt:
+      'Before drafting, build a voice profile from these samples. Describe it concretely enough that someone else could imitate it: typical sentence length and how much it varies, vocabulary register and words used often or never, how paragraphs open, use of first person, humour and how it is signalled, punctuation habits, how claims are hedged or not, and how pieces begin and end. Quote a short example for each trait. List what this writer never does, since the absences are what generic prose gets wrong. Then write the draft to the profile, and afterwards point to the two places it drifts furthest from it.',
+    why:
+      '"Write like me" gives the model nothing to hold, so it falls back to its default voice with a few surface features copied. Making it state the traits and the absences first turns imitation into a spec it can be checked against.',
+    watchOut:
+      'Three or four samples of the same kind are the minimum; a profile built from one email will overfit to that email.',
+    related: ['few-shot-examples', 'world-bible', 'style-sheet', 'reader-centric-rewrite'],
+    tags: ['writing', 'tone', 'ghostwriting', 'brand voice', 'style', 'profiling'],
+  },
 ]
