@@ -556,6 +556,43 @@ var architecture = [
 			"configuration",
 			"scalability"
 		]
+	},
+	{
+		id: "headless-architecture",
+		name: "Headless Architecture",
+		aka: [
+			"headless CMS",
+			"headless commerce",
+			"decoupled frontend",
+			"API-first backend"
+		],
+		origin: "Headless CMS and commerce platforms; MACH architecture",
+		domains: ["engineering", "strategy"],
+		intents: ["decide", "structure"],
+		oneLiner: "Split the content or commerce backend from the presentation layer so the same data serves a website, apps and other channels through an API.",
+		useWhen: [
+			"our CMS templates are holding back the website redesign",
+			"we need the same content on the website, the app and in-store screens",
+			"marketing cannot change a page without a developer",
+			"should we decouple the frontend from our commerce platform",
+			"the platform forces its own page templates on us"
+		],
+		prompt: "Evaluate a headless architecture for this: separating the content or commerce backend from presentation, with frontends consuming it over an API. Start by listing the channels that need this data now and in the next two years, since headless pays off with several consumers and costs more with one. Then lay out what we would take on: preview and editing experience for non-developers, routing, SEO and rendering, caching, and the extra system to run. Compare against keeping the coupled platform and against a hybrid. End with a recommendation and the condition that would change it.",
+		why: "Headless is often sold as a default upgrade. Making the model count the consumers first and list what the coupled platform was quietly providing, such as editor preview and page routing, grounds the decision in cost rather than fashion.",
+		watchOut: "Content editors lose what-you-see editing unless preview is rebuilt, and that is the most common regret.",
+		related: [
+			"server-vs-client-rendering",
+			"headless-component",
+			"build-vs-buy"
+		],
+		tags: [
+			"architecture",
+			"cms",
+			"ecommerce",
+			"decoupling",
+			"headless",
+			"api"
+		]
 	}
 ];
 //#endregion
@@ -3316,6 +3353,159 @@ var communication = [
 			"promotion",
 			"self review"
 		]
+	},
+	{
+		id: "world-bible",
+		name: "World Bible",
+		aka: [
+			"story bible",
+			"series bible",
+			"lore document",
+			"canon document",
+			"show bible"
+		],
+		origin: "Television writers' rooms and long-running fiction series",
+		domains: ["writing", "meta"],
+		intents: ["structure", "steer"],
+		oneLiner: "One canonical reference for the facts, rules, characters and tone of an invented world, written down before the drafting so every chapter, episode or session draws from the same source.",
+		useWhen: [
+			"the characters keep changing personality between chapters",
+			"it forgot how the magic system works halfway through",
+			"details in my novel contradict each other",
+			"every new chat about my story starts from scratch",
+			"I am building a fantasy setting and cannot keep track of it",
+			"the timeline of my story does not add up",
+			"a game world where the lore keeps drifting"
+		],
+		prompt: "Before we write any more scenes, build a world bible for this project and treat it as canon from now on. Sections: premise and tone in a paragraph; the rules of the world, stated as constraints with their costs and limits, because unlimited powers break stories; a character sheet for each major character covering want, fear, voice, and what they know and when they learned it; places; a dated timeline of events; and an open-questions list for anything not yet decided. Draw only from what I have already written, and flag every contradiction you find rather than silently picking a side. When we draft later, check each scene against the bible and tell me before you add anything new to canon.",
+		variants: [{
+			label: "For a long-running AI project, not fiction",
+			prompt: "Write a project bible I can paste at the top of every new session: the fixed decisions and why, the vocabulary we use and what each term means, the conventions to follow, the things we have tried and rejected, and the open questions. Keep it to what a newcomer must know to avoid contradicting past work, and nothing else."
+		}],
+		why: "A model has no memory across sessions and a weak grip on details from far back in a long context, so continuity drifts unless the canon is written down and handed back. Naming it a bible tells the model it is authoritative, not a suggestion, and the \"flag contradictions, do not resolve them\" instruction keeps the author in charge of canon.",
+		watchOut: "Bibles grow until nobody reads them. Keep the pasted version short and put the long-form lore in a separate reference, or the important constraints get buried.",
+		related: [
+			"style-sheet",
+			"continuity-pass",
+			"voice-profile",
+			"context-priming"
+		],
+		tags: [
+			"fiction",
+			"worldbuilding",
+			"consistency",
+			"creative writing",
+			"canon",
+			"lore"
+		]
+	},
+	{
+		id: "style-sheet",
+		name: "Editorial Style Sheet",
+		aka: [
+			"copyeditor style sheet",
+			"house style",
+			"spelling and usage sheet"
+		],
+		origin: "Book publishing copyediting practice",
+		domains: ["writing"],
+		intents: ["structure", "steer"],
+		oneLiner: "A running per-document list of every spelling, capitalisation, hyphenation, number and naming decision, so the same choice is made the same way every time.",
+		useWhen: [
+			"the same name is spelled three different ways in the draft",
+			"is it e-mail or email, we keep switching",
+			"the document mixes British and American spelling",
+			"numbers are sometimes words and sometimes digits",
+			"several people wrote parts of this and it reads inconsistent"
+		],
+		prompt: "Build an editorial style sheet for this document before editing it. Go through the text and record every decision that has more than one defensible answer: spelling variants, capitalisation of terms and titles, hyphenation and compound words, how numbers, dates and units are written, abbreviations and when they are first expanded, product and proper names, and serial comma. Where the text is inconsistent, list each variant with a count and recommend one, noting which I must decide. Then apply the sheet and give me the list of changes grouped by rule, not a line-by-line diff.",
+		why: "Asked to \"make it consistent\", a model normalises some instances and misses others because it never commits to the rule. Writing the sheet first turns a vague polish into a checklist it applies mechanically, and the counts surface choices the author did not know they were making.",
+		watchOut: "A style sheet records choices; it does not make prose good. Run it last, after structural edits, or it gets rebuilt every time a section moves.",
+		related: [
+			"world-bible",
+			"plain-language",
+			"continuity-pass"
+		],
+		tags: [
+			"editing",
+			"copyediting",
+			"consistency",
+			"style guide",
+			"writing"
+		]
+	},
+	{
+		id: "continuity-pass",
+		name: "Continuity Pass",
+		aka: [
+			"continuity edit",
+			"consistency check",
+			"continuity error hunt"
+		],
+		origin: "Film script supervision and manuscript editing",
+		domains: ["writing"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "A dedicated read that checks only whether facts, timelines and character knowledge agree across the whole work, separate from any edit for quality.",
+		useWhen: [
+			"a reader said a character knew something before they could have",
+			"the eye colour changed in chapter nine",
+			"I rewrote the middle and now the ending does not line up",
+			"the dates in the report disagree with each other",
+			"check that nothing in this long draft contradicts itself"
+		],
+		prompt: "Do a continuity pass on this draft and nothing else: do not comment on style or pacing. Track every stated fact about people, places, objects, dates, durations and numbers, and every point where a character learns something. Report each conflict with both locations quoted, what disagrees, and which version the rest of the text supports. Separately list timeline problems, such as travel that takes impossible time or events out of order, and knowledge problems, where someone acts on information they have not yet received. Rank by how noticeable each would be to a reader.",
+		why: "Mixed into a general edit, contradictions lose out to style notes, because style is visible in every paragraph and a contradiction needs two distant passages held in mind at once. A single-purpose pass with quoted locations forces the model to actually cross-reference.",
+		watchOut: "Deliberate inconsistency, such as an unreliable narrator or a character lying, will be flagged. Tell it which contradictions are intentional.",
+		related: [
+			"world-bible",
+			"style-sheet",
+			"self-critique-loop"
+		],
+		tags: [
+			"editing",
+			"fiction",
+			"consistency",
+			"timeline",
+			"review"
+		]
+	},
+	{
+		id: "voice-profile",
+		name: "Voice Profile",
+		aka: [
+			"style profile",
+			"writing fingerprint",
+			"tone of voice guide",
+			"brand voice"
+		],
+		origin: "Brand voice guidelines and stylometry",
+		domains: ["writing", "meta"],
+		intents: ["steer", "structure"],
+		oneLiner: "Extract an explicit description of how someone writes from real samples, then write to that description instead of to \"sound like me\".",
+		useWhen: [
+			"it does not sound like me",
+			"the draft reads like a robot wrote it",
+			"ghostwriting for my boss and it sounds nothing like them",
+			"our blog posts all sound different depending on who wrote them",
+			"I want it to write the way I write"
+		],
+		prompt: "Before drafting, build a voice profile from these samples. Describe it concretely enough that someone else could imitate it: typical sentence length and how much it varies, vocabulary register and words used often or never, how paragraphs open, use of first person, humour and how it is signalled, punctuation habits, how claims are hedged or not, and how pieces begin and end. Quote a short example for each trait. List what this writer never does, since the absences are what generic prose gets wrong. Then write the draft to the profile, and afterwards point to the two places it drifts furthest from it.",
+		why: "\"Write like me\" gives the model nothing to hold, so it falls back to its default voice with a few surface features copied. Making it state the traits and the absences first turns imitation into a spec it can be checked against.",
+		watchOut: "Three or four samples of the same kind are the minimum; a profile built from one email will overfit to that email.",
+		related: [
+			"few-shot-examples",
+			"world-bible",
+			"style-sheet",
+			"reader-centric-rewrite"
+		],
+		tags: [
+			"writing",
+			"tone",
+			"ghostwriting",
+			"brand voice",
+			"style",
+			"profiling"
+		]
 	}
 ];
 //#endregion
@@ -3890,6 +4080,43 @@ var strategy = [
 			"positioning",
 			"strategy",
 			"commoditisation"
+		]
+	},
+	{
+		id: "ideal-customer-profile",
+		name: "Ideal Customer Profile",
+		aka: [
+			"ICP",
+			"customer profiling",
+			"target account profile",
+			"best-fit customer"
+		],
+		origin: "B2B sales and account-based marketing",
+		domains: ["strategy", "product"],
+		intents: ["prioritize", "reframe"],
+		oneLiner: "Describe the kind of organisation that gets the most value from you and is cheapest to win and keep, based on your best existing customers rather than on who might conceivably buy.",
+		useWhen: [
+			"we sell to anyone who will pay and it is exhausting",
+			"our sales pipeline is full of deals that never close",
+			"who should we actually be targeting",
+			"some customers churn fast and others stay forever",
+			"marketing and sales disagree about who the customer is"
+		],
+		prompt: "Build an ideal customer profile from our actual customer base, not from aspiration. Split customers into the best (retain, expand, cheap to serve, refer others) and the worst (churn, heavy support, long sales cycles, discount-driven), and find the observable attributes that separate the two groups: industry, size, tech stack, the trigger event that made them buy, who championed it, and the problem they had. Keep only attributes a salesperson could check before the first call. Then write the profile as qualifying criteria, and the disqualifiers that should end a deal early.",
+		why: "Left alone, a model writes an aspirational persona that fits everyone. Anchoring on the contrast between best and worst customers, and restricting to attributes checkable before a call, makes the profile something that changes who gets pursued.",
+		watchOut: "An ICP built from a small or early customer base describes who found you first, not who you serve best. Revisit it as the base grows.",
+		related: [
+			"playing-to-win",
+			"blue-ocean-errc",
+			"competitive-teardown"
+		],
+		tags: [
+			"sales",
+			"marketing",
+			"targeting",
+			"go to market",
+			"customers",
+			"profiling"
 		]
 	}
 ];
@@ -4514,6 +4741,44 @@ var steering = [
 			"writing",
 			"iteration",
 			"control"
+		]
+	},
+	{
+		id: "headless-run",
+		name: "Headless Mode",
+		aka: [
+			"non-interactive run",
+			"unattended agent",
+			"print mode",
+			"batch agent run",
+			"claude -p"
+		],
+		origin: "Headless browsers and servers; Claude Code's non-interactive mode",
+		domains: ["meta", "engineering"],
+		intents: ["steer", "plan"],
+		oneLiner: "Write the task so it can finish with nobody watching: no questions back, explicit stopping rules, decisions logged, and output a script can parse.",
+		useWhen: [
+			"I want to run this in CI without anyone answering prompts",
+			"the agent stopped to ask a question and the job hung",
+			"running the same task over hundreds of files overnight",
+			"I need the output to be machine readable for a pipeline",
+			"kick it off and come back later to the result"
+		],
+		prompt: "You are running headless: nobody will answer questions or approve steps. Where you would normally ask, choose the most conservative reasonable option, record the assumption, and continue. Do not take destructive or irreversible actions; if the task requires one, stop and report instead. Stop when the success check passes, or after a fixed budget of attempts, whichever comes first. Finish with a single structured result I can parse: status of done, partial or blocked, what changed, every assumption you made, and anything a human must look at.",
+		why: "Models default to conversational turn-taking and treat ambiguity as a reason to ask, which hangs an unattended run. Stating up front that nobody is there converts each question into a logged assumption, and the fixed result shape lets a script check the outcome instead of a person reading prose.",
+		watchOut: "Conservative defaults can quietly produce a no-op that reports success. Make the success check something observable, like tests passing, not the model's own judgement.",
+		related: [
+			"output-contract",
+			"interview-me-first",
+			"constraint-stacking"
+		],
+		tags: [
+			"automation",
+			"agents",
+			"ci",
+			"non-interactive",
+			"headless",
+			"scripting"
 		]
 	}
 ];
@@ -12501,6 +12766,42 @@ var dataSystems = [
 			"injection",
 			"validation"
 		]
+	},
+	{
+		id: "data-profiling",
+		name: "Data Profiling",
+		aka: [
+			"exploratory data profile",
+			"column profiling",
+			"know your data first"
+		],
+		origin: "Data quality and ETL practice; exploratory data analysis (John Tukey, 1977)",
+		domains: ["data"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "Before analysing or migrating a dataset, measure what is actually in each column: types, nulls, distinct values, ranges, distributions and oddities.",
+		useWhen: [
+			"I just got handed a spreadsheet and need to analyse it",
+			"the analysis came out wrong because of weird values in the data",
+			"I do not trust this dataset but cannot say why",
+			"we are about to migrate this table and nobody knows what is in it",
+			"the column says date but half of it is not dates"
+		],
+		prompt: "Profile this dataset before any analysis. For every column report the inferred type and whether values actually conform to it, null and blank rates, distinct count, the most frequent values, min, max and a distribution summary for numbers and dates, and string length ranges. Flag the oddities that break analyses: sentinel values like 0, -1, 9999 or \"N/A\" standing in for missing, mixed units or formats, duplicate keys, impossible values, and suspicious spikes on a single date or value. Check relationships between columns that should hold, such as end after start. Finish with the three problems most likely to distort conclusions and how you would handle each.",
+		why: "Asked to analyse, a model trusts the column headers and computes averages over sentinel values. Profiling first puts the data's real shape in front of it, and the sentinel and cross-column checks catch the problems that pass every type check.",
+		watchOut: "A profile of a sample can miss rare but important values. Profile the full table where you can, or say how the sample was drawn.",
+		related: [
+			"data-quality-checks",
+			"data-contracts",
+			"data-classification"
+		],
+		tags: [
+			"data",
+			"analysis",
+			"data quality",
+			"profiling",
+			"exploration",
+			"spreadsheet"
+		]
 	}
 ];
 //#endregion
@@ -18431,6 +18732,44 @@ var frontend = [
 			"frontend",
 			"web",
 			"authentication"
+		]
+	},
+	{
+		id: "headless-component",
+		name: "Headless Component",
+		aka: [
+			"headless UI",
+			"renderless component",
+			"unstyled primitives",
+			"logic-only hook"
+		],
+		origin: "React Table, Downshift, Radix and Headless UI libraries",
+		domains: ["engineering", "design"],
+		intents: ["structure", "reframe"],
+		oneLiner: "Ship the behaviour, state and accessibility of a widget with no markup or styling, so each product can render it however its design requires.",
+		useWhen: [
+			"every team restyles our dropdown by overriding its CSS",
+			"the component library looks nothing like our brand",
+			"we keep copying the combobox and fixing the keyboard bugs in each copy",
+			"designers want a different look but the logic is the same",
+			"I want the accessibility handled but full control of the markup"
+		],
+		prompt: "Design this as a headless component: separate the behaviour from the rendering. The headless part owns state, keyboard interaction, focus management and the ARIA attributes, and exposes them as a hook or prop getters the caller spreads onto their own elements. It renders nothing and has no styles. Define its API: the state it exposes, the actions, the prop getters, and which parts can be controlled from outside. Then show one thin styled wrapper built on it, so the common case stays easy, and list the accessibility behaviour the caller cannot break and what they are still responsible for.",
+		why: "Asked for a reusable component, a model produces one with styling options bolted on, which is exactly what teams fight. Naming the headless split moves it to a known architecture with prop getters, and asking for the thin wrapper keeps it from abandoning the easy path.",
+		watchOut: "Headless moves work to every caller. If there is one product and one design, a normal styled component is simpler.",
+		related: [
+			"component-api-design",
+			"design-system-governance",
+			"keyboard-navigation",
+			"focus-management"
+		],
+		tags: [
+			"frontend",
+			"components",
+			"design system",
+			"accessibility",
+			"headless",
+			"react"
 		]
 	}
 ];

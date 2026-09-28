@@ -1025,4 +1025,30 @@ export const dataSystems: Concept[] = [
     related: ['input-validation-boundary', 'least-privilege', 'row-level-security', 'xss-prevention'],
     tags: ['security', 'databases', 'injection', 'validation'],
   },
+
+  {
+    id: 'data-profiling',
+    name: 'Data Profiling',
+    aka: ['exploratory data profile', 'column profiling', 'know your data first'],
+    origin: 'Data quality and ETL practice; exploratory data analysis (John Tukey, 1977)',
+    domains: ['data'],
+    intents: ['diagnose', 'explain'],
+    oneLiner:
+      'Before analysing or migrating a dataset, measure what is actually in each column: types, nulls, distinct values, ranges, distributions and oddities.',
+    useWhen: [
+      'I just got handed a spreadsheet and need to analyse it',
+      'the analysis came out wrong because of weird values in the data',
+      'I do not trust this dataset but cannot say why',
+      'we are about to migrate this table and nobody knows what is in it',
+      'the column says date but half of it is not dates',
+    ],
+    prompt:
+      'Profile this dataset before any analysis. For every column report the inferred type and whether values actually conform to it, null and blank rates, distinct count, the most frequent values, min, max and a distribution summary for numbers and dates, and string length ranges. Flag the oddities that break analyses: sentinel values like 0, -1, 9999 or "N/A" standing in for missing, mixed units or formats, duplicate keys, impossible values, and suspicious spikes on a single date or value. Check relationships between columns that should hold, such as end after start. Finish with the three problems most likely to distort conclusions and how you would handle each.',
+    why:
+      'Asked to analyse, a model trusts the column headers and computes averages over sentinel values. Profiling first puts the data\'s real shape in front of it, and the sentinel and cross-column checks catch the problems that pass every type check.',
+    watchOut:
+      'A profile of a sample can miss rare but important values. Profile the full table where you can, or say how the sample was drawn.',
+    related: ['data-quality-checks', 'data-contracts', 'data-classification'],
+    tags: ['data', 'analysis', 'data quality', 'profiling', 'exploration', 'spreadsheet'],
+  },
 ]

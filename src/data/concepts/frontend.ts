@@ -850,4 +850,30 @@ export const frontend: Concept[] = [
     related: ['xss-prevention', 'cors-configuration', 'idempotent-http-methods', 'api-authentication-choice'],
     tags: ['security', 'frontend', 'web', 'authentication'],
   },
+
+  {
+    id: 'headless-component',
+    name: 'Headless Component',
+    aka: ['headless UI', 'renderless component', 'unstyled primitives', 'logic-only hook'],
+    origin: 'React Table, Downshift, Radix and Headless UI libraries',
+    domains: ['engineering', 'design'],
+    intents: ['structure', 'reframe'],
+    oneLiner:
+      'Ship the behaviour, state and accessibility of a widget with no markup or styling, so each product can render it however its design requires.',
+    useWhen: [
+      'every team restyles our dropdown by overriding its CSS',
+      'the component library looks nothing like our brand',
+      'we keep copying the combobox and fixing the keyboard bugs in each copy',
+      'designers want a different look but the logic is the same',
+      'I want the accessibility handled but full control of the markup',
+    ],
+    prompt:
+      'Design this as a headless component: separate the behaviour from the rendering. The headless part owns state, keyboard interaction, focus management and the ARIA attributes, and exposes them as a hook or prop getters the caller spreads onto their own elements. It renders nothing and has no styles. Define its API: the state it exposes, the actions, the prop getters, and which parts can be controlled from outside. Then show one thin styled wrapper built on it, so the common case stays easy, and list the accessibility behaviour the caller cannot break and what they are still responsible for.',
+    why:
+      'Asked for a reusable component, a model produces one with styling options bolted on, which is exactly what teams fight. Naming the headless split moves it to a known architecture with prop getters, and asking for the thin wrapper keeps it from abandoning the easy path.',
+    watchOut:
+      'Headless moves work to every caller. If there is one product and one design, a normal styled component is simpler.',
+    related: ['component-api-design', 'design-system-governance', 'keyboard-navigation', 'focus-management'],
+    tags: ['frontend', 'components', 'design system', 'accessibility', 'headless', 'react'],
+  },
 ]

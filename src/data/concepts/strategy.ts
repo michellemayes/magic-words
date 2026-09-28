@@ -122,4 +122,30 @@ export const strategy: Concept[] = [
     related: ['competitive-teardown', 'kano-model', 'inversion', 'playing-to-win'],
     tags: ['differentiation', 'innovation', 'positioning', 'strategy', 'commoditisation'],
   },
+
+  {
+    id: 'ideal-customer-profile',
+    name: 'Ideal Customer Profile',
+    aka: ['ICP', 'customer profiling', 'target account profile', 'best-fit customer'],
+    origin: 'B2B sales and account-based marketing',
+    domains: ['strategy', 'product'],
+    intents: ['prioritize', 'reframe'],
+    oneLiner:
+      'Describe the kind of organisation that gets the most value from you and is cheapest to win and keep, based on your best existing customers rather than on who might conceivably buy.',
+    useWhen: [
+      'we sell to anyone who will pay and it is exhausting',
+      'our sales pipeline is full of deals that never close',
+      'who should we actually be targeting',
+      'some customers churn fast and others stay forever',
+      'marketing and sales disagree about who the customer is',
+    ],
+    prompt:
+      'Build an ideal customer profile from our actual customer base, not from aspiration. Split customers into the best (retain, expand, cheap to serve, refer others) and the worst (churn, heavy support, long sales cycles, discount-driven), and find the observable attributes that separate the two groups: industry, size, tech stack, the trigger event that made them buy, who championed it, and the problem they had. Keep only attributes a salesperson could check before the first call. Then write the profile as qualifying criteria, and the disqualifiers that should end a deal early.',
+    why:
+      'Left alone, a model writes an aspirational persona that fits everyone. Anchoring on the contrast between best and worst customers, and restricting to attributes checkable before a call, makes the profile something that changes who gets pursued.',
+    watchOut:
+      'An ICP built from a small or early customer base describes who found you first, not who you serve best. Revisit it as the base grows.',
+    related: ['playing-to-win', 'blue-ocean-errc', 'competitive-teardown'],
+    tags: ['sales', 'marketing', 'targeting', 'go to market', 'customers', 'profiling'],
+  },
 ]

@@ -410,4 +410,30 @@ export const architecture: Concept[] = [
     related: ['backend-for-frontend', 'observability-triage', 'definition-of-done', 'blameless-postmortem'],
     tags: ['deployment', 'operations', 'cloud', 'configuration', 'scalability'],
   },
+
+  {
+    id: 'headless-architecture',
+    name: 'Headless Architecture',
+    aka: ['headless CMS', 'headless commerce', 'decoupled frontend', 'API-first backend'],
+    origin: 'Headless CMS and commerce platforms; MACH architecture',
+    domains: ['engineering', 'strategy'],
+    intents: ['decide', 'structure'],
+    oneLiner:
+      'Split the content or commerce backend from the presentation layer so the same data serves a website, apps and other channels through an API.',
+    useWhen: [
+      'our CMS templates are holding back the website redesign',
+      'we need the same content on the website, the app and in-store screens',
+      'marketing cannot change a page without a developer',
+      'should we decouple the frontend from our commerce platform',
+      'the platform forces its own page templates on us',
+    ],
+    prompt:
+      'Evaluate a headless architecture for this: separating the content or commerce backend from presentation, with frontends consuming it over an API. Start by listing the channels that need this data now and in the next two years, since headless pays off with several consumers and costs more with one. Then lay out what we would take on: preview and editing experience for non-developers, routing, SEO and rendering, caching, and the extra system to run. Compare against keeping the coupled platform and against a hybrid. End with a recommendation and the condition that would change it.',
+    why:
+      'Headless is often sold as a default upgrade. Making the model count the consumers first and list what the coupled platform was quietly providing, such as editor preview and page routing, grounds the decision in cost rather than fashion.',
+    watchOut:
+      'Content editors lose what-you-see editing unless preview is rebuilt, and that is the most common regret.',
+    related: ['server-vs-client-rendering', 'headless-component', 'build-vs-buy'],
+    tags: ['architecture', 'cms', 'ecommerce', 'decoupling', 'headless', 'api'],
+  },
 ]

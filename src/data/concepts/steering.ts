@@ -310,4 +310,30 @@ export const steering: Concept[] = [
     related: ['output-contract', 'interview-me-first', 'negative-space-prompting', 'work-breakdown-structure'],
     tags: ['prompting', 'long form', 'writing', 'iteration', 'control'],
   },
+
+  {
+    id: 'headless-run',
+    name: 'Headless Mode',
+    aka: ['non-interactive run', 'unattended agent', 'print mode', 'batch agent run', 'claude -p'],
+    origin: 'Headless browsers and servers; Claude Code\'s non-interactive mode',
+    domains: ['meta', 'engineering'],
+    intents: ['steer', 'plan'],
+    oneLiner:
+      'Write the task so it can finish with nobody watching: no questions back, explicit stopping rules, decisions logged, and output a script can parse.',
+    useWhen: [
+      'I want to run this in CI without anyone answering prompts',
+      'the agent stopped to ask a question and the job hung',
+      'running the same task over hundreds of files overnight',
+      'I need the output to be machine readable for a pipeline',
+      'kick it off and come back later to the result',
+    ],
+    prompt:
+      'You are running headless: nobody will answer questions or approve steps. Where you would normally ask, choose the most conservative reasonable option, record the assumption, and continue. Do not take destructive or irreversible actions; if the task requires one, stop and report instead. Stop when the success check passes, or after a fixed budget of attempts, whichever comes first. Finish with a single structured result I can parse: status of done, partial or blocked, what changed, every assumption you made, and anything a human must look at.',
+    why:
+      'Models default to conversational turn-taking and treat ambiguity as a reason to ask, which hangs an unattended run. Stating up front that nobody is there converts each question into a logged assumption, and the fixed result shape lets a script check the outcome instead of a person reading prose.',
+    watchOut:
+      'Conservative defaults can quietly produce a no-op that reports success. Make the success check something observable, like tests passing, not the model\'s own judgement.',
+    related: ['output-contract', 'interview-me-first', 'constraint-stacking'],
+    tags: ['automation', 'agents', 'ci', 'non-interactive', 'headless', 'scripting'],
+  },
 ]
