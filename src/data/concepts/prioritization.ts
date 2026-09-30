@@ -176,4 +176,56 @@ export const prioritization: Concept[] = [
     related: ['cost-of-delay', 'critical-path', 'root-cause-fishbone', 'second-order-thinking'],
     tags: ['bottleneck', 'throughput', 'process', 'efficiency', 'systems thinking'],
   },
+
+  {
+    id: 'ice-scoring',
+    name: 'ICE Scoring',
+    aka: ['ICE', 'impact confidence ease', 'ICE score'],
+    origin: 'Sean Ellis, growth hacking practice',
+    domains: ['product', 'strategy'],
+    intents: ['prioritize', 'estimate'],
+    oneLiner:
+      'Rate each idea from 1 to 10 on impact, confidence and ease, then rank by the combined score: a fast triage for long lists of small experiments.',
+    useWhen: [
+      'we have a hundred growth ideas and a small team',
+      'which experiments should we run first this sprint',
+      'I need a quick way to rank ideas without a big spreadsheet',
+      'the brainstorm produced a long list and no order',
+      'everyone has a favourite test they want to run next',
+    ],
+    prompt:
+      'Score these ideas with ICE. Before scoring, anchor the scale: say what a 2, a 5 and an 8 mean for each dimension in our context, so the numbers are comparable. Then rate each idea from 1 to 10 on impact (how much it would move our target metric if it works), confidence (how much evidence we have that it will work) and ease (how little time and effort it needs), with one line justifying each number. Be strict on confidence: 7 or above only when there is data, a prior test or a close analogue, not enthusiasm. Rank by the average of the three, list the top five, and name the idea whose rank depends most on a single guess.',
+    why:
+      'ICE scores drift toward everyone rating their own idea 8 across the board. Anchoring the scale before scoring and setting an evidence bar for confidence keeps the numbers comparable and stops the ranking from reflecting enthusiasm.',
+    watchOut:
+      'ICE suits quick, cheap, reversible bets. For large projects with different reach and effort, RICE or cost of delay gives a more defensible ranking.',
+    related: ['rice-scoring', 'cost-of-delay', 'eisenhower-matrix', 'expected-value'],
+    tags: ['experiments', 'growth', 'scoring', 'triage', 'product management'],
+  },
+
+  {
+    id: 'now-next-later-roadmap',
+    name: 'Now-Next-Later Roadmap',
+    aka: ['now next later', 'outcome roadmap', 'timeline-free roadmap', 'theme-based roadmap'],
+    origin: 'Janna Bastow, ProdPad',
+    domains: ['product', 'strategy'],
+    intents: ['plan', 'prioritize', 'communicate'],
+    oneLiner:
+      'Replace a dated feature timeline with three horizons of decreasing certainty, with each item stated as a problem or outcome rather than a feature with a ship date.',
+    useWhen: [
+      'our roadmap has dates we always miss',
+      'sales keeps promising customers features from the roadmap',
+      'the plan for six months out is fake precision',
+      'stakeholders treat every roadmap item as a commitment',
+      'we need a roadmap but things change every month',
+    ],
+    prompt:
+      'Rework this roadmap into Now, Next and Later columns with no dates. Now holds what is committed and in progress, with specific scope. Next holds problems we have decided to tackle soon, stated as the problem or outcome, with the evidence for it and what we still need to learn. Later holds broader themes we believe matter, described loosely on purpose. Rewrite any item phrased as a feature into the outcome it is meant to achieve. Keep Now small enough that the team could name every item. Then list items that should drop off entirely, and draft a short note for stakeholders explaining what each column does and does not promise.',
+    why:
+      'Models reproduce the dated, Gantt-style roadmap they have seen most often. Tying certainty to the column and forcing features to be rewritten as outcomes makes the uncertainty visible, and the stakeholder note addresses the real failure: reading the roadmap as a delivery contract.',
+    watchOut:
+      'Some commitments really do have dates, such as regulatory deadlines or contracted launches. Keep those as explicit dated items in Now instead of hiding them.',
+    related: ['opportunity-solution-tree', 'moscow', 'cost-of-delay', 'backcasting'],
+    tags: ['roadmap', 'planning', 'stakeholders', 'outcomes', 'product management'],
+  },
 ]

@@ -231,4 +231,56 @@ export const framing: Concept[] = [
     related: ['pre-mortem', 'red-teaming', 'first-principles', 'fmea'],
     tags: ['risk', 'failure modes', 'mental model', 'contrarian', 'planning'],
   },
+
+  {
+    id: 'six-thinking-hats',
+    name: 'Six Thinking Hats',
+    aka: ['de Bono hats', 'parallel thinking', 'thinking hats'],
+    origin: 'Edward de Bono, Six Thinking Hats (1985)',
+    domains: ['strategy', 'product', 'career'],
+    intents: ['critique', 'ideate', 'structure'],
+    oneLiner:
+      'Look at a problem in six separate modes in turn (facts, feelings, risks, benefits, new ideas and process) so everyone thinks in the same direction at once instead of arguing across modes.',
+    useWhen: [
+      'our meetings turn into one person attacking and another defending',
+      'we only ever talk about why an idea will not work',
+      'I want to look at this proposal from every angle',
+      'feelings about the plan are driving the debate but nobody says so',
+      'the discussion jumps between data, opinions and ideas',
+    ],
+    prompt:
+      'Examine this using the Six Thinking Hats, one hat at a time in separate sections. White: the facts and figures we have, and the information we are missing. Red: gut reactions and feelings, stated without justification. Black: risks, weaknesses and why it might fail. Yellow: benefits and why it might work, argued as seriously as the risks. Green: alternatives, new ideas and changes, including ones that answer the black-hat points. Blue: a summary of what the other hats showed, the decision or next step it points to, and which hat deserves more time. Keep each hat to its own mode; a risk that turns up under yellow belongs under black.',
+    why:
+      'An open "evaluate this" produces a blended pros and cons list that leans toward whichever mode the model starts in. Separating the hats, and requiring yellow to be argued as seriously as black, gives optimism and emotion equal airtime, and the blue hat forces a conclusion.',
+    watchOut:
+      'On a simple question it produces six thin sections. Use it for contested proposals or group discussions, not for questions with a clear answer.',
+    related: ['red-teaming', 'steelmanning', 'crazy-eights', 'decision-matrix'],
+    tags: ['meetings', 'perspective', 'facilitation', 'brainstorming', 'group thinking'],
+  },
+
+  {
+    id: 'scamper',
+    name: 'SCAMPER',
+    aka: ['substitute combine adapt modify', 'Osborn checklist', 'idea checklist'],
+    origin: 'Bob Eberle (1971), building on Alex Osborn\'s brainstorming checklist',
+    domains: ['product', 'design', 'strategy'],
+    intents: ['ideate'],
+    oneLiner:
+      'Generate variations on an existing product or process by running it through seven prompts: substitute, combine, adapt, modify, put to another use, eliminate, and reverse.',
+    useWhen: [
+      'we need to improve the product but have run out of ideas',
+      'how can we make this existing thing different',
+      'the brainstorm keeps producing the same three suggestions',
+      'I want to rework an old service rather than start from scratch',
+      'looking for new uses for something we already have',
+    ],
+    prompt:
+      'Apply SCAMPER to this, one letter at a time, with at least two concrete ideas per letter. Substitute: a component, material, person or step we could swap. Combine: what could merge with it, including another product or process. Adapt: what idea from another industry or context we could borrow. Modify: what could be made bigger, smaller, faster or different in form. Put to another use: who else or what else it could serve. Eliminate: what could be removed entirely. Reverse or rearrange: what order, role or direction could be flipped. Make each idea specific to this case, not a generic category. Then pick the three most promising and say what would need to be true for each to work.',
+    why:
+      'An open request for ideas returns the most probable suggestions, which are the obvious ones. Seven fixed lenses with two ideas each push the model into less likely territory, and banning generic categories stops filler like "combine it with AI" that fills a letter without saying anything.',
+    watchOut:
+      'It works on something that already exists. For a blank-slate problem, reframe first with how might we or jobs to be done.',
+    related: ['crazy-eights', 'how-might-we', 'blue-ocean-errc', 'first-principles', 'six-thinking-hats'],
+    tags: ['brainstorming', 'innovation', 'creativity', 'ideation', 'product improvement'],
+  },
 ]

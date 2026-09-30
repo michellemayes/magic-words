@@ -1402,6 +1402,91 @@ var framing = [
 			"contrarian",
 			"planning"
 		]
+	},
+	{
+		id: "six-thinking-hats",
+		name: "Six Thinking Hats",
+		aka: [
+			"de Bono hats",
+			"parallel thinking",
+			"thinking hats"
+		],
+		origin: "Edward de Bono, Six Thinking Hats (1985)",
+		domains: [
+			"strategy",
+			"product",
+			"career"
+		],
+		intents: [
+			"critique",
+			"ideate",
+			"structure"
+		],
+		oneLiner: "Look at a problem in six separate modes in turn (facts, feelings, risks, benefits, new ideas and process) so everyone thinks in the same direction at once instead of arguing across modes.",
+		useWhen: [
+			"our meetings turn into one person attacking and another defending",
+			"we only ever talk about why an idea will not work",
+			"I want to look at this proposal from every angle",
+			"feelings about the plan are driving the debate but nobody says so",
+			"the discussion jumps between data, opinions and ideas"
+		],
+		prompt: "Examine this using the Six Thinking Hats, one hat at a time in separate sections. White: the facts and figures we have, and the information we are missing. Red: gut reactions and feelings, stated without justification. Black: risks, weaknesses and why it might fail. Yellow: benefits and why it might work, argued as seriously as the risks. Green: alternatives, new ideas and changes, including ones that answer the black-hat points. Blue: a summary of what the other hats showed, the decision or next step it points to, and which hat deserves more time. Keep each hat to its own mode; a risk that turns up under yellow belongs under black.",
+		why: "An open \"evaluate this\" produces a blended pros and cons list that leans toward whichever mode the model starts in. Separating the hats, and requiring yellow to be argued as seriously as black, gives optimism and emotion equal airtime, and the blue hat forces a conclusion.",
+		watchOut: "On a simple question it produces six thin sections. Use it for contested proposals or group discussions, not for questions with a clear answer.",
+		related: [
+			"red-teaming",
+			"steelmanning",
+			"crazy-eights",
+			"decision-matrix"
+		],
+		tags: [
+			"meetings",
+			"perspective",
+			"facilitation",
+			"brainstorming",
+			"group thinking"
+		]
+	},
+	{
+		id: "scamper",
+		name: "SCAMPER",
+		aka: [
+			"substitute combine adapt modify",
+			"Osborn checklist",
+			"idea checklist"
+		],
+		origin: "Bob Eberle (1971), building on Alex Osborn's brainstorming checklist",
+		domains: [
+			"product",
+			"design",
+			"strategy"
+		],
+		intents: ["ideate"],
+		oneLiner: "Generate variations on an existing product or process by running it through seven prompts: substitute, combine, adapt, modify, put to another use, eliminate, and reverse.",
+		useWhen: [
+			"we need to improve the product but have run out of ideas",
+			"how can we make this existing thing different",
+			"the brainstorm keeps producing the same three suggestions",
+			"I want to rework an old service rather than start from scratch",
+			"looking for new uses for something we already have"
+		],
+		prompt: "Apply SCAMPER to this, one letter at a time, with at least two concrete ideas per letter. Substitute: a component, material, person or step we could swap. Combine: what could merge with it, including another product or process. Adapt: what idea from another industry or context we could borrow. Modify: what could be made bigger, smaller, faster or different in form. Put to another use: who else or what else it could serve. Eliminate: what could be removed entirely. Reverse or rearrange: what order, role or direction could be flipped. Make each idea specific to this case, not a generic category. Then pick the three most promising and say what would need to be true for each to work.",
+		why: "An open request for ideas returns the most probable suggestions, which are the obvious ones. Seven fixed lenses with two ideas each push the model into less likely territory, and banning generic categories stops filler like \"combine it with AI\" that fills a letter without saying anything.",
+		watchOut: "It works on something that already exists. For a blank-slate problem, reframe first with how might we or jobs to be done.",
+		related: [
+			"crazy-eights",
+			"how-might-we",
+			"blue-ocean-errc",
+			"first-principles",
+			"six-thinking-hats"
+		],
+		tags: [
+			"brainstorming",
+			"innovation",
+			"creativity",
+			"ideation",
+			"product improvement"
+		]
 	}
 ];
 //#endregion
@@ -1801,6 +1886,83 @@ var decisions = [
 			"communication",
 			"alignment"
 		]
+	},
+	{
+		id: "regret-minimization",
+		name: "Regret Minimization Framework",
+		aka: [
+			"regret minimisation",
+			"age 80 test",
+			"Bezos regret framework",
+			"deathbed test"
+		],
+		origin: "Jeff Bezos, on leaving his job to start Amazon",
+		domains: ["career", "strategy"],
+		intents: ["decide", "reframe"],
+		oneLiner: "For a big personal decision, project yourself to age 80 and ask which choice you would regret more, which weights long-term meaning over short-term fear.",
+		useWhen: [
+			"should I quit my job to start something",
+			"I keep going back and forth on a big life decision",
+			"the safe option looks better on paper but I cannot let the other go",
+			"I am scared of making the wrong career move",
+			"everyone says I am crazy to take this leap"
+		],
+		prompt: "Help me apply the regret minimization framework to this decision. First, describe each option concretely as it would play out over the next two years, including the realistic bad case. Then take the view from age 80: for each option, what would I regret about having chosen it, and what would I regret about not having chosen it? Separate regrets of action from regrets of inaction, and be honest about which fears are short-term discomfort (embarrassment, a pay cut, an awkward conversation) and which are lasting consequences. Check that the downside is survivable, and if an option risks something hard to recover, like health, family or all my savings, say so plainly. Finish with which choice I would regret less and the one fact that could change that.",
+		why: "Asked for advice on a life decision, a model balances pros and cons into mush. The age-80 frame changes the time horizon, and splitting short-term discomfort from lasting consequences, plus a survivability check, stops the framework from simply endorsing the bold option.",
+		watchOut: "It leans toward action, because regrets of inaction loom larger in hindsight. Use it for personal, identity-level choices, not business decisions that expected value handles better.",
+		related: [
+			"type-1-type-2-decisions",
+			"expected-value",
+			"opportunity-cost",
+			"inversion"
+		],
+		tags: [
+			"career",
+			"life decisions",
+			"risk",
+			"mental model",
+			"personal"
+		]
+	},
+	{
+		id: "ooda-loop",
+		name: "OODA Loop",
+		aka: [
+			"observe orient decide act",
+			"Boyd cycle",
+			"OODA"
+		],
+		origin: "Colonel John Boyd, US Air Force",
+		domains: [
+			"strategy",
+			"engineering",
+			"career"
+		],
+		intents: ["decide", "plan"],
+		oneLiner: "Cycle through observe, orient, decide and act faster than the situation changes, treating orientation, how you interpret what you see, as the step that matters most.",
+		useWhen: [
+			"the situation keeps changing faster than we can plan",
+			"by the time we decide the facts have moved",
+			"a competitor keeps reacting to us before we finish",
+			"we are in the middle of a crisis and need to move now",
+			"we keep acting on an old picture of what is going on"
+		],
+		prompt: "Run this as an OODA loop and get me through one cycle quickly. Observe: list the facts we have right now, marked by how fresh and reliable each is, and what we cannot see. Orient: state the mental model we are using to interpret those facts, the assumptions inside it, and one alternative reading that fits the same facts. Decide: pick the action that is best under the most likely reading and still acceptable under the alternative. Act: define it small enough to do within hours or days. Then name what we will observe next to know whether it worked, and when to start the next loop. Keep it short; speed matters more than completeness here.",
+		why: "Models treat OODA as a four-step checklist and rush past orientation. Asking for the assumptions and an alternative reading of the same facts forces the step Boyd cared about, and bounding the action in hours keeps the answer from becoming a long plan the situation will outrun.",
+		watchOut: "It is built for fast, adversarial or fluid situations. For slow, irreversible decisions a quick loop is the wrong tempo; slow down and analyse.",
+		related: [
+			"type-1-type-2-decisions",
+			"incident-command",
+			"hypothesis-driven-debugging",
+			"second-order-thinking"
+		],
+		tags: [
+			"speed",
+			"adaptation",
+			"crisis",
+			"competition",
+			"mental model"
+		]
 	}
 ];
 //#endregion
@@ -2054,6 +2216,83 @@ var prioritization = [
 			"process",
 			"efficiency",
 			"systems thinking"
+		]
+	},
+	{
+		id: "ice-scoring",
+		name: "ICE Scoring",
+		aka: [
+			"ICE",
+			"impact confidence ease",
+			"ICE score"
+		],
+		origin: "Sean Ellis, growth hacking practice",
+		domains: ["product", "strategy"],
+		intents: ["prioritize", "estimate"],
+		oneLiner: "Rate each idea from 1 to 10 on impact, confidence and ease, then rank by the combined score: a fast triage for long lists of small experiments.",
+		useWhen: [
+			"we have a hundred growth ideas and a small team",
+			"which experiments should we run first this sprint",
+			"I need a quick way to rank ideas without a big spreadsheet",
+			"the brainstorm produced a long list and no order",
+			"everyone has a favourite test they want to run next"
+		],
+		prompt: "Score these ideas with ICE. Before scoring, anchor the scale: say what a 2, a 5 and an 8 mean for each dimension in our context, so the numbers are comparable. Then rate each idea from 1 to 10 on impact (how much it would move our target metric if it works), confidence (how much evidence we have that it will work) and ease (how little time and effort it needs), with one line justifying each number. Be strict on confidence: 7 or above only when there is data, a prior test or a close analogue, not enthusiasm. Rank by the average of the three, list the top five, and name the idea whose rank depends most on a single guess.",
+		why: "ICE scores drift toward everyone rating their own idea 8 across the board. Anchoring the scale before scoring and setting an evidence bar for confidence keeps the numbers comparable and stops the ranking from reflecting enthusiasm.",
+		watchOut: "ICE suits quick, cheap, reversible bets. For large projects with different reach and effort, RICE or cost of delay gives a more defensible ranking.",
+		related: [
+			"rice-scoring",
+			"cost-of-delay",
+			"eisenhower-matrix",
+			"expected-value"
+		],
+		tags: [
+			"experiments",
+			"growth",
+			"scoring",
+			"triage",
+			"product management"
+		]
+	},
+	{
+		id: "now-next-later-roadmap",
+		name: "Now-Next-Later Roadmap",
+		aka: [
+			"now next later",
+			"outcome roadmap",
+			"timeline-free roadmap",
+			"theme-based roadmap"
+		],
+		origin: "Janna Bastow, ProdPad",
+		domains: ["product", "strategy"],
+		intents: [
+			"plan",
+			"prioritize",
+			"communicate"
+		],
+		oneLiner: "Replace a dated feature timeline with three horizons of decreasing certainty, with each item stated as a problem or outcome rather than a feature with a ship date.",
+		useWhen: [
+			"our roadmap has dates we always miss",
+			"sales keeps promising customers features from the roadmap",
+			"the plan for six months out is fake precision",
+			"stakeholders treat every roadmap item as a commitment",
+			"we need a roadmap but things change every month"
+		],
+		prompt: "Rework this roadmap into Now, Next and Later columns with no dates. Now holds what is committed and in progress, with specific scope. Next holds problems we have decided to tackle soon, stated as the problem or outcome, with the evidence for it and what we still need to learn. Later holds broader themes we believe matter, described loosely on purpose. Rewrite any item phrased as a feature into the outcome it is meant to achieve. Keep Now small enough that the team could name every item. Then list items that should drop off entirely, and draft a short note for stakeholders explaining what each column does and does not promise.",
+		why: "Models reproduce the dated, Gantt-style roadmap they have seen most often. Tying certainty to the column and forcing features to be rewritten as outcomes makes the uncertainty visible, and the stakeholder note addresses the real failure: reading the roadmap as a delivery contract.",
+		watchOut: "Some commitments really do have dates, such as regulatory deadlines or contracted launches. Keep those as explicit dated items in Now instead of hiding them.",
+		related: [
+			"opportunity-solution-tree",
+			"moscow",
+			"cost-of-delay",
+			"backcasting"
+		],
+		tags: [
+			"roadmap",
+			"planning",
+			"stakeholders",
+			"outcomes",
+			"product management"
 		]
 	}
 ];
@@ -2374,6 +2613,47 @@ var critique = [
 			"critique",
 			"ux",
 			"collaboration"
+		]
+	},
+	{
+		id: "ladder-of-inference",
+		name: "Ladder of Inference",
+		aka: [
+			"inference ladder",
+			"Argyris ladder",
+			"jumping to conclusions"
+		],
+		origin: "Chris Argyris; popularised by Peter Senge, The Fifth Discipline",
+		domains: [
+			"career",
+			"strategy",
+			"research"
+		],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Trace a conclusion back down the steps that produced it, from observable data through selected facts, added meaning and assumptions, to find where interpretation replaced evidence.",
+		useWhen: [
+			"I am sure my coworker is doing this on purpose",
+			"we are arguing and both sides think the facts are obvious",
+			"I think I might be reading too much into this",
+			"the team decided the launch failed because of pricing with no real data",
+			"I got annoyed at an email and want to check my reaction"
+		],
+		prompt: "Walk this conclusion down the ladder of inference. Start at the top with the belief as stated. Then, rung by rung, identify the action it is driving, the assumptions it rests on, the meaning added to the facts, the specific data that was selected, and finally the full pool of observable data, meaning what a video camera would have recorded. At each rung, flag where interpretation was added and what else it could have meant. List the observable facts that were left out because they did not fit. Finish with a conclusion supported only by observable data, and one question I could ask the other person to test my interpretation.",
+		why: "Asked whether someone is being unfair, a model tends to accept the user's framing as fact. Asking for the video-camera data and the facts that were left out separates observation from interpretation, and the closing question turns a private conclusion into something that can be checked.",
+		watchOut: "Sometimes the conclusion is right. The goal is to know which rungs are evidence and which are inference, not to talk yourself out of every judgement.",
+		related: [
+			"sbi-feedback",
+			"nonviolent-communication",
+			"socratic-questioning",
+			"steelmanning",
+			"confounders-check"
+		],
+		tags: [
+			"bias",
+			"assumptions",
+			"conflict",
+			"reasoning",
+			"mental model"
 		]
 	}
 ];
@@ -3506,6 +3786,459 @@ var communication = [
 			"style",
 			"profiling"
 		]
+	},
+	{
+		id: "inverted-pyramid",
+		name: "Inverted Pyramid",
+		aka: [
+			"news style",
+			"most important first",
+			"journalistic structure",
+			"lede first"
+		],
+		origin: "Nineteenth-century wire-service journalism",
+		domains: ["writing"],
+		intents: ["communicate", "structure"],
+		oneLiner: "Put the most newsworthy facts in the first paragraph and order everything after by decreasing importance, so the piece can be cut from the bottom at any point.",
+		useWhen: [
+			"people only read the first paragraph of my updates",
+			"writing an announcement and the news is in paragraph four",
+			"my status report starts with background nobody needs",
+			"the editor will trim this and I do not know what survives",
+			"how do journalists decide what goes first"
+		],
+		prompt: "Restructure this as an inverted pyramid. Write a lede of one or two sentences that answers who, what, when, where and why for the single most important development, in plain words a skimmer would understand. Then order every remaining paragraph by how much a reader loses if it is cut, most important first, with background and history at the bottom. Each paragraph should stand on its own without needing the one after it. Finally, show me where you would cut if the piece had to lose half its length, and confirm that the shortened version is still accurate.",
+		why: "The \"where would you cut\" test gives the model a concrete check it can run on its own ordering. Without it, \"put the important thing first\" produces a new opening sentence stacked on the same chronological body.",
+		watchOut: "Built for news and announcements. Arguments and persuasive pieces usually need the Pyramid Principle instead, because their supporting points are not ranked by newsworthiness but grouped by logic.",
+		related: [
+			"bluf",
+			"pyramid-principle",
+			"scqa",
+			"concision-pass"
+		],
+		tags: [
+			"journalism",
+			"structure",
+			"announcements",
+			"news writing",
+			"skimmable"
+		]
+	},
+	{
+		id: "reverse-outline",
+		name: "Reverse Outline",
+		aka: [
+			"after-the-fact outline",
+			"paragraph audit",
+			"post-draft outline",
+			"structural edit"
+		],
+		origin: "Writing-centre and composition teaching practice",
+		domains: ["writing"],
+		intents: [
+			"diagnose",
+			"structure",
+			"critique"
+		],
+		oneLiner: "Outline a finished draft one line per paragraph to see the structure you actually wrote, then fix the order, gaps and repeats before touching sentences.",
+		useWhen: [
+			"my draft feels disorganised but I cannot say why",
+			"I wrote this without a plan and now it wanders",
+			"the essay repeats itself somewhere in the middle",
+			"I do not know which parts to move or cut",
+			"a long document that grew over weeks and has no shape"
+		],
+		prompt: "Make a reverse outline of this draft. For each paragraph, give its number and one sentence stating the point it actually makes, not the point it seems meant to make. Mark paragraphs that make two points, paragraphs that repeat an earlier point, and paragraphs whose point does not serve the main claim. Then state the main claim as the outline reveals it and say whether it matches the claim in the introduction. Propose a new order as a list of paragraph numbers with merges and cuts noted, and name any step in the argument that is missing entirely. Do not rewrite prose yet.",
+		why: "Summarising each paragraph forces the model to read for structure instead of polishing sentences, which is what it does by default when asked to \"improve\" a draft. The \"does not rewrite prose\" line keeps the structural diagnosis from being buried under line edits.",
+		watchOut: "Short pieces rarely need it. Below a page, a plain read catches the same problems faster.",
+		related: [
+			"pyramid-principle",
+			"continuity-pass",
+			"self-critique-loop",
+			"concision-pass"
+		],
+		tags: [
+			"editing",
+			"structure",
+			"revision",
+			"essays",
+			"drafting"
+		]
+	},
+	{
+		id: "and-but-therefore",
+		name: "And, But, Therefore (ABT)",
+		aka: [
+			"ABT",
+			"ABT narrative template",
+			"and but therefore",
+			"narrative spine"
+		],
+		origin: "Randy Olson, \"Houston, We Have a Narrative\"; adapted from Trey Parker and Matt Stone",
+		domains: ["writing", "research"],
+		intents: ["communicate", "structure"],
+		oneLiner: "State the setup with \"and\", the problem with \"but\", and the consequence or action with \"therefore\", so any explanation has a narrative instead of a list.",
+		useWhen: [
+			"my presentation is just a list of facts",
+			"the abstract is accurate and completely boring",
+			"I need to explain why this project matters in two sentences",
+			"people nod along and then forget what I said",
+			"my pitch has no tension"
+		],
+		prompt: "Rewrite the core message as an ABT: one sentence of \"[established context] and [more context], but [the problem or surprise], therefore [what we do or what follows]\". Keep it under 50 words. Then check it: the \"and\" part must be something the audience already accepts, the \"but\" must be a real conflict rather than a transition, and the \"therefore\" must follow from the \"but\". Give me three versions with different \"but\" statements, say which is strongest and why, and then show how the full piece should be reordered so it follows that arc.",
+		why: "The three connecting words give the model a fixed grammar, and a short one is easy to check. Asking for several \"but\" options matters because the problem statement is where most drafts are weak, and the model picks the conflict it would otherwise have smoothed over.",
+		watchOut: "Every paragraph written as an ABT becomes monotonous. Use it for the spine of the piece and for openings, not as a template for every section.",
+		related: [
+			"scqa",
+			"story-spine",
+			"pyramid-principle",
+			"narrative-memo"
+		],
+		tags: [
+			"storytelling",
+			"narrative",
+			"science communication",
+			"pitch",
+			"abstract"
+		]
+	},
+	{
+		id: "narrative-memo",
+		name: "Narrative Memo",
+		aka: [
+			"six-page memo",
+			"Amazon narrative",
+			"memo instead of slides",
+			"written narrative"
+		],
+		origin: "Amazon senior leadership meetings, after Jeff Bezos banned slide decks in 2004",
+		domains: [
+			"writing",
+			"strategy",
+			"product"
+		],
+		intents: ["communicate", "decide"],
+		oneLiner: "Replace the slide deck with a few pages of full sentences that the room reads silently at the start of the meeting, so the reasoning has to be written out rather than implied by bullets.",
+		useWhen: [
+			"our slide decks hide weak reasoning behind bullet points",
+			"meetings are spent explaining the deck instead of deciding",
+			"I need to write a proposal leadership will actually read",
+			"the plan sounds good in a presentation but falls apart in questions",
+			"converting bullet points into a real argument"
+		],
+		prompt: "Turn this into a narrative memo of no more than six pages, in full paragraphs with no bullets except for data tables. Order: the purpose and the decision being asked for in the first paragraph; the context a smart reader outside the team needs; the tenets or principles the proposal rests on; the current state with data; the proposal and the alternatives we rejected, with why; risks and open questions; and the specific ask. Every claim needs a number or a reason. Where my notes rely on a bullet to hide a missing step, write the step out or flag that I need to supply it. End with the five hardest questions a sceptical reader will write in the margin.",
+		why: "Banning bullets is the working constraint. A model writing bullets can list assertions without connecting them; in paragraphs it has to supply the \"because\" and \"so\", and the gaps show up as sentences it cannot write.",
+		watchOut: "It only works if the meeting actually reserves reading time. Sent as a pre-read that nobody opens, a six-page memo is worse than a one-page summary.",
+		related: [
+			"working-backwards",
+			"pyramid-principle",
+			"rfc-process",
+			"bluf"
+		],
+		tags: [
+			"memo",
+			"amazon",
+			"proposal",
+			"meetings",
+			"decision making",
+			"documents"
+		]
+	},
+	{
+		id: "concision-pass",
+		name: "Concision Pass",
+		aka: [
+			"omit needless words",
+			"cut edit",
+			"tighten",
+			"word count cut",
+			"line edit for length"
+		],
+		origin: "Strunk and White, \"The Elements of Style\"; newsroom copy desks",
+		domains: ["writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Cut every word, sentence and paragraph that does not change the meaning, measured against a hard length target rather than a feeling of tightness.",
+		useWhen: [
+			"this is too long and I cannot see what to remove",
+			"I need to get this under the word limit",
+			"my writing is wordy and repetitive",
+			"every sentence starts with a throat-clearing phrase",
+			"trim this without changing what it says"
+		],
+		prompt: "Do a concision pass and cut this by at least 30 percent without losing any fact, qualification or instruction. Work in this order: delete paragraphs that repeat an earlier point, then sentences that only announce what comes next, then filler phrases (\"it is important to note that\", \"in order to\", \"the fact that\"), stacked intensifiers and doubled words (\"each and every\"). Keep the author's voice and any hedge that carries real uncertainty. Give me the cut version, the before and after word counts, and a short list of anything you considered removing but kept because it changed the meaning.",
+		why: "\"Make it concise\" is an instruction models agree with and then barely follow. A percentage target and a word count make it measurable, and the ordered list of cuts pushes the model to remove whole redundant paragraphs, not only trim words inside them.",
+		watchOut: "A hard percentage can cut the transitions a reader needs. If the result reads choppy, restore connectives before restoring content.",
+		related: [
+			"plain-language",
+			"bluf",
+			"reverse-outline",
+			"inverted-pyramid"
+		],
+		tags: [
+			"editing",
+			"concise",
+			"word count",
+			"brevity",
+			"revision"
+		]
+	},
+	{
+		id: "show-dont-tell",
+		name: "Show, Don't Tell",
+		aka: [
+			"show do not tell",
+			"dramatise",
+			"concrete detail",
+			"scene over summary"
+		],
+		origin: "Fiction craft teaching, often traced to Chekhov's letters",
+		domains: ["writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Replace statements of emotion, character or quality with concrete actions, details and dialogue that let the reader reach the conclusion themselves.",
+		useWhen: [
+			"my story says the character is angry but I do not feel it",
+			"the writing is flat and full of adjectives",
+			"readers say my characters feel like descriptions",
+			"my case study just says the product is great",
+			"how do I make this scene come alive"
+		],
+		prompt: "Find every sentence in this draft that tells the reader what to conclude: named emotions (\"she was furious\"), character labels (\"he was generous\"), and verdicts (\"it was a beautiful house\", \"the tool is powerful\"). List them with their location. For the five that matter most to the piece, rewrite each as something the reader can see or hear: an action, a specific object, a line of dialogue, or a measurable result, and do not name the emotion or quality in the rewrite. Leave summary where it is doing its job of moving time along quickly, and tell me which telling sentences you kept on purpose and why.",
+		why: "Listing the telling sentences first gives the model a target it can find mechanically. The rule against naming the emotion in the rewrite stops the common failure where it adds a gesture and then explains it anyway.",
+		watchOut: "Showing everything makes a piece slow and long. Summary is the right tool for transitions and for facts the reader just needs to know.",
+		related: [
+			"voice-profile",
+			"story-spine",
+			"concision-pass",
+			"continuity-pass"
+		],
+		tags: [
+			"fiction",
+			"creative writing",
+			"description",
+			"craft",
+			"storytelling"
+		]
+	},
+	{
+		id: "crucial-conversations",
+		name: "Crucial Conversations",
+		aka: [
+			"high stakes conversation",
+			"pool of shared meaning",
+			"STATE my path",
+			"silence or violence"
+		],
+		origin: "Patterson, Grenny, McMillan and Switzler, \"Crucial Conversations\" (2002)",
+		domains: ["career"],
+		intents: ["communicate", "plan"],
+		oneLiner: "When stakes are high, opinions differ and emotions run strong, keep the conversation safe enough that both sides put all their information on the table.",
+		useWhen: [
+			"I have to talk to my manager about something big and I keep avoiding it",
+			"every time we discuss this it turns into a fight or a sulk",
+			"a talk with my cofounder about equity that I am dreading",
+			"people go quiet in the meeting and complain afterwards",
+			"how do I raise a problem without the other person getting defensive"
+		],
+		prompt: "Help me prepare for this conversation using the Crucial Conversations approach. First, what do I really want for myself, for them and for the relationship, and what would I do if I wanted those things. Second, separate the facts from the story I am telling myself about them. Third, draft an opening that states the facts, then my tentative conclusion, then asks for their view (the STATE path). Fourth, list the signs that they are moving to silence or aggression and a line I can use to restore safety, such as a contrasting statement (\"I do not mean X, I do mean Y\"). End with the outcome we should leave with: who does what by when.",
+		why: "The \"what do I really want\" step stops the model from drafting a script to win the argument. Splitting facts from story gives it a concrete edit to make on the user's own framing, which is where these conversations usually go wrong.",
+		watchOut: "Preparation helps, but a memorised script sounds like one. Use the draft to clarify your facts and opening, then talk normally.",
+		related: [
+			"nonviolent-communication",
+			"sbi-feedback",
+			"radical-candor",
+			"psychological-safety"
+		],
+		tags: [
+			"difficult conversation",
+			"conflict",
+			"communication",
+			"leadership",
+			"relationships"
+		]
+	},
+	{
+		id: "radical-candor",
+		name: "Radical Candor",
+		aka: [
+			"care personally challenge directly",
+			"ruinous empathy",
+			"obnoxious aggression",
+			"manipulative insincerity"
+		],
+		origin: "Kim Scott, \"Radical Candor\" (2017)",
+		domains: ["career"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Give feedback that both shows you care about the person and challenges them directly, avoiding the two common failures of being too nice to be useful or too harsh to be heard.",
+		useWhen: [
+			"I keep softening feedback until it says nothing",
+			"my team never tells me what I am doing wrong",
+			"I was told I come across as harsh when giving notes",
+			"I let a performance problem go on too long because I liked them",
+			"how do I tell someone their work is not good enough"
+		],
+		prompt: "Rewrite this feedback using the Radical Candor framework. First, place my current draft on the two axes (care personally, challenge directly) and name which failure it is closest to: ruinous empathy, obnoxious aggression or manipulative insincerity, quoting the phrases that put it there. Then rewrite it so the problem is stated plainly in the first two sentences, the evidence is specific, and the care shows in what I offer to do next rather than in padding around the criticism. Keep it short enough to say in person. Finally, give me one question to ask them to invite feedback on me in return.",
+		why: "Naming the four quadrants gives the model a vocabulary to diagnose the draft, not just rewrite it, so the user sees which habit to fix. \"Care shows in what I offer to do\" stops the rewrite from reaching for compliments to sandwich the criticism.",
+		watchOut: "Often misread as permission to be blunt. Candor without a relationship already in place lands as aggression, whatever the framework says.",
+		related: [
+			"sbi-feedback",
+			"crucial-conversations",
+			"nonviolent-communication",
+			"psychological-safety"
+		],
+		tags: [
+			"feedback",
+			"management",
+			"leadership",
+			"performance review",
+			"candor"
+		]
+	},
+	{
+		id: "scarf-model",
+		name: "SCARF Model",
+		aka: [
+			"SCARF",
+			"status certainty autonomy relatedness fairness",
+			"social threat model"
+		],
+		origin: "David Rock, NeuroLeadership Institute (2008)",
+		domains: ["career"],
+		intents: ["diagnose", "communicate"],
+		oneLiner: "People react to social threats to Status, Certainty, Autonomy, Relatedness and Fairness as strongly as to physical ones, so check a message against all five before sending it.",
+		useWhen: [
+			"my announcement caused a much bigger reaction than I expected",
+			"the team is upset about a reorg and I do not know why exactly",
+			"a reasonable change is getting fierce pushback",
+			"I need to tell people their project is being cancelled",
+			"why did that email land so badly"
+		],
+		prompt: "Check this message against the SCARF model. For each of the five domains (Status, Certainty, Autonomy, Relatedness, Fairness), say whether the message threatens or rewards it for each group of readers, and quote the wording responsible. Rank the threats by how strongly they are likely to be felt. Then revise the message to reduce the top three threats without hiding the actual decision: for example, give a date for the next update to address certainty, or real choices within the change to address autonomy. List anything that cannot be softened honestly so I can address it in person.",
+		why: "Five named domains give the model a checklist to read the message from the recipient's side, where \"make this more sensitive\" produces generic warmth. Tying each threat to quoted wording keeps the revision specific.",
+		watchOut: "The neuroscience behind it is looser than it is often presented. Treat it as a useful checklist for reactions, not as a model of the brain.",
+		related: [
+			"nonviolent-communication",
+			"psychological-safety",
+			"crucial-conversations",
+			"stakeholder-mapping"
+		],
+		tags: [
+			"change management",
+			"leadership",
+			"communication",
+			"reorg",
+			"empathy"
+		]
+	},
+	{
+		id: "batna",
+		name: "BATNA",
+		aka: [
+			"best alternative to a negotiated agreement",
+			"principled negotiation",
+			"Getting to Yes",
+			"walk away point",
+			"interests not positions"
+		],
+		origin: "Roger Fisher and William Ury, \"Getting to Yes\" (1981), Harvard Negotiation Project",
+		domains: ["career", "strategy"],
+		intents: ["plan", "decide"],
+		oneLiner: "Know what you will do if the negotiation fails, because that alternative, not the other side's opening number, sets how much leverage you have and when to walk away.",
+		useWhen: [
+			"I have a job offer and do not know how hard to push on salary",
+			"negotiating a contract and I feel like I have no leverage",
+			"how do I know when to walk away from a deal",
+			"the other side keeps anchoring on their number",
+			"we are arguing positions and getting nowhere"
+		],
+		prompt: "Help me prepare this negotiation using principled negotiation from Getting to Yes. First, list my realistic alternatives if no deal happens and pick the best one: that is my BATNA, and state it concretely with its value. Do the same for the other side, from what I know, and say what would make theirs weaker or stronger. Second, separate positions from interests: what each side is demanding and why they actually want it. Third, propose three options that serve both sides' interests better than splitting the difference, and an objective standard (market data, precedent) to anchor on. End with my walk-away point and one way I could improve my BATNA before the talk.",
+		why: "Starting with the alternatives turns \"how do I negotiate\" from a question about tactics into one about facts, which a model can reason about. Asking for the other side's BATNA too prevents the one-sided advice where the user overrates their own position.",
+		watchOut: "A BATNA you are not actually willing to act on is a bluff. If the alternative is hypothetical, say so and plan around it.",
+		related: [
+			"expected-value",
+			"opportunity-cost",
+			"steelmanning",
+			"stakeholder-mapping"
+		],
+		tags: [
+			"negotiation",
+			"salary",
+			"contracts",
+			"leverage",
+			"deal making"
+		]
+	},
+	{
+		id: "stakeholder-mapping",
+		name: "Stakeholder Mapping",
+		aka: [
+			"power interest grid",
+			"stakeholder analysis",
+			"Mendelow matrix",
+			"influence map"
+		],
+		origin: "Mendelow's power-interest matrix (1991) and project management practice",
+		domains: ["career", "strategy"],
+		intents: ["plan", "prioritize"],
+		oneLiner: "Place everyone affected by a project on a grid of power over it and interest in it, then decide how to engage each quadrant instead of treating everyone the same.",
+		useWhen: [
+			"someone senior blocked my project late and I never saw it coming",
+			"I do not know who I need to get on board",
+			"too many people want updates and I cannot keep them all happy",
+			"a cross-team initiative where nobody reports to me",
+			"who should I talk to before I announce this"
+		],
+		prompt: "Build a stakeholder map for this initiative. List every person and group affected, including those who could block it quietly, like finance, legal, security or an adjacent team. For each, estimate power (can they stop or change it) and interest (how much it affects them) as high or low, with one line of evidence. Place them in the four quadrants: manage closely, keep satisfied, keep informed, monitor. For the manage-closely group, give each person's likely position, what they care about, and the conversation I should have with them and in what order. Flag anyone whose position I am guessing at, and anyone missing that usually matters for this kind of project.",
+		why: "A named grid forces the model to rate each person on two dimensions instead of producing a flat list of names. The \"who could block it quietly\" prompt catches the low-visibility, high-power groups that surprise people late.",
+		watchOut: "People move quadrants as a project progresses. A map made at kickoff is out of date by launch; revisit it at each milestone.",
+		related: [
+			"decision-roles-daci",
+			"managing-up",
+			"scarf-model",
+			"blind-spot-audit"
+		],
+		tags: [
+			"stakeholders",
+			"influence",
+			"project management",
+			"alignment",
+			"politics"
+		]
+	},
+	{
+		id: "managing-up",
+		name: "Managing Up",
+		aka: [
+			"managing your manager",
+			"managing your boss",
+			"upward management"
+		],
+		origin: "Gabarro and Kotter, \"Managing Your Boss\", Harvard Business Review (1980)",
+		domains: ["career"],
+		intents: ["communicate", "plan"],
+		oneLiner: "Treat the relationship with your manager as something you actively shape: learn their goals, pressures and preferred style, and adapt how you report, ask and escalate to fit.",
+		useWhen: [
+			"my boss keeps asking for updates at the worst times",
+			"I do great work and my manager does not seem to notice",
+			"my manager and I have completely different working styles",
+			"I never know what my boss actually cares about",
+			"how do I tell my manager a project is going off the rails"
+		],
+		prompt: "Help me manage up with this manager. First, from what I have told you, describe their goals, the pressures on them from above, and their working style: do they want detail or summary, written or spoken, early warnings or finished answers. Mark what is guesswork and give me questions to confirm it. Second, identify where my current habits clash with their style. Third, draft a short recurring update in the format they would prefer, with decisions I need from them at the top. Fourth, write how I should raise the current problem: what to say first, what options to bring, and what I am asking them to do.",
+		why: "Starting from the manager's pressures turns a vague relationship question into a model of another person the assistant can reason about. Marking guesswork and producing confirming questions stops the advice from being built on the user's assumptions.",
+		watchOut: "Managing up is about making the working relationship effective, not about managing perceptions. If the advice starts to look like image control, the underlying problem is probably the work or the fit.",
+		related: [
+			"bluf",
+			"brag-document",
+			"stakeholder-mapping",
+			"crucial-conversations"
+		],
+		tags: [
+			"manager",
+			"career",
+			"workplace",
+			"communication",
+			"status updates"
+		]
 	}
 ];
 //#endregion
@@ -3655,6 +4388,299 @@ var learning = [
 			"practice",
 			"onboarding",
 			"skill building"
+		]
+	},
+	{
+		id: "spaced-repetition",
+		name: "Spaced Repetition System",
+		aka: [
+			"SRS",
+			"Anki cards",
+			"Leitner system",
+			"minimum information principle"
+		],
+		origin: "Sebastian Leitner (1972); Piotr Wozniak, SuperMemo and the twenty rules of formulating knowledge",
+		domains: ["learning"],
+		intents: ["structure", "plan"],
+		oneLiner: "Turn material into small cards that each test one fact, and review each card on a widening schedule timed to just before you would lose it.",
+		useWhen: [
+			"turn my notes into flashcards that actually work",
+			"my Anki deck is full of cards I hate reviewing",
+			"learning vocabulary for a new language over months",
+			"I need to keep hundreds of facts for the long term, not just for next week",
+			"building a deck for medical or law school"
+		],
+		prompt: "Turn this material into spaced repetition cards. Follow the minimum information principle: each card tests exactly one fact, with a question that has one clear answer. Split any list or multi-part answer into separate cards, or use cloze deletions. Word the prompt so it cannot be answered by recognising its shape. Add a short context tag to cards that would be ambiguous alone. Skip anything I would not care about forgetting. Output as a two-column table (front, back) I can import, then list any ideas you left out because they are understanding rather than facts and need a different kind of practice.",
+		why: "Models turning notes into flashcards tend to copy whole paragraphs onto the back of a card, which makes reviews slow and recall fuzzy. Naming the minimum information principle and asking for splits and clozes produces cards that survive months of review, and the \"left out\" list stops the deck pretending to cover concepts it cannot.",
+		watchOut: "Cards preserve facts, not understanding. Learn the idea first; use the deck to keep it.",
+		related: [
+			"active-recall",
+			"interleaving",
+			"desirable-difficulties",
+			"elaborative-interrogation"
+		],
+		tags: [
+			"flashcards",
+			"memory",
+			"anki",
+			"study",
+			"language learning"
+		]
+	},
+	{
+		id: "interleaving",
+		name: "Interleaved Practice",
+		aka: [
+			"interleaving",
+			"mixed practice",
+			"shuffled problem sets"
+		],
+		origin: "Rohrer & Taylor (2007); Kornell & Bjork (2008)",
+		domains: ["learning"],
+		intents: ["plan", "structure"],
+		oneLiner: "Mix different problem types in one practice session instead of doing a block of each, so you learn to pick the method as well as run it.",
+		useWhen: [
+			"I can do each chapter's exercises but fail the mixed exam",
+			"I know how to solve it once someone tells me which technique to use",
+			"practising the same kind of problem twenty times in a row",
+			"my study sessions go through one topic at a time",
+			"I freeze when a question does not say which topic it is from"
+		],
+		prompt: "Build me an interleaved practice set from these topics. Mix the problem types so no two consecutive problems use the same method, and strip any labels, headings or chapter references that give away which method applies. Include a few pairs that look similar on the surface but need different approaches. For each problem, ask me first to name which method I would use and why, before solving it. After I answer, tell me whether my choice of method was right, separately from whether the working was right, and keep a tally of which types I confuse with which.",
+		why: "Practice sets from a model default to grouping by topic, because that is how textbooks are laid out. Removing labels and asking for the method choice first targets the skill blocked practice never trains: recognising which tool the problem needs.",
+		watchOut: "Interleave only once you can do each type on its own. Mixing before that just produces confusion.",
+		related: [
+			"desirable-difficulties",
+			"spaced-repetition",
+			"deliberate-practice",
+			"worked-example-fading"
+		],
+		tags: [
+			"practice",
+			"study",
+			"exam prep",
+			"problem solving",
+			"maths"
+		]
+	},
+	{
+		id: "deliberate-practice",
+		name: "Deliberate Practice",
+		aka: [
+			"purposeful practice",
+			"targeted practice",
+			"the 10,000 hours research"
+		],
+		origin: "K. Anders Ericsson (1993); Ericsson & Pool, Peak",
+		domains: ["learning", "career"],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Improve by working on one specific weakness at the edge of your ability, with immediate feedback, rather than by repeating what you can already do.",
+		useWhen: [
+			"I have been doing this for years and I am not getting better",
+			"I have plateaued at intermediate",
+			"I practise every day but it is the same stuff",
+			"how do I actually get good at public speaking or writing or code review",
+			"I do not know what to work on to improve"
+		],
+		prompt: "Design a deliberate practice plan for this skill. First, break the skill into sub-skills and ask me questions until you can say which one is my current bottleneck. Then design a drill for that one sub-skill: short, repeatable, slightly beyond what I can do reliably now, with a clear success criterion. Say where the feedback comes from on each repetition (a reference answer, a recording, a mentor, a test) since practice without feedback is just repetition. Give me the session length, how I will know I have outgrown the drill, and what the next bottleneck is likely to be.",
+		why: "Ask a model how to improve and it lists general advice (practise more, read books, find a mentor). Making it diagnose one bottleneck and build a drill with a feedback source produces something you can do tomorrow and measure.",
+		watchOut: "Deliberate practice is tiring and not fun; an hour of it is a lot. Keep ordinary, enjoyable practice alongside it for motivation.",
+		related: [
+			"interleaving",
+			"desirable-difficulties",
+			"scaffolding-zpd",
+			"worked-example-fading",
+			"feynman-technique"
+		],
+		tags: [
+			"skill building",
+			"practice",
+			"improvement",
+			"expertise",
+			"plateau"
+		]
+	},
+	{
+		id: "scaffolding-zpd",
+		name: "Scaffolding in the Zone of Proximal Development",
+		aka: [
+			"zone of proximal development",
+			"ZPD",
+			"instructional scaffolding",
+			"just-right challenge"
+		],
+		origin: "Lev Vygotsky; scaffolding coined by Wood, Bruner & Ross (1976)",
+		domains: ["learning", "career"],
+		intents: ["explain", "plan"],
+		oneLiner: "Teach at the level just beyond what the learner can do alone but can do with help, and remove the help piece by piece as they take over.",
+		useWhen: [
+			"the explanation is either way too basic or way over my head",
+			"mentoring a junior who is either bored or drowning",
+			"how much should I help without doing it for them",
+			"tutoring my kid and I end up just giving the answers",
+			"pitch this at my level, not a beginner's and not an expert's"
+		],
+		prompt: "Teach this at the edge of what I can already do. Start by asking me two or three diagnostic questions, or giving me a short task, to find what I can do unaided and where I get stuck. Then pitch the next step just past that point. When I get stuck, give the smallest hint that gets me moving, in increasing strength: a question, then a pointer to the relevant idea, then a partial step, and only then the answer. Tell me which level of hint you are giving. As I succeed, give less help on the next problem, and tell me when you think I can do this kind of task alone.",
+		why: "By default a model either explains everything from scratch or answers at expert level, and when you are stuck it gives the full solution. Asking for diagnosis first and a graded ladder of hints keeps it in the band where you are learning rather than watching.",
+		watchOut: "Diagnosis only works if you answer honestly. Saying you understand something you do not will pitch everything too high.",
+		related: [
+			"worked-example-fading",
+			"socratic-questioning",
+			"deliberate-practice",
+			"blooms-taxonomy",
+			"audience-ladder"
+		],
+		tags: [
+			"teaching",
+			"mentoring",
+			"tutoring",
+			"hints",
+			"difficulty"
+		]
+	},
+	{
+		id: "elaborative-interrogation",
+		name: "Elaborative Interrogation",
+		aka: [
+			"asking why",
+			"why is this true",
+			"self-explanation"
+		],
+		origin: "Pressley et al. (1987); rated in Dunlosky et al. (2013) review of study techniques",
+		domains: ["learning"],
+		intents: ["explain", "critique"],
+		oneLiner: "For each fact you learn, ask and answer why it is true and how it connects to what you already know, so it hooks into a structure instead of floating alone.",
+		useWhen: [
+			"I memorised the facts but they do not connect to anything",
+			"it feels like a list of arbitrary rules",
+			"I can recite it but could not reason from it",
+			"history dates and names that just will not stick",
+			"why does this work the way it does"
+		],
+		prompt: "Take me through this material by elaborative interrogation. For each key claim, ask me \"why would this be true?\" or \"why this and not something else?\" and wait for my answer before continuing. If my answer is right, push one level further: why is that true, or what would change if it were not. If it is wrong or vague, point to what I already know that should lead me to the reason, rather than stating it. After each claim, have me say in one sentence how it connects to an earlier one. At the end, show me the chain of reasons we built as a short outline.",
+		why: "A model explaining material tends to give the facts and the reasons together, so you never have to produce the reason yourself. Making it ask why and wait turns reading into generation, which is what makes the fact stick.",
+		watchOut: "It works best when you already have some background to reason from. On completely new ground, read an explanation first, then interrogate it.",
+		related: [
+			"feynman-technique",
+			"socratic-questioning",
+			"active-recall",
+			"concept-mapping"
+		],
+		tags: [
+			"study",
+			"understanding",
+			"questioning",
+			"memory",
+			"reasoning"
+		]
+	},
+	{
+		id: "concept-mapping",
+		name: "Concept Mapping",
+		aka: [
+			"concept map",
+			"knowledge map",
+			"propositional map"
+		],
+		origin: "Joseph Novak, Cornell University (1972)",
+		domains: ["learning", "writing"],
+		intents: ["structure", "explain"],
+		oneLiner: "Draw the key ideas as nodes and label every link with the relationship between them, so the map states propositions rather than just grouping topics.",
+		useWhen: [
+			"I know all the terms but not how they fit together",
+			"my notes are a pile of disconnected pages",
+			"show me how all these parts of the subject relate",
+			"a mind map did not help, it was just a list with lines",
+			"I need to see the big picture of a new field"
+		],
+		prompt: "Build a concept map of this topic. Start with a focus question the map should answer. Pick 12 to 20 key concepts. Connect them with labelled links, where every link reads as a sentence: concept, verb phrase, concept (for example \"enzymes lower activation energy\"). Arrange it from the most general concepts to the most specific. Add at least three cross-links between distant branches, since those show real understanding. Output it as a list of propositions and as Mermaid graph code. Then ask me to fill in the labels on five links you have left blank.",
+		why: "Asked for a map, a model often produces a mind map: a tree of topics with unlabelled branches that says nothing about how ideas relate. Requiring every link to read as a sentence, plus cross-links, forces it to state the relationships, which are what you are trying to learn.",
+		watchOut: "A map the model builds for you is a summary. The learning comes from building or correcting one yourself, so use the blank links.",
+		related: [
+			"elaborative-interrogation",
+			"analogical-mapping",
+			"information-architecture",
+			"feynman-technique"
+		],
+		tags: [
+			"diagram",
+			"knowledge structure",
+			"study",
+			"mind map",
+			"notes"
+		]
+	},
+	{
+		id: "blooms-taxonomy",
+		name: "Bloom's Taxonomy",
+		aka: [
+			"revised Bloom's taxonomy",
+			"learning objectives levels",
+			"cognitive levels"
+		],
+		origin: "Benjamin Bloom (1956); revised by Anderson & Krathwohl (2001)",
+		domains: ["learning", "career"],
+		intents: ["plan", "structure"],
+		oneLiner: "Write learning objectives and assessments at an explicit level of thinking (remember, understand, apply, analyse, evaluate, create) so the course tests what it claims to teach.",
+		useWhen: [
+			"writing learning objectives for a course or workshop",
+			"my quiz only tests whether people memorised definitions",
+			"designing a training session for new hires",
+			"the lesson plan is a list of topics with no clear outcomes",
+			"people pass the training and still cannot do the job"
+		],
+		prompt: "Design this lesson using Bloom's taxonomy. First, write 4 to 6 learning objectives, each starting with a measurable verb and labelled with its level (remember, understand, apply, analyse, evaluate, create). Make sure the objectives reach the level the learner actually needs for their job, not just remember and understand. For each objective, give one activity and one assessment question at that same level, and check that the assessment could not be passed by recall alone when the objective is higher. Present it as a table: objective, level, activity, assessment. Finally, flag any objective using an unmeasurable verb like \"know\" or \"appreciate\".",
+		why: "Left alone, a model writes objectives with vague verbs and quizzes that test recall, because those are easiest to generate. Forcing a level on each row and matching the assessment to it exposes the gap between what the course promises and what it checks.",
+		watchOut: "The levels are a guide, not a strict ladder. Real tasks mix levels, and you do not have to master every lower level before attempting a higher one.",
+		related: [
+			"scaffolding-zpd",
+			"worked-example-fading",
+			"rubric-grading",
+			"definition-of-done"
+		],
+		tags: [
+			"instructional design",
+			"teaching",
+			"learning objectives",
+			"training",
+			"curriculum"
+		]
+	},
+	{
+		id: "desirable-difficulties",
+		name: "Desirable Difficulties",
+		aka: [
+			"productive struggle",
+			"learning versus performance",
+			"illusion of fluency"
+		],
+		origin: "Robert A. Bjork (1994)",
+		domains: ["learning"],
+		intents: ["reframe", "plan"],
+		oneLiner: "Conditions that make learning feel slower and harder, such as testing, spacing, mixing and generating answers, tend to make it last longer; smooth study often only feels effective.",
+		useWhen: [
+			"studying feels easy but I do badly on the exam",
+			"rereading my notes feels productive but nothing sticks",
+			"the course was great and a month later I remember nothing",
+			"I want a study plan that actually works rather than one that feels good",
+			"training went smoothly but people could not apply it"
+		],
+		prompt: "Redesign my study plan using desirable difficulties. List each thing I currently do and say whether it builds long-term learning or just makes the session feel smooth. Replace the smooth ones with harder versions: rereading becomes self-testing, massed sessions become spaced ones, blocked topics become mixed, and reading solutions becomes attempting the problem first. For each change, predict how it will feel (slower, more errors) so I do not abandon it. Also tell me which difficulties would be too much given my current level, because a difficulty only helps if I can eventually succeed at it.",
+		why: "Asked for a study plan, a model tends to optimise for a pleasant experience: summaries, highlights, neat progressions. Naming desirable difficulties tells it that effort is the goal, and predicting the discomfort in advance stops you from reading it as failure.",
+		watchOut: "Difficulty is only desirable if you can overcome it. For a real beginner, piling on hard conditions just causes failure; add them as competence grows.",
+		related: [
+			"active-recall",
+			"spaced-repetition",
+			"interleaving",
+			"deliberate-practice",
+			"elaborative-interrogation"
+		],
+		tags: [
+			"study",
+			"memory",
+			"learning science",
+			"exam prep",
+			"training"
 		]
 	}
 ];
@@ -3889,6 +4915,279 @@ var research = [
 			"literature",
 			"orientation"
 		]
+	},
+	{
+		id: "the-mom-test",
+		name: "The Mom Test",
+		aka: [
+			"customer discovery interviews",
+			"non-leading interview questions",
+			"problem interviews"
+		],
+		origin: "Rob Fitzpatrick, The Mom Test (2013)",
+		domains: ["research", "product"],
+		intents: ["critique", "plan"],
+		oneLiner: "Ask about the specifics of what people did in the past, never whether they like your idea, because even your mother will lie to be kind.",
+		useWhen: [
+			"everyone I pitched said they would use it and then nobody signed up",
+			"customer calls feel encouraging but I learn nothing",
+			"writing questions for validation interviews with potential users",
+			"people keep saying it sounds great and I do not trust it",
+			"how do I talk to customers without leading them"
+		],
+		prompt: "Rewrite my customer interview plan so it passes the Mom Test. First, list every question I drafted that mentions my idea, asks about the future (\"would you\", \"will you\"), or asks for an opinion, and explain what a polite person would answer. Then replace each with a question about a specific past event: the last time the problem happened, what they did about it, what it cost them, and what they have already tried or paid for. Add two questions that probe for commitment, such as time, money, or an introduction. Finish with a short list of signals that count as real evidence versus compliments, fluff, and hypothetical promises, so I can score each call afterwards.",
+		why: "Models default to survey-style questions about preferences because that is what most question lists look like. Naming the three failure types (mentions the idea, asks about the future, asks for opinion) gives the model a filter it can apply line by line, and the evidence-versus-compliment list turns fuzzy calls into something you can score.",
+		watchOut: "It tells you whether a problem is real and painful, not whether your particular solution is right. You still need a prototype or a pre-sale for that.",
+		related: [
+			"jobs-to-be-done",
+			"mvp-riskiest-assumption",
+			"assumption-mapping",
+			"affinity-mapping"
+		],
+		tags: [
+			"customer interviews",
+			"user research",
+			"validation",
+			"discovery",
+			"startups"
+		]
+	},
+	{
+		id: "affinity-mapping",
+		name: "Affinity Mapping",
+		aka: [
+			"affinity diagram",
+			"KJ method",
+			"thematic clustering",
+			"sticky note synthesis"
+		],
+		origin: "Jiro Kawakita, KJ method (1960s)",
+		domains: [
+			"research",
+			"product",
+			"design"
+		],
+		intents: ["structure", "diagnose"],
+		oneLiner: "Break qualitative notes into single observations, then cluster them bottom-up by similarity and name each cluster only after it forms.",
+		useWhen: [
+			"I have forty pages of interview notes and no idea what they say",
+			"how do I turn a pile of user feedback into themes",
+			"the research readout is just a list of quotes",
+			"hundreds of support tickets and open-ended survey answers to make sense of",
+			"we did the interviews and now need to find patterns"
+		],
+		prompt: "Synthesise these notes with affinity mapping. Step one: split everything into atomic observations, one idea each, keeping a source tag (participant or ticket id) on every one, and quote rather than paraphrase where the wording matters. Step two: group observations by similarity without using any categories decided in advance; let the groups emerge from the notes. Step three: name each group with a sentence that states the insight, not a one-word topic. Step four: group the groups into a few higher themes. For every theme, report how many distinct sources support it, list the observations that did not fit anywhere, and flag any theme resting on a single loud source.",
+		why: "Asked to \"find themes\", a model imposes familiar categories (usability, pricing, performance) and then fills them. Forcing atomic notes first and naming groups last keeps the structure coming from the data, and the source counts stop one vivid quote from becoming a headline finding.",
+		watchOut: "Frequency is not importance. A theme mentioned by two people can matter more than one mentioned by twenty, so weigh severity separately.",
+		related: [
+			"triangulation",
+			"jobs-to-be-done",
+			"user-journey-mapping",
+			"the-mom-test",
+			"diary-study"
+		],
+		tags: [
+			"synthesis",
+			"qualitative research",
+			"user research",
+			"themes",
+			"interview notes"
+		]
+	},
+	{
+		id: "survivorship-bias",
+		name: "Survivorship Bias",
+		aka: [
+			"missing bullet holes",
+			"silent evidence",
+			"survivor bias",
+			"Wald's bombers"
+		],
+		origin: "Abraham Wald's WWII aircraft armour analysis; Nassim Taleb's \"silent evidence\"",
+		domains: [
+			"research",
+			"data",
+			"strategy"
+		],
+		intents: ["critique", "reframe"],
+		oneLiner: "Drawing conclusions only from the cases that made it through a filter, while the failures that would contradict you are invisible.",
+		useWhen: [
+			"every successful founder I read about dropped out of college",
+			"we only surveyed current customers about why they chose us",
+			"the playbook comes from studying the companies that won",
+			"old buildings were built better than new ones",
+			"our long-time users love the feature so it must be good"
+		],
+		prompt: "Check this conclusion for survivorship bias. First, name the filter: what process decided which cases ended up in the data I am looking at, such as churn, failure, deletion, or not responding. Second, describe the missing population: who or what went through the same process and did not survive, and roughly how large that group is. Third, ask whether the trait I am crediting was also common among the failures; if it was, it cannot explain success. Fourth, tell me where I could actually find data on the non-survivors (exit surveys, archived records, cancelled accounts, failed competitors). End with a rewritten version of my claim that only says what the surviving data supports.",
+		why: "Survivorship is hard to spot because the evidence against you is absent rather than wrong. Making the model name the filter and estimate the missing group forces it to reason about data that is not in front of it, which it will not do unprompted.",
+		watchOut: "Sometimes the survivors are the right population, for example when you only care about serving the customers you keep. Decide which question you are asking first.",
+		related: [
+			"confounders-check",
+			"regression-to-the-mean",
+			"reference-class-forecasting",
+			"triangulation"
+		],
+		tags: [
+			"bias",
+			"statistics",
+			"selection effects",
+			"critical thinking",
+			"data"
+		]
+	},
+	{
+		id: "regression-to-the-mean",
+		name: "Regression to the Mean",
+		aka: [
+			"reversion to the mean",
+			"regression toward mediocrity",
+			"sophomore slump"
+		],
+		origin: "Francis Galton (1886); popularised by Daniel Kahneman",
+		domains: ["data", "research"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Extreme results partly reflect luck, so the next measurement tends to land closer to average whether or not anything changed.",
+		useWhen: [
+			"we intervened on the worst performing stores and they all improved",
+			"the rep with the best quarter had a terrible one after",
+			"praising people seems to make them worse and criticism makes them better",
+			"the fix worked on the teams with the worst scores",
+			"last month was a record and this month it dropped back"
+		],
+		prompt: "Before crediting the change, check whether this is regression to the mean. Tell me how the cases were selected and whether they were picked because their first measurement was extreme. Estimate how noisy the metric is from period to period, using the data I have or a range if I do not. Work out roughly how much movement toward the average we would expect with no intervention at all. Then tell me what comparison would separate the effect from the rebound: a similar extreme group that was not treated, a randomised holdout, or a longer baseline. State plainly how much of the observed improvement is left once expected rebound is subtracted.",
+		why: "The intervention story is always more compelling than noise, and a model asked \"did it work?\" will usually find reasons it did. Asking for the expected rebound as a number makes the null explanation compete on equal terms instead of being mentioned and dismissed.",
+		watchOut: "Regression does not mean nothing happened. It means the before-and-after on an extreme group cannot tell you; a control group can.",
+		related: [
+			"confounders-check",
+			"survivorship-bias",
+			"pre-registration",
+			"falsification-test"
+		],
+		tags: [
+			"statistics",
+			"noise",
+			"experiments",
+			"performance reviews",
+			"bias"
+		]
+	},
+	{
+		id: "simpsons-paradox",
+		name: "Simpson's Paradox",
+		aka: [
+			"Yule-Simpson effect",
+			"aggregation reversal",
+			"the trend flips when you split it"
+		],
+		origin: "Edward Simpson (1951), earlier Udny Yule and Karl Pearson",
+		domains: ["data", "research"],
+		intents: ["diagnose", "explain"],
+		oneLiner: "A relationship that holds in every subgroup can reverse when the groups are pooled, because the groups differ in size and base rate.",
+		useWhen: [
+			"variant B wins on mobile and on desktop but loses overall",
+			"each department admits women at a higher rate but the university admits fewer",
+			"the new treatment looks worse in total but better for every patient type",
+			"the numbers point opposite ways depending on how I slice them",
+			"which version of this breakdown should I believe"
+		],
+		prompt: "Check this comparison for Simpson's paradox. Build the table both ways: pooled, and split by the most plausible grouping variable, with counts and rates in each cell. Show whether the direction of the effect changes. If it does, explain the mechanism in one paragraph: which group is over-represented on which side, and why its base rate drags the total. Then answer the part people skip: given how the grouping variable relates to the treatment (does it cause the treatment, or is it caused by it?), tell me whether the pooled or the split answer is the right one to act on, and why.",
+		why: "Most explanations stop at \"it reverses\", which leaves you with two contradictory numbers. Asking which level to trust, based on the causal role of the grouping variable, is what turns the paradox into a decision.",
+		watchOut: "Splitting by every variable you can find will eventually produce a reversal by chance. Pick the grouping for a causal reason before you look.",
+		related: [
+			"cohort-analysis",
+			"confounders-check",
+			"regression-to-the-mean",
+			"pre-registration"
+		],
+		tags: [
+			"statistics",
+			"ab testing",
+			"aggregation",
+			"analytics",
+			"paradox"
+		]
+	},
+	{
+		id: "pre-registration",
+		name: "Pre-registration",
+		aka: [
+			"analysis plan up front",
+			"pre-specified success criteria",
+			"registered report",
+			"decide the bar before you look"
+		],
+		origin: "Clinical trial registration; adopted in psychology after the replication crisis",
+		domains: [
+			"research",
+			"data",
+			"product"
+		],
+		intents: ["plan", "critique"],
+		oneLiner: "Write down the hypothesis, the metric, the analysis and what counts as success before seeing any results, so the data cannot quietly move the goalposts.",
+		useWhen: [
+			"every experiment we run somehow ends up counting as a win",
+			"we keep slicing the results until something looks significant",
+			"the success metric changed after the launch numbers came in",
+			"planning an A/B test and want it to be honest",
+			"the team argues about what the result means after every test"
+		],
+		prompt: "Help me pre-register this experiment before any data comes in. Produce a one-page plan with: the hypothesis in one sentence; the single primary metric and exactly how it is computed; any secondary metrics, labelled as exploratory; the sample size or run length and why; exclusions decided now (bots, internal users, outliers); the analysis method; and the decision rule, stated as \"if the primary metric moves by at least X we ship, if it is below Y we stop, otherwise we do Z\". List the subgroup cuts we are allowed to report as findings and say that any other cut is a lead for a new test, not a result. Then point out anything in my plan still vague enough to be decided after the fact.",
+		why: "A model helping analyse results will happily find the angle that works, because that is what it is asked for. Having it write the decision rule first, with numbers, gives both of you something fixed to check the result against, and the \"still vague\" pass catches loopholes.",
+		watchOut: "Pre-registration does not ban exploration; it labels it. Keep exploring, just do not present exploratory cuts as confirmed.",
+		related: [
+			"falsification-test",
+			"goodharts-law",
+			"simpsons-paradox",
+			"regression-to-the-mean"
+		],
+		tags: [
+			"experiments",
+			"ab testing",
+			"p-hacking",
+			"research methods",
+			"success criteria"
+		]
+	},
+	{
+		id: "diary-study",
+		name: "Diary Study",
+		aka: [
+			"experience sampling",
+			"longitudinal user research",
+			"in-context logging"
+		],
+		origin: "HCI and social science field research; experience sampling method (Csikszentmihalyi)",
+		domains: [
+			"research",
+			"product",
+			"design"
+		],
+		intents: ["plan", "diagnose"],
+		oneLiner: "Participants log short entries in the moment over days or weeks, capturing behaviour and context that a single interview or session cannot recall.",
+		useWhen: [
+			"people cannot remember how they actually use the product day to day",
+			"the problem only shows up over weeks, not in one session",
+			"usability tests look fine but real usage tells a different story",
+			"I want to see habits forming or dropping off over time",
+			"the task happens at home or on the move, not in front of us"
+		],
+		prompt: "Design a diary study for this research question. Specify: the question in one sentence and what decision it feeds; who to recruit and how many, allowing for dropout; duration and why; the entry trigger (event-based, such as each time they do the task, or signal-based, such as a daily prompt); the entry format, kept under two minutes, with the exact prompts and whether photos or screenshots are wanted; how we keep people engaged mid-study; and the kickoff and exit interviews. Give me a draft of the first three prompts and flag any that ask people to interpret rather than report what happened. End with how we will analyse the entries.",
+		why: "Left open, a model designs a survey spread over time, with long retrospective questions. Separating the trigger, the two-minute format and the report-not-interpret check keeps the study close to the moment, which is the point of doing one.",
+		watchOut: "Diary studies are expensive in participant effort and dropout is high. Keep entries short and pay people to stay to the end, or the late data comes only from enthusiasts.",
+		related: [
+			"affinity-mapping",
+			"user-journey-mapping",
+			"the-mom-test",
+			"triangulation",
+			"jobs-to-be-done"
+		],
+		tags: [
+			"user research",
+			"longitudinal",
+			"qualitative research",
+			"field study",
+			"behaviour"
+		]
 	}
 ];
 //#endregion
@@ -4118,6 +5417,201 @@ var strategy = [
 			"customers",
 			"profiling"
 		]
+	},
+	{
+		id: "porter-five-forces",
+		name: "Porter's Five Forces",
+		aka: [
+			"five forces",
+			"industry analysis",
+			"industry attractiveness",
+			"Porter"
+		],
+		origin: "Michael Porter, Harvard Business Review, 1979",
+		domains: ["strategy", "product"],
+		intents: ["diagnose", "decide"],
+		oneLiner: "Explain an industry's profitability through five pressures: rivalry, buyer power, supplier power, the threat of substitutes, and the threat of new entrants.",
+		useWhen: [
+			"is this market actually worth entering",
+			"everyone in this industry seems to make thin margins",
+			"our customers keep squeezing us on price",
+			"a big supplier could raise prices and we would be stuck",
+			"why are some industries so much more profitable than others"
+		],
+		prompt: "Run a five forces analysis on this industry, from the point of view of a typical company in it rather than ours alone. For each force (rivalry among existing competitors, bargaining power of buyers, bargaining power of suppliers, threat of substitutes, threat of new entrants), rate it high, medium or low and give the specific structural reason, such as concentration, switching costs, capital requirements, differentiation or regulation. Substitutes means different products that do the same job, not direct competitors. Then say which one or two forces set the ceiling on profitability, how each is likely to shift over the next three to five years, and where our position lets us escape or reshape the strongest force.",
+		why: "Asked about a market, a model lists competitors and trends. Naming the five forces and demanding a structural cause for each rating moves it from who is in the market to why money is or is not made there, and asking which forces set the ceiling stops it treating all five as equally important.",
+		watchOut: "It describes an industry, not a company, and it is a snapshot. Pair it with a view of your own advantages and of where the industry is heading, or it will tell you a market is hard without saying what to do.",
+		related: [
+			"seven-powers",
+			"competitive-teardown",
+			"blue-ocean-errc",
+			"wardley-mapping"
+		],
+		tags: [
+			"competition",
+			"market analysis",
+			"industry structure",
+			"pricing power",
+			"strategy"
+		]
+	},
+	{
+		id: "seven-powers",
+		name: "7 Powers",
+		aka: [
+			"Seven Powers",
+			"Hamilton Helmer",
+			"durable competitive advantage",
+			"moat",
+			"moats"
+		],
+		origin: "Hamilton Helmer, 7 Powers: The Foundations of Business Strategy (2016)",
+		domains: ["strategy", "product"],
+		intents: ["critique", "decide"],
+		oneLiner: "A durable advantage needs both a benefit that raises cash flow and a barrier that stops competitors copying it, and there are only seven kinds: scale economies, network economies, counter-positioning, switching costs, branding, cornered resource and process power.",
+		useWhen: [
+			"what actually stops a competitor from copying us",
+			"investors keep asking about our defensibility",
+			"we are winning now but I am not sure it will last",
+			"a bigger company could build this in a quarter",
+			"is our advantage real or are we just early"
+		],
+		prompt: "Assess our strategic position using Hamilton Helmer's 7 Powers. For each of the seven (scale economies, network economies, counter-positioning, switching costs, branding, cornered resource, process power), say whether we have it, are building it, or do not have it. Where you say we have it, name both halves: the benefit, meaning how it improves our cash flow, and the barrier, meaning why a well-funded competitor cannot or will not copy it. If you cannot name the barrier, it is not a power. Then say which power is realistic to build at our stage: counter-positioning and cornered resource during origination, scale, network economies and switching costs during takeoff, branding and process power once stable. End with the biggest threat to it.",
+		why: "Models call anything good a moat. Requiring both a benefit and a barrier for each claimed power, and saying outright that a missing barrier disqualifies it, filters out operating strengths like a good team or fast shipping that competitors can match.",
+		watchOut: "Most early companies honestly have no power yet. The useful output then is which one to build, not a flattering reading of the current position.",
+		related: [
+			"porter-five-forces",
+			"flywheel-effect",
+			"competitive-teardown",
+			"playing-to-win",
+			"wardley-mapping"
+		],
+		tags: [
+			"moat",
+			"competitive advantage",
+			"defensibility",
+			"strategy",
+			"investing"
+		]
+	},
+	{
+		id: "flywheel-effect",
+		name: "Flywheel Effect",
+		aka: [
+			"flywheel",
+			"virtuous cycle",
+			"Amazon flywheel",
+			"reinforcing loop"
+		],
+		origin: "Jim Collins, Good to Great; Amazon's growth napkin sketch",
+		domains: ["strategy", "product"],
+		intents: ["structure", "plan"],
+		oneLiner: "Describe the business as a closed loop of steps where each one feeds the next, so effort compounds instead of having to be restarted every quarter.",
+		useWhen: [
+			"every quarter we start growth from scratch",
+			"we run lots of initiatives and none of them build on each other",
+			"how do the parts of our business reinforce each other",
+			"growth only happens when we spend on ads",
+			"explaining to the board why this investment compounds"
+		],
+		prompt: "Draw our business as a flywheel. Give four to six steps in a closed loop, where each step causes the next and the last feeds back into the first, and write the causal link on each arrow as a testable claim, such as \"more sellers leads to more selection\". Mark which arrows we have evidence for and which are hopes. Identify the step where a push produces the most rotation, and any step that currently leaks energy out of the loop. Then list our current initiatives and say which push a step on the wheel and which sit outside it, since those are the candidates to stop.",
+		why: "A flywheel prompt on its own yields a tidy diagram with vague arrows. Making each arrow a testable causal claim flagged by evidence, then sorting current initiatives against the loop, turns it into a prioritisation tool rather than a slide.",
+		watchOut: "Loops drawn after the fact always look inevitable. If no arrow can be measured, the flywheel is a story, and the causal links are what to test first.",
+		related: [
+			"seven-powers",
+			"north-star-metric",
+			"second-order-thinking",
+			"playing-to-win"
+		],
+		tags: [
+			"growth",
+			"compounding",
+			"systems thinking",
+			"business model",
+			"strategy"
+		]
+	},
+	{
+		id: "north-star-metric",
+		name: "North Star Metric",
+		aka: [
+			"NSM",
+			"north star",
+			"one metric that matters",
+			"OMTM"
+		],
+		origin: "Growth practice, popularised by Sean Ellis and Amplitude",
+		domains: [
+			"product",
+			"strategy",
+			"data"
+		],
+		intents: ["decide", "structure"],
+		oneLiner: "Pick the one measure that best captures the value customers get from the product, and tie it to a few input metrics that teams can actually move.",
+		useWhen: [
+			"we track forty metrics and nobody knows which matters",
+			"every team optimises a different number",
+			"revenue is up but I am not sure customers are getting value",
+			"what should be the main number on our dashboard",
+			"teams cannot connect their work to company results"
+		],
+		prompt: "Help me choose a north star metric. Propose three candidates and test each against these criteria: it reflects value the customer receives rather than value we extract, it leads revenue rather than lagging it, it can visibly move within weeks, and it cannot easily be inflated in ways that hurt customers. Reject revenue, signups and page views unless you can argue otherwise. For the best candidate, break it into three to five input metrics that specific teams can own, and show the causal link from each input to the north star. Finish with the counter-metric we should watch so the north star is not gamed.",
+		why: "Without criteria, a model suggests daily active users for everything. The value-received and leading-indicator tests rule out vanity numbers, and asking for input metrics and a counter-metric makes the result usable by teams and guards against Goodhart effects.",
+		watchOut: "One number simplifies; it does not replace judgement. A business with very different customer types may need one per product line.",
+		related: [
+			"goodharts-law",
+			"okr-laddering",
+			"flywheel-effect",
+			"opportunity-solution-tree"
+		],
+		tags: [
+			"metrics",
+			"kpi",
+			"alignment",
+			"product management",
+			"growth"
+		]
+	},
+	{
+		id: "value-proposition-canvas",
+		name: "Value Proposition Canvas",
+		aka: [
+			"VPC",
+			"customer profile and value map",
+			"jobs pains gains",
+			"Strategyzer canvas"
+		],
+		origin: "Alexander Osterwalder et al., Value Proposition Design (Strategyzer)",
+		domains: [
+			"product",
+			"strategy",
+			"design"
+		],
+		intents: ["structure", "critique"],
+		oneLiner: "Map a customer segment's jobs, pains and gains against the product's pain relievers and gain creators, and check where the two sides actually fit.",
+		useWhen: [
+			"our pitch describes features and customers shrug",
+			"I cannot explain why someone would switch to us",
+			"the landing page copy lists everything the product does",
+			"we built it and now need to work out who it is for",
+			"checking whether the product solves a problem people care about"
+		],
+		prompt: "Build a value proposition canvas for this product and one specific customer segment. On the customer side, list their jobs (functional, social, emotional), their pains and their gains, ranked by how much the customer cares, based on the evidence I gave you and marking anything you assumed. On the product side, list the products and services, the pain relievers and the gain creators. Then draw the fit explicitly by connecting each reliever or creator to the pain or gain it addresses. Report the high-ranked pains and gains that nothing addresses, and the features that address nothing the customer ranked highly. Close with a one-sentence value proposition built only from connections that held.",
+		why: "Filling two columns is easy and says nothing. The value is in the fit check, so the prompt asks for explicit connections and for both kinds of mismatch, unmet high-priority pains and features serving nobody, which is where the product or the pitch has to change.",
+		watchOut: "A canvas filled from the team's imagination rather than customer evidence just confirms the product. Mark the assumptions and go test them.",
+		related: [
+			"jobs-to-be-done",
+			"ideal-customer-profile",
+			"kano-model",
+			"assumption-mapping"
+		],
+		tags: [
+			"positioning",
+			"product market fit",
+			"customers",
+			"messaging",
+			"product strategy"
+		]
 	}
 ];
 //#endregion
@@ -4297,6 +5791,305 @@ var design = [
 			"documentation",
 			"ux",
 			"findability"
+		]
+	},
+	{
+		id: "double-diamond",
+		name: "Double Diamond",
+		aka: [
+			"diverge and converge",
+			"discover define develop deliver",
+			"problem space then solution space"
+		],
+		origin: "UK Design Council, 2005",
+		domains: ["design", "product"],
+		intents: ["plan", "reframe"],
+		oneLiner: "Run two rounds of widening then narrowing: first explore and pin down the right problem, then explore and pin down the right solution.",
+		useWhen: [
+			"we jumped straight to building the first idea someone had",
+			"the team is arguing about solutions and nobody agrees on the problem",
+			"we shipped it and it solved something users did not care about",
+			"I do not know what phase this project is in",
+			"research and ideation keep blurring into each other"
+		],
+		prompt: "Structure this work as a Double Diamond. Discover: list what we would need to learn about users and context, and the questions to open up, without proposing solutions. Define: turn that into one sharp problem statement and say what we are deliberately not solving. Develop: generate several distinct solution directions for that statement. Deliver: say how to test and narrow them to one. For each phase, name the output that marks it finished. Then tell me which phase we are actually in right now, based on what I have described, and where we skipped a phase.",
+		why: "Naming the four phases with a required output for each stops the model, and the team, from treating a solution idea as a problem definition. Asking which phase we are really in turns a generic framework into a diagnosis of the current project.",
+		watchOut: "Real projects loop back between diamonds. Treat it as a map of modes of work, not a one-way gate process.",
+		related: [
+			"how-might-we",
+			"jobs-to-be-done",
+			"crazy-eights",
+			"abstraction-laddering"
+		],
+		tags: [
+			"design process",
+			"problem framing",
+			"divergent thinking",
+			"convergent thinking",
+			"discovery"
+		]
+	},
+	{
+		id: "think-aloud-usability-test",
+		name: "Think-Aloud Usability Test",
+		aka: [
+			"usability testing",
+			"think aloud protocol",
+			"moderated user test",
+			"task-based testing"
+		],
+		origin: "Ericsson & Simon protocol analysis; popularised for UX by Jakob Nielsen",
+		domains: [
+			"design",
+			"research",
+			"product"
+		],
+		intents: ["diagnose", "plan"],
+		oneLiner: "Watch a handful of real users attempt realistic tasks while narrating what they think, so you see where they get confused rather than hearing opinions.",
+		useWhen: [
+			"we asked users if they liked it and they all said yes, then did not use it",
+			"I want to watch people use the prototype but do not know how to run it",
+			"the team disagrees about whether the flow is confusing",
+			"we need user feedback before launch on a tiny budget",
+			"surveys tell us what people say, not what they do"
+		],
+		prompt: "Write a think-aloud usability test plan for this. Give me: the three to five tasks, each phrased as a realistic goal in the user's words that does not name the UI element they need; who to recruit and how many (five is usually enough per round); a neutral script for introducing the session and prompting people to keep talking without leading them; what to observe and note for each task (success, time, hesitation, wrong turns, quotes); and how to synthesise findings into issues ranked by severity and frequency. List the phrases the moderator must avoid because they give away the answer.",
+		why: "Most AI-written test plans ask users what they think of the design. Specifying tasks written as goals, a non-leading script and banned moderator phrases produces a plan that captures behaviour, which is where usability problems actually show up.",
+		watchOut: "Five users find most usability problems, not whether anyone wants the product. It also cannot tell you how common a problem is across your whole user base.",
+		related: [
+			"heuristic-evaluation",
+			"five-second-test",
+			"user-journey-mapping",
+			"design-critique"
+		],
+		tags: [
+			"usability",
+			"user research",
+			"testing",
+			"ux",
+			"prototype"
+		]
+	},
+	{
+		id: "five-second-test",
+		name: "Five-Second Test",
+		aka: [
+			"first impression test",
+			"glance test",
+			"above the fold test"
+		],
+		origin: "UX research practice (Perfetti; UsabilityHub)",
+		domains: ["design", "writing"],
+		intents: ["critique"],
+		oneLiner: "Show a page for five seconds, hide it, and ask what it was for and what stood out, to check whether the main message survives a glance.",
+		useWhen: [
+			"people land on the page and leave without doing anything",
+			"visitors cannot tell what our product does",
+			"the homepage says a lot and communicates nothing",
+			"I want to know what people notice first",
+			"is the headline clear enough"
+		],
+		prompt: "Run a simulated five-second test on this page. Look only at what a visitor would take in from a quick glance at the top of the screen: the headline, the most prominent visual, and the primary button. Answer as that visitor: what is this, who is it for, and what am I supposed to do next? Then compare those answers with what the page is meant to communicate and list every gap. Name the element that grabbed attention first and whether it deserved to. Finish with a rewrite of the headline and primary action that would pass.",
+		why: "A model reviewing a page reads every word, which is exactly what visitors do not do. Restricting it to the glance-level elements and making it answer the three visitor questions mimics real scanning and exposes a buried message.",
+		watchOut: "A simulation is a cheap first filter, not evidence. Run the real test with people outside the team before making claims about users.",
+		related: [
+			"visual-hierarchy",
+			"think-aloud-usability-test",
+			"bluf",
+			"heuristic-evaluation"
+		],
+		tags: [
+			"first impressions",
+			"landing page",
+			"clarity",
+			"ux research",
+			"messaging"
+		]
+	},
+	{
+		id: "visual-hierarchy",
+		name: "Visual Hierarchy",
+		aka: [
+			"emphasis and contrast",
+			"scan path",
+			"information hierarchy",
+			"f-pattern"
+		],
+		origin: "Graphic design and Gestalt principles",
+		domains: ["design"],
+		intents: ["critique", "structure"],
+		oneLiner: "Use size, weight, colour, contrast, spacing and position to make the most important thing on the screen get seen first, then the next.",
+		useWhen: [
+			"everything on the page looks equally important",
+			"users miss the main button even though it is right there",
+			"the design feels busy and cluttered",
+			"I do not know where to look first on this screen",
+			"the dashboard is a wall of same-sized boxes"
+		],
+		prompt: "Review the visual hierarchy of this screen. First state what the single most important element should be, then the second and third, based on what the user came here to do. Then describe the order a user's eye will actually travel given the current size, weight, colour, contrast, spacing and position of each element. List every place where the actual order differs from the intended one, and for each give the specific change (for example: reduce the secondary button to a text link, increase heading size one step, add space above the section). Prefer removing emphasis from competing elements over adding more to the main one.",
+		why: "Asking for the intended order and the predicted order separately turns \"it feels cluttered\" into a concrete list of mismatches. The instruction to reduce competing emphasis steers away from the default fix of making everything bigger and bolder.",
+		related: [
+			"five-second-test",
+			"fitts-law",
+			"information-architecture",
+			"design-critique",
+			"accessibility-audit"
+		],
+		tags: [
+			"layout",
+			"typography",
+			"emphasis",
+			"ui",
+			"clutter"
+		]
+	},
+	{
+		id: "hicks-law",
+		name: "Hick's Law",
+		aka: [
+			"Hick-Hyman law",
+			"choice overload",
+			"too many options",
+			"decision time"
+		],
+		origin: "William Hick and Ray Hyman, 1952",
+		domains: ["design", "product"],
+		intents: ["critique", "prioritize"],
+		oneLiner: "The time it takes to choose grows with the number of options, so cutting, grouping or defaulting choices makes interfaces faster to use.",
+		useWhen: [
+			"the menu has so many items nobody finds anything",
+			"users freeze on the pricing page and leave",
+			"every setting is exposed at once on one screen",
+			"onboarding asks too many questions up front",
+			"people keep picking the wrong option out of a long list"
+		],
+		prompt: "Apply Hick's Law to this interface. List every point where the user has to choose, and how many options they face at each. For each high-count decision, propose the best fix from: removing options that few people use, setting a smart default, grouping into a small number of labelled categories, splitting the decision into steps, or moving advanced options behind a secondary control. Say which options you would cut and what evidence would justify it. Do not apply this to cases where users already know exactly what they are looking for, such as a well-sorted list they can scan by name.",
+		why: "Naming the law gives the model a specific lens: count the choices, then reduce them. The menu of fixes and the exception for known-target search keep it from just recommending fewer buttons everywhere.",
+		watchOut: "Hiding options adds clicks and can bury things experts need. Measure which options are actually used before cutting them.",
+		related: [
+			"fitts-law",
+			"information-architecture",
+			"visual-hierarchy",
+			"heuristic-evaluation"
+		],
+		tags: [
+			"choice",
+			"simplicity",
+			"menus",
+			"ux laws",
+			"cognitive load"
+		]
+	},
+	{
+		id: "fitts-law",
+		name: "Fitts's Law",
+		aka: [
+			"Fitts law",
+			"target size and distance",
+			"click target size",
+			"tap target"
+		],
+		origin: "Paul Fitts, 1954",
+		domains: ["design", "engineering"],
+		intents: ["critique"],
+		oneLiner: "The time to hit a target depends on its size and distance, so frequent actions should be big and close, and dangerous ones small or far away.",
+		useWhen: [
+			"people keep missing the button on mobile",
+			"users accidentally tap delete instead of save",
+			"the main action is tucked in a tiny corner",
+			"links are so small they are hard to click",
+			"the most used control is the furthest from where people are working"
+		],
+		prompt: "Review this interface using Fitts's Law. For each important interactive element, note its size, how far it is from where the user's pointer or thumb usually is, and how often it is used. Flag frequent actions that are small or distant, destructive actions that sit next to common ones or are easy to hit by accident, and touch targets under about 44 by 44 points. For each, give a concrete fix: enlarge the hit area, move it closer to the related content, use screen edges and corners, or add distance or confirmation for risky actions. Order the fixes by how often the element is used.",
+		why: "The law reduces to two measurable variables, so asking for size, distance and frequency per element gives the model a checklist instead of vague taste. Including destructive actions covers the half of the principle people forget.",
+		watchOut: "It models pointing speed, not comprehension. A large, close button with an unclear label is still a bad button.",
+		related: [
+			"hicks-law",
+			"visual-hierarchy",
+			"accessibility-audit",
+			"heuristic-evaluation"
+		],
+		tags: [
+			"touch targets",
+			"mobile",
+			"buttons",
+			"ux laws",
+			"interaction"
+		]
+	},
+	{
+		id: "empty-state-design",
+		name: "Empty State Design",
+		aka: [
+			"zero state",
+			"blank slate",
+			"first-run experience",
+			"no results state"
+		],
+		origin: "Interaction design practice",
+		domains: ["design", "product"],
+		intents: ["critique", "plan"],
+		oneLiner: "Design what a screen shows when there is nothing in it yet, so new users, cleared lists and failed searches get guidance instead of a blank page.",
+		useWhen: [
+			"new users sign up and see a blank screen with nothing to do",
+			"the page just says no data",
+			"search with no results feels like a dead end",
+			"users do not know how to get started after onboarding",
+			"our screenshots only ever show the app full of data"
+		],
+		prompt: "Design the empty states for this product. First list every screen or component that can be empty, and sort each into a type: first use (nothing created yet), user cleared (they finished or deleted everything), no results (a search or filter matched nothing), and error or no permission. For each, write the headline, one line of explanation, and the single primary action that gets the user to a useful state, plus any sample content or template worth offering. Make first-use states teach what the screen is for, and make no-results states say why and how to widen the search.",
+		why: "Designers and models both work from screens full of data, so empty states get forgotten. Forcing an inventory by type makes the model find all of them, and requiring one primary action per state turns a dead end into a next step.",
+		related: [
+			"ux-microcopy",
+			"onboarding-ramp",
+			"skeleton-vs-spinner",
+			"user-journey-mapping",
+			"heuristic-evaluation"
+		],
+		tags: [
+			"onboarding",
+			"first run",
+			"ui states",
+			"activation",
+			"ux"
+		]
+	},
+	{
+		id: "ux-microcopy",
+		name: "UX Microcopy",
+		aka: [
+			"interface copy",
+			"ux writing",
+			"button labels",
+			"content design"
+		],
+		origin: "UX writing and content design practice",
+		domains: ["design", "writing"],
+		intents: ["communicate", "critique"],
+		oneLiner: "Write the small bits of interface text, such as labels, buttons, hints, errors and confirmations, so they tell users what will happen and what to do next.",
+		useWhen: [
+			"our buttons just say submit and OK",
+			"error messages say something went wrong and nothing else",
+			"users are nervous about clicking because they do not know what happens",
+			"the wording in the app is inconsistent from screen to screen",
+			"the tone of the interface feels robotic or too cute"
+		],
+		prompt: "Rewrite the interface text on these screens. For each string give the current text, the new text, and a short reason. Rules: buttons say what happens, using a verb and object (\"Save draft\", not \"OK\"); errors say what went wrong, why if it helps, and exactly how to fix it, without blaming the user; hints appear before the mistake, not after; confirmations for destructive actions name what will be lost. Use the user's words, not internal names. Keep the same term for the same thing everywhere, and list the terms you standardised. Keep each string as short as it can be while still being clear.",
+		why: "Generic copy requests produce friendlier versions of the same vague text. Per-string rules with a before, after and reason force specific, checkable changes, and the terminology list catches inconsistency across screens.",
+		watchOut: "Copy cannot fix a confusing flow. If a label needs a long explanation, the design underneath probably needs to change.",
+		related: [
+			"plain-language",
+			"error-message-design",
+			"empty-state-design",
+			"voice-profile",
+			"form-ux-validation"
+		],
+		tags: [
+			"ux writing",
+			"copy",
+			"labels",
+			"error messages",
+			"content design"
 		]
 	}
 ];
@@ -4779,6 +6572,272 @@ var steering = [
 			"non-interactive",
 			"headless",
 			"scripting"
+		]
+	},
+	{
+		id: "prompt-chaining",
+		name: "Prompt Chaining",
+		aka: [
+			"staged prompts",
+			"multi-step pipeline",
+			"task decomposition for llms",
+			"one job per call"
+		],
+		origin: "Anthropic and OpenAI prompting guides; LLM pipeline practice",
+		domains: ["meta", "engineering"],
+		intents: ["steer", "plan"],
+		oneLiner: "Split a big task into a sequence of smaller calls, each with one job and a defined output that feeds the next.",
+		useWhen: [
+			"one giant request does five things and does all of them badly",
+			"it forgets half the instructions in a long prompt",
+			"I cannot tell which part of the process went wrong",
+			"research, analysis and writing all mashed into one answer",
+			"the task is too big to get right in a single go"
+		],
+		prompt: "Do not attempt this in one pass. First break the task into three to six stages, each with a single job, a named input and a named output (for example: extract facts, then analyse them, then draft, then check). Show me that chain before running it. Then run one stage at a time. At the end of each stage, emit only that stage's output in the agreed shape, plus a one-line check of whether it is good enough to feed the next stage. If a stage fails its check, fix or rerun that stage instead of pushing a weak result downstream.",
+		why: "A model given one instruction per step spends all its attention on that step, and the explicit hand-off shape between stages makes each result inspectable. When the final answer is wrong you can see which link broke instead of regenerating everything.",
+		watchOut: "Errors compound down the chain, and each stage only sees what the previous one passed along. Keep anything later stages need, such as the original goal, in every step.",
+		related: [
+			"progressive-disclosure",
+			"plan-then-execute",
+			"output-contract",
+			"work-breakdown-structure"
+		],
+		tags: [
+			"prompting",
+			"pipelines",
+			"decomposition",
+			"workflow",
+			"ai"
+		]
+	},
+	{
+		id: "plan-then-execute",
+		name: "Plan Then Execute",
+		aka: [
+			"plan mode",
+			"propose before acting",
+			"approval gate",
+			"plan and wait"
+		],
+		origin: "Agentic coding practice; plan-and-solve prompting (Wang et al., 2023)",
+		domains: ["meta", "engineering"],
+		intents: ["steer", "plan"],
+		oneLiner: "Have the agent write a concrete plan of what it will change and how it will verify it, and wait for approval before it touches anything.",
+		useWhen: [
+			"the agent charged ahead and rewrote half the project",
+			"I only find out what it decided after it has already done it",
+			"it took an approach I would have rejected in ten seconds",
+			"the change is risky and I want a say before it starts",
+			"undoing its work takes longer than doing it myself"
+		],
+		prompt: "Do not make any changes yet. First write a plan: the goal in one sentence, the files or systems you will touch and what changes in each, the order you will do it in, the approach you considered and rejected and why, the riskiest step, and how you will verify the result works. List any open questions whose answers would change the plan. Then stop and wait for my approval. Once I approve, follow the plan; if you discover it was wrong, stop and tell me what changed instead of silently improvising a new one.",
+		why: "Reviewing a plan costs a minute; reviewing a finished diff built on a bad approach costs the whole run. Asking for the rejected alternative and the riskiest step surfaces the decisions a reviewer actually needs to see, and the \"stop if the plan breaks\" rule keeps approval meaningful.",
+		watchOut: "For small, reversible edits the approval round trip is pure overhead. Save it for changes that are expensive to undo.",
+		related: [
+			"context-priming",
+			"progressive-disclosure",
+			"prompt-chaining",
+			"interview-me-first",
+			"pre-mortem"
+		],
+		tags: [
+			"agents",
+			"planning",
+			"approval",
+			"coding",
+			"control"
+		]
+	},
+	{
+		id: "quote-then-answer",
+		name: "Quote Then Answer",
+		aka: [
+			"extract quotes first",
+			"evidence first answering",
+			"cite before you conclude",
+			"grounded answering"
+		],
+		origin: "Anthropic long-context prompting guidance",
+		domains: ["meta", "research"],
+		intents: ["steer", "explain"],
+		oneLiner: "Make the model pull the exact passages that bear on the question out of a long document first, then answer only from those passages.",
+		useWhen: [
+			"it made up something that is not in the document I gave it",
+			"I pasted a long contract and the answer ignores the relevant clause",
+			"I cannot tell which part of the report the answer came from",
+			"summaries of long files drift away from what they actually say",
+			"I need to check the answer against the source quickly"
+		],
+		prompt: "Before answering, find the passages in the document that are relevant to my question and copy them out word for word inside <quotes> tags, each with its location (section, page or heading). Do not paraphrase in this step. Then answer inside <answer> tags using only what those quotes support, referring to them by number. If the quotes do not contain enough to answer, say what is missing rather than filling the gap from general knowledge. If passages conflict, show both and say which you would trust and why.",
+		why: "In a long context the model tends to answer from a blurred impression of the whole document. Forcing verbatim extraction first puts the exact evidence right next to where the answer is generated, and it gives you a fast way to check the answer against the source.",
+		watchOut: "Verbatim quotes can still be chosen selectively. Ask for passages that cut against the answer too when the question is contested.",
+		related: [
+			"retrieval-grounding",
+			"chain-of-thought",
+			"calibrated-uncertainty",
+			"output-contract"
+		],
+		tags: [
+			"prompting",
+			"long context",
+			"hallucination",
+			"citations",
+			"documents"
+		]
+	},
+	{
+		id: "calibrated-uncertainty",
+		name: "Calibrated Uncertainty",
+		aka: [
+			"confidence levels",
+			"flag your guesses",
+			"say how sure you are",
+			"epistemic markers"
+		],
+		origin: "Forecasting and calibration research (Tetlock); LLM calibration work",
+		domains: ["meta", "research"],
+		intents: ["steer", "critique"],
+		oneLiner: "Ask the model to attach a confidence level to each claim and separate what it knows from what it is inferring or guessing.",
+		useWhen: [
+			"it sounds equally sure about everything, including the parts it made up",
+			"I cannot tell which bits to double check",
+			"confident answer turned out to be wrong",
+			"I need to know what is fact and what is a guess",
+			"it never says I do not know"
+		],
+		prompt: "For each substantive claim in your answer, mark how confident you are: high (you would bet on it and could point to why), medium (likely, but based on inference or partial knowledge), or low (a guess). Put the mark right after the claim, not in a footnote. Separate what comes from the material I gave you from what comes from your general knowledge. For anything medium or low, say what would confirm or refute it. End with the one claim I should verify before relying on this. Saying \"I do not know\" is an acceptable answer.",
+		why: "By default a model writes every sentence in the same assured register, so its guesses look like its facts. Asking for a per-claim label with a concrete meaning, and explicitly permitting \"I do not know\", gives it room to express the uncertainty it already has and tells you where to spend checking effort.",
+		watchOut: "Stated confidence is a useful signal, not a probability you can trust to the decimal. It is weakest exactly where the model is confidently wrong, so still verify the high-stakes claims.",
+		related: [
+			"chain-of-thought",
+			"quote-then-answer",
+			"estimation-uncertainty",
+			"self-critique-loop"
+		],
+		tags: [
+			"prompting",
+			"confidence",
+			"hallucination",
+			"accuracy",
+			"verification"
+		]
+	},
+	{
+		id: "minimal-diff-edits",
+		name: "Minimal Diff Edits",
+		aka: [
+			"surgical edits",
+			"change only what I asked",
+			"smallest possible change",
+			"leave the rest untouched"
+		],
+		origin: "Code review practice; agentic editing",
+		domains: [
+			"meta",
+			"engineering",
+			"writing"
+		],
+		intents: ["steer"],
+		oneLiner: "Constrain an edit to exactly what was requested and keep everything else byte-identical, so the change is easy to review and nothing unrelated drifts.",
+		useWhen: [
+			"I asked for one fix and it reformatted the whole file",
+			"it rewrote my paragraph when I wanted one word changed",
+			"the diff is huge and I cannot find the actual change",
+			"it keeps tidying up things I did not ask it to touch",
+			"renamed variables and reordered imports for no reason"
+		],
+		prompt: "Make only the change I asked for. Everything else must stay byte-identical: no reformatting, no renaming, no reordering, no fixing typos or style you happen to notice, no added comments. Match the surrounding style even where you would do it differently. Output the change as a diff or as exact before and after snippets, not the whole rewritten file. If the requested change genuinely forces edits elsewhere, list each one and why before making it. Put anything else you noticed in a separate \"not changed\" list at the end.",
+		why: "Models treat an edit request as permission to improve the whole thing, because a fuller rewrite looks more helpful. Naming the specific kinds of drift, and giving the model a \"not changed\" list as a place to put its other observations, removes the reason to act on them.",
+		watchOut: "Sometimes the surrounding code is the real problem. Ask for the \"not changed\" list so the minimal fix does not hide a larger issue.",
+		related: [
+			"negative-space-prompting",
+			"output-contract",
+			"preparatory-refactoring",
+			"code-review-checklist"
+		],
+		tags: [
+			"editing",
+			"coding",
+			"diff",
+			"scope",
+			"review"
+		]
+	},
+	{
+		id: "context-handoff-brief",
+		name: "Context Handoff Brief",
+		aka: [
+			"session handoff",
+			"handover note",
+			"continuation summary",
+			"agent handoff",
+			"compaction summary"
+		],
+		origin: "Shift handover practice (medicine, operations); multi-agent workflows",
+		domains: ["meta", "writing"],
+		intents: ["steer", "communicate"],
+		oneLiner: "Have the model write a self-contained brief that lets a fresh session or another agent pick up the work without the original conversation.",
+		useWhen: [
+			"the chat got so long it started forgetting early decisions",
+			"I need to start a new session and do not want to explain everything again",
+			"passing a half-finished task to another agent or teammate",
+			"the new conversation repeated mistakes we already fixed",
+			"I want to pause this work and resume next week"
+		],
+		prompt: "Write a handoff brief for someone who has none of this conversation and must continue the work. Include, in this order: the goal and what done looks like; the current state (what is finished, what is in progress, what is untouched); decisions made and why, including options we rejected so they are not revisited; constraints and preferences I have stated; dead ends and what we learned from them; the exact next step; and open questions. Use specific names, paths, commands and values rather than descriptions. Leave out the history of how we got here unless it changes what to do next.",
+		why: "Summaries default to narrating what happened. Ordering the brief around what the next reader must do, and calling out rejected options and dead ends, preserves the information that is expensive to rediscover and most often lost when context resets.",
+		watchOut: "The brief reflects what the model thinks mattered. Read it before handing it on and add anything it dropped, especially your own preferences.",
+		related: [
+			"context-priming",
+			"bluf",
+			"plan-then-execute",
+			"headless-run"
+		],
+		tags: [
+			"agents",
+			"context",
+			"handoff",
+			"summary",
+			"long conversations"
+		]
+	},
+	{
+		id: "eval-set-first",
+		name: "Eval Set First",
+		aka: [
+			"test cases before prompt tuning",
+			"prompt test set",
+			"evals before vibes",
+			"golden examples"
+		],
+		origin: "Test-driven development, applied to prompt engineering",
+		domains: ["meta", "engineering"],
+		intents: ["steer", "critique"],
+		oneLiner: "Before rewording a prompt, write a small set of inputs with expected outcomes, so every change is judged against the same cases instead of the last one you tried.",
+		useWhen: [
+			"I keep tweaking the prompt and cannot tell if it is getting better",
+			"fixing one example broke another one I had already fixed",
+			"I test by trying whatever input comes to mind",
+			"the prompt works on my examples and fails for real users",
+			"I do not know when to stop fiddling with the wording"
+		],
+		prompt: "Before we change the prompt, help me build a test set. Propose 10 to 20 inputs: typical cases, edge cases, inputs that failed before, and a few where the correct behaviour is to refuse or ask. For each, write what a passing output must do and must not do, as checkable criteria rather than an ideal answer. Let me edit the set. Then run the current prompt against every case and report pass or fail with a reason. Only then propose one prompt change at a time, rerun the full set, and show which cases flipped in each direction.",
+		why: "Without fixed cases each edit is judged on whichever example you happen to look at, so you chase regressions in circles. Writing pass criteria before seeing output stops the model grading itself generously, and rerunning the whole set makes regressions visible.",
+		watchOut: "A small set is easy to overfit. Add real failures as you find them, and keep a few cases you never tune against.",
+		related: [
+			"llm-evaluation-harness",
+			"rubric-grading",
+			"few-shot-examples",
+			"red-green-refactor",
+			"prompt-chaining"
+		],
+		tags: [
+			"prompting",
+			"evaluation",
+			"testing",
+			"iteration",
+			"ai"
 		]
 	}
 ];
