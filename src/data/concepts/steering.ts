@@ -336,4 +336,186 @@ export const steering: Concept[] = [
     related: ['output-contract', 'interview-me-first', 'constraint-stacking'],
     tags: ['automation', 'agents', 'ci', 'non-interactive', 'headless', 'scripting'],
   },
+
+  {
+    id: 'prompt-chaining',
+    name: 'Prompt Chaining',
+    aka: ['staged prompts', 'multi-step pipeline', 'task decomposition for llms', 'one job per call'],
+    origin: 'Anthropic and OpenAI prompting guides; LLM pipeline practice',
+    domains: ['meta', 'engineering'],
+    intents: ['steer', 'plan'],
+    oneLiner:
+      'Split a big task into a sequence of smaller calls, each with one job and a defined output that feeds the next.',
+    useWhen: [
+      'one giant request does five things and does all of them badly',
+      'it forgets half the instructions in a long prompt',
+      'I cannot tell which part of the process went wrong',
+      'research, analysis and writing all mashed into one answer',
+      'the task is too big to get right in a single go',
+    ],
+    prompt:
+      'Do not attempt this in one pass. First break the task into three to six stages, each with a single job, a named input and a named output (for example: extract facts, then analyse them, then draft, then check). Show me that chain before running it. Then run one stage at a time. At the end of each stage, emit only that stage\'s output in the agreed shape, plus a one-line check of whether it is good enough to feed the next stage. If a stage fails its check, fix or rerun that stage instead of pushing a weak result downstream.',
+    why:
+      'A model given one instruction per step spends all its attention on that step, and the explicit hand-off shape between stages makes each result inspectable. When the final answer is wrong you can see which link broke instead of regenerating everything.',
+    watchOut:
+      'Errors compound down the chain, and each stage only sees what the previous one passed along. Keep anything later stages need, such as the original goal, in every step.',
+    related: ['progressive-disclosure', 'plan-then-execute', 'output-contract', 'work-breakdown-structure'],
+    tags: ['prompting', 'pipelines', 'decomposition', 'workflow', 'ai'],
+  },
+
+  {
+    id: 'plan-then-execute',
+    name: 'Plan Then Execute',
+    aka: ['plan mode', 'propose before acting', 'approval gate', 'plan and wait'],
+    origin: 'Agentic coding practice; plan-and-solve prompting (Wang et al., 2023)',
+    domains: ['meta', 'engineering'],
+    intents: ['steer', 'plan'],
+    oneLiner:
+      'Have the agent write a concrete plan of what it will change and how it will verify it, and wait for approval before it touches anything.',
+    useWhen: [
+      'the agent charged ahead and rewrote half the project',
+      'I only find out what it decided after it has already done it',
+      'it took an approach I would have rejected in ten seconds',
+      'the change is risky and I want a say before it starts',
+      'undoing its work takes longer than doing it myself',
+    ],
+    prompt:
+      'Do not make any changes yet. First write a plan: the goal in one sentence, the files or systems you will touch and what changes in each, the order you will do it in, the approach you considered and rejected and why, the riskiest step, and how you will verify the result works. List any open questions whose answers would change the plan. Then stop and wait for my approval. Once I approve, follow the plan; if you discover it was wrong, stop and tell me what changed instead of silently improvising a new one.',
+    why:
+      'Reviewing a plan costs a minute; reviewing a finished diff built on a bad approach costs the whole run. Asking for the rejected alternative and the riskiest step surfaces the decisions a reviewer actually needs to see, and the "stop if the plan breaks" rule keeps approval meaningful.',
+    watchOut:
+      'For small, reversible edits the approval round trip is pure overhead. Save it for changes that are expensive to undo.',
+    related: ['context-priming', 'progressive-disclosure', 'prompt-chaining', 'interview-me-first', 'pre-mortem'],
+    tags: ['agents', 'planning', 'approval', 'coding', 'control'],
+  },
+
+  {
+    id: 'quote-then-answer',
+    name: 'Quote Then Answer',
+    aka: ['extract quotes first', 'evidence first answering', 'cite before you conclude', 'grounded answering'],
+    origin: 'Anthropic long-context prompting guidance',
+    domains: ['meta', 'research'],
+    intents: ['steer', 'explain'],
+    oneLiner:
+      'Make the model pull the exact passages that bear on the question out of a long document first, then answer only from those passages.',
+    useWhen: [
+      'it made up something that is not in the document I gave it',
+      'I pasted a long contract and the answer ignores the relevant clause',
+      'I cannot tell which part of the report the answer came from',
+      'summaries of long files drift away from what they actually say',
+      'I need to check the answer against the source quickly',
+    ],
+    prompt:
+      'Before answering, find the passages in the document that are relevant to my question and copy them out word for word inside <quotes> tags, each with its location (section, page or heading). Do not paraphrase in this step. Then answer inside <answer> tags using only what those quotes support, referring to them by number. If the quotes do not contain enough to answer, say what is missing rather than filling the gap from general knowledge. If passages conflict, show both and say which you would trust and why.',
+    why:
+      'In a long context the model tends to answer from a blurred impression of the whole document. Forcing verbatim extraction first puts the exact evidence right next to where the answer is generated, and it gives you a fast way to check the answer against the source.',
+    watchOut:
+      'Verbatim quotes can still be chosen selectively. Ask for passages that cut against the answer too when the question is contested.',
+    related: ['retrieval-grounding', 'chain-of-thought', 'calibrated-uncertainty', 'output-contract'],
+    tags: ['prompting', 'long context', 'hallucination', 'citations', 'documents'],
+  },
+
+  {
+    id: 'calibrated-uncertainty',
+    name: 'Calibrated Uncertainty',
+    aka: ['confidence levels', 'flag your guesses', 'say how sure you are', 'epistemic markers'],
+    origin: 'Forecasting and calibration research (Tetlock); LLM calibration work',
+    domains: ['meta', 'research'],
+    intents: ['steer', 'critique'],
+    oneLiner:
+      'Ask the model to attach a confidence level to each claim and separate what it knows from what it is inferring or guessing.',
+    useWhen: [
+      'it sounds equally sure about everything, including the parts it made up',
+      'I cannot tell which bits to double check',
+      'confident answer turned out to be wrong',
+      'I need to know what is fact and what is a guess',
+      'it never says I do not know',
+    ],
+    prompt:
+      'For each substantive claim in your answer, mark how confident you are: high (you would bet on it and could point to why), medium (likely, but based on inference or partial knowledge), or low (a guess). Put the mark right after the claim, not in a footnote. Separate what comes from the material I gave you from what comes from your general knowledge. For anything medium or low, say what would confirm or refute it. End with the one claim I should verify before relying on this. Saying "I do not know" is an acceptable answer.',
+    why:
+      'By default a model writes every sentence in the same assured register, so its guesses look like its facts. Asking for a per-claim label with a concrete meaning, and explicitly permitting "I do not know", gives it room to express the uncertainty it already has and tells you where to spend checking effort.',
+    watchOut:
+      'Stated confidence is a useful signal, not a probability you can trust to the decimal. It is weakest exactly where the model is confidently wrong, so still verify the high-stakes claims.',
+    related: ['chain-of-thought', 'quote-then-answer', 'estimation-uncertainty', 'self-critique-loop'],
+    tags: ['prompting', 'confidence', 'hallucination', 'accuracy', 'verification'],
+  },
+
+  {
+    id: 'minimal-diff-edits',
+    name: 'Minimal Diff Edits',
+    aka: ['surgical edits', 'change only what I asked', 'smallest possible change', 'leave the rest untouched'],
+    origin: 'Code review practice; agentic editing',
+    domains: ['meta', 'engineering', 'writing'],
+    intents: ['steer'],
+    oneLiner:
+      'Constrain an edit to exactly what was requested and keep everything else byte-identical, so the change is easy to review and nothing unrelated drifts.',
+    useWhen: [
+      'I asked for one fix and it reformatted the whole file',
+      'it rewrote my paragraph when I wanted one word changed',
+      'the diff is huge and I cannot find the actual change',
+      'it keeps tidying up things I did not ask it to touch',
+      'renamed variables and reordered imports for no reason',
+    ],
+    prompt:
+      'Make only the change I asked for. Everything else must stay byte-identical: no reformatting, no renaming, no reordering, no fixing typos or style you happen to notice, no added comments. Match the surrounding style even where you would do it differently. Output the change as a diff or as exact before and after snippets, not the whole rewritten file. If the requested change genuinely forces edits elsewhere, list each one and why before making it. Put anything else you noticed in a separate "not changed" list at the end.',
+    why:
+      'Models treat an edit request as permission to improve the whole thing, because a fuller rewrite looks more helpful. Naming the specific kinds of drift, and giving the model a "not changed" list as a place to put its other observations, removes the reason to act on them.',
+    watchOut:
+      'Sometimes the surrounding code is the real problem. Ask for the "not changed" list so the minimal fix does not hide a larger issue.',
+    related: ['negative-space-prompting', 'output-contract', 'preparatory-refactoring', 'code-review-checklist'],
+    tags: ['editing', 'coding', 'diff', 'scope', 'review'],
+  },
+
+  {
+    id: 'context-handoff-brief',
+    name: 'Context Handoff Brief',
+    aka: ['session handoff', 'handover note', 'continuation summary', 'agent handoff', 'compaction summary'],
+    origin: 'Shift handover practice (medicine, operations); multi-agent workflows',
+    domains: ['meta', 'writing'],
+    intents: ['steer', 'communicate'],
+    oneLiner:
+      'Have the model write a self-contained brief that lets a fresh session or another agent pick up the work without the original conversation.',
+    useWhen: [
+      'the chat got so long it started forgetting early decisions',
+      'I need to start a new session and do not want to explain everything again',
+      'passing a half-finished task to another agent or teammate',
+      'the new conversation repeated mistakes we already fixed',
+      'I want to pause this work and resume next week',
+    ],
+    prompt:
+      'Write a handoff brief for someone who has none of this conversation and must continue the work. Include, in this order: the goal and what done looks like; the current state (what is finished, what is in progress, what is untouched); decisions made and why, including options we rejected so they are not revisited; constraints and preferences I have stated; dead ends and what we learned from them; the exact next step; and open questions. Use specific names, paths, commands and values rather than descriptions. Leave out the history of how we got here unless it changes what to do next.',
+    why:
+      'Summaries default to narrating what happened. Ordering the brief around what the next reader must do, and calling out rejected options and dead ends, preserves the information that is expensive to rediscover and most often lost when context resets.',
+    watchOut:
+      'The brief reflects what the model thinks mattered. Read it before handing it on and add anything it dropped, especially your own preferences.',
+    related: ['context-priming', 'bluf', 'plan-then-execute', 'headless-run'],
+    tags: ['agents', 'context', 'handoff', 'summary', 'long conversations'],
+  },
+
+  {
+    id: 'eval-set-first',
+    name: 'Eval Set First',
+    aka: ['test cases before prompt tuning', 'prompt test set', 'evals before vibes', 'golden examples'],
+    origin: 'Test-driven development, applied to prompt engineering',
+    domains: ['meta', 'engineering'],
+    intents: ['steer', 'critique'],
+    oneLiner:
+      'Before rewording a prompt, write a small set of inputs with expected outcomes, so every change is judged against the same cases instead of the last one you tried.',
+    useWhen: [
+      'I keep tweaking the prompt and cannot tell if it is getting better',
+      'fixing one example broke another one I had already fixed',
+      'I test by trying whatever input comes to mind',
+      'the prompt works on my examples and fails for real users',
+      'I do not know when to stop fiddling with the wording',
+    ],
+    prompt:
+      'Before we change the prompt, help me build a test set. Propose 10 to 20 inputs: typical cases, edge cases, inputs that failed before, and a few where the correct behaviour is to refuse or ask. For each, write what a passing output must do and must not do, as checkable criteria rather than an ideal answer. Let me edit the set. Then run the current prompt against every case and report pass or fail with a reason. Only then propose one prompt change at a time, rerun the full set, and show which cases flipped in each direction.',
+    why:
+      'Without fixed cases each edit is judged on whichever example you happen to look at, so you chase regressions in circles. Writing pass criteria before seeing output stops the model grading itself generously, and rerunning the whole set makes regressions visible.',
+    watchOut:
+      'A small set is easy to overfit. Add real failures as you find them, and keep a few cases you never tune against.',
+    related: ['llm-evaluation-harness', 'rubric-grading', 'few-shot-examples', 'red-green-refactor', 'prompt-chaining'],
+    tags: ['prompting', 'evaluation', 'testing', 'iteration', 'ai'],
+  },
 ]

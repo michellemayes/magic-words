@@ -210,4 +210,30 @@ export const critique: Concept[] = [
     related: ['heuristic-evaluation', 'red-teaming', 'sbi-feedback', 'rubric-grading'],
     tags: ['design review', 'feedback', 'critique', 'ux', 'collaboration'],
   },
+
+  {
+    id: 'ladder-of-inference',
+    name: 'Ladder of Inference',
+    aka: ['inference ladder', 'Argyris ladder', 'jumping to conclusions'],
+    origin: 'Chris Argyris; popularised by Peter Senge, The Fifth Discipline',
+    domains: ['career', 'strategy', 'research'],
+    intents: ['critique', 'diagnose'],
+    oneLiner:
+      'Trace a conclusion back down the steps that produced it, from observable data through selected facts, added meaning and assumptions, to find where interpretation replaced evidence.',
+    useWhen: [
+      'I am sure my coworker is doing this on purpose',
+      'we are arguing and both sides think the facts are obvious',
+      'I think I might be reading too much into this',
+      'the team decided the launch failed because of pricing with no real data',
+      'I got annoyed at an email and want to check my reaction',
+    ],
+    prompt:
+      'Walk this conclusion down the ladder of inference. Start at the top with the belief as stated. Then, rung by rung, identify the action it is driving, the assumptions it rests on, the meaning added to the facts, the specific data that was selected, and finally the full pool of observable data, meaning what a video camera would have recorded. At each rung, flag where interpretation was added and what else it could have meant. List the observable facts that were left out because they did not fit. Finish with a conclusion supported only by observable data, and one question I could ask the other person to test my interpretation.',
+    why:
+      'Asked whether someone is being unfair, a model tends to accept the user\'s framing as fact. Asking for the video-camera data and the facts that were left out separates observation from interpretation, and the closing question turns a private conclusion into something that can be checked.',
+    watchOut:
+      'Sometimes the conclusion is right. The goal is to know which rungs are evidence and which are inference, not to talk yourself out of every judgement.',
+    related: ['sbi-feedback', 'nonviolent-communication', 'socratic-questioning', 'steelmanning', 'confounders-check'],
+    tags: ['bias', 'assumptions', 'conflict', 'reasoning', 'mental model'],
+  },
 ]

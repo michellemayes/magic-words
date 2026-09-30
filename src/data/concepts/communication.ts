@@ -366,4 +366,316 @@ export const communication: Concept[] = [
     related: ['few-shot-examples', 'world-bible', 'style-sheet', 'reader-centric-rewrite'],
     tags: ['writing', 'tone', 'ghostwriting', 'brand voice', 'style', 'profiling'],
   },
+
+  {
+    id: 'inverted-pyramid',
+    name: 'Inverted Pyramid',
+    aka: ['news style', 'most important first', 'journalistic structure', 'lede first'],
+    origin: 'Nineteenth-century wire-service journalism',
+    domains: ['writing'],
+    intents: ['communicate', 'structure'],
+    oneLiner:
+      'Put the most newsworthy facts in the first paragraph and order everything after by decreasing importance, so the piece can be cut from the bottom at any point.',
+    useWhen: [
+      'people only read the first paragraph of my updates',
+      'writing an announcement and the news is in paragraph four',
+      'my status report starts with background nobody needs',
+      'the editor will trim this and I do not know what survives',
+      'how do journalists decide what goes first',
+    ],
+    prompt:
+      'Restructure this as an inverted pyramid. Write a lede of one or two sentences that answers who, what, when, where and why for the single most important development, in plain words a skimmer would understand. Then order every remaining paragraph by how much a reader loses if it is cut, most important first, with background and history at the bottom. Each paragraph should stand on its own without needing the one after it. Finally, show me where you would cut if the piece had to lose half its length, and confirm that the shortened version is still accurate.',
+    why:
+      'The "where would you cut" test gives the model a concrete check it can run on its own ordering. Without it, "put the important thing first" produces a new opening sentence stacked on the same chronological body.',
+    watchOut:
+      'Built for news and announcements. Arguments and persuasive pieces usually need the Pyramid Principle instead, because their supporting points are not ranked by newsworthiness but grouped by logic.',
+    related: ['bluf', 'pyramid-principle', 'scqa', 'concision-pass'],
+    tags: ['journalism', 'structure', 'announcements', 'news writing', 'skimmable'],
+  },
+
+  {
+    id: 'reverse-outline',
+    name: 'Reverse Outline',
+    aka: ['after-the-fact outline', 'paragraph audit', 'post-draft outline', 'structural edit'],
+    origin: 'Writing-centre and composition teaching practice',
+    domains: ['writing'],
+    intents: ['diagnose', 'structure', 'critique'],
+    oneLiner:
+      'Outline a finished draft one line per paragraph to see the structure you actually wrote, then fix the order, gaps and repeats before touching sentences.',
+    useWhen: [
+      'my draft feels disorganised but I cannot say why',
+      'I wrote this without a plan and now it wanders',
+      'the essay repeats itself somewhere in the middle',
+      'I do not know which parts to move or cut',
+      'a long document that grew over weeks and has no shape',
+    ],
+    prompt:
+      'Make a reverse outline of this draft. For each paragraph, give its number and one sentence stating the point it actually makes, not the point it seems meant to make. Mark paragraphs that make two points, paragraphs that repeat an earlier point, and paragraphs whose point does not serve the main claim. Then state the main claim as the outline reveals it and say whether it matches the claim in the introduction. Propose a new order as a list of paragraph numbers with merges and cuts noted, and name any step in the argument that is missing entirely. Do not rewrite prose yet.',
+    why:
+      'Summarising each paragraph forces the model to read for structure instead of polishing sentences, which is what it does by default when asked to "improve" a draft. The "does not rewrite prose" line keeps the structural diagnosis from being buried under line edits.',
+    watchOut:
+      'Short pieces rarely need it. Below a page, a plain read catches the same problems faster.',
+    related: ['pyramid-principle', 'continuity-pass', 'self-critique-loop', 'concision-pass'],
+    tags: ['editing', 'structure', 'revision', 'essays', 'drafting'],
+  },
+
+  {
+    id: 'and-but-therefore',
+    name: 'And, But, Therefore (ABT)',
+    aka: ['ABT', 'ABT narrative template', 'and but therefore', 'narrative spine'],
+    origin: 'Randy Olson, "Houston, We Have a Narrative"; adapted from Trey Parker and Matt Stone',
+    domains: ['writing', 'research'],
+    intents: ['communicate', 'structure'],
+    oneLiner:
+      'State the setup with "and", the problem with "but", and the consequence or action with "therefore", so any explanation has a narrative instead of a list.',
+    useWhen: [
+      'my presentation is just a list of facts',
+      'the abstract is accurate and completely boring',
+      'I need to explain why this project matters in two sentences',
+      'people nod along and then forget what I said',
+      'my pitch has no tension',
+    ],
+    prompt:
+      'Rewrite the core message as an ABT: one sentence of "[established context] and [more context], but [the problem or surprise], therefore [what we do or what follows]". Keep it under 50 words. Then check it: the "and" part must be something the audience already accepts, the "but" must be a real conflict rather than a transition, and the "therefore" must follow from the "but". Give me three versions with different "but" statements, say which is strongest and why, and then show how the full piece should be reordered so it follows that arc.',
+    why:
+      'The three connecting words give the model a fixed grammar, and a short one is easy to check. Asking for several "but" options matters because the problem statement is where most drafts are weak, and the model picks the conflict it would otherwise have smoothed over.',
+    watchOut:
+      'Every paragraph written as an ABT becomes monotonous. Use it for the spine of the piece and for openings, not as a template for every section.',
+    related: ['scqa', 'story-spine', 'pyramid-principle', 'narrative-memo'],
+    tags: ['storytelling', 'narrative', 'science communication', 'pitch', 'abstract'],
+  },
+
+  {
+    id: 'narrative-memo',
+    name: 'Narrative Memo',
+    aka: ['six-page memo', 'Amazon narrative', 'memo instead of slides', 'written narrative'],
+    origin: 'Amazon senior leadership meetings, after Jeff Bezos banned slide decks in 2004',
+    domains: ['writing', 'strategy', 'product'],
+    intents: ['communicate', 'decide'],
+    oneLiner:
+      'Replace the slide deck with a few pages of full sentences that the room reads silently at the start of the meeting, so the reasoning has to be written out rather than implied by bullets.',
+    useWhen: [
+      'our slide decks hide weak reasoning behind bullet points',
+      'meetings are spent explaining the deck instead of deciding',
+      'I need to write a proposal leadership will actually read',
+      'the plan sounds good in a presentation but falls apart in questions',
+      'converting bullet points into a real argument',
+    ],
+    prompt:
+      'Turn this into a narrative memo of no more than six pages, in full paragraphs with no bullets except for data tables. Order: the purpose and the decision being asked for in the first paragraph; the context a smart reader outside the team needs; the tenets or principles the proposal rests on; the current state with data; the proposal and the alternatives we rejected, with why; risks and open questions; and the specific ask. Every claim needs a number or a reason. Where my notes rely on a bullet to hide a missing step, write the step out or flag that I need to supply it. End with the five hardest questions a sceptical reader will write in the margin.',
+    why:
+      'Banning bullets is the working constraint. A model writing bullets can list assertions without connecting them; in paragraphs it has to supply the "because" and "so", and the gaps show up as sentences it cannot write.',
+    watchOut:
+      'It only works if the meeting actually reserves reading time. Sent as a pre-read that nobody opens, a six-page memo is worse than a one-page summary.',
+    related: ['working-backwards', 'pyramid-principle', 'rfc-process', 'bluf'],
+    tags: ['memo', 'amazon', 'proposal', 'meetings', 'decision making', 'documents'],
+  },
+
+  {
+    id: 'concision-pass',
+    name: 'Concision Pass',
+    aka: ['omit needless words', 'cut edit', 'tighten', 'word count cut', 'line edit for length'],
+    origin: 'Strunk and White, "The Elements of Style"; newsroom copy desks',
+    domains: ['writing'],
+    intents: ['communicate', 'critique'],
+    oneLiner:
+      'Cut every word, sentence and paragraph that does not change the meaning, measured against a hard length target rather than a feeling of tightness.',
+    useWhen: [
+      'this is too long and I cannot see what to remove',
+      'I need to get this under the word limit',
+      'my writing is wordy and repetitive',
+      'every sentence starts with a throat-clearing phrase',
+      'trim this without changing what it says',
+    ],
+    prompt:
+      'Do a concision pass and cut this by at least 30 percent without losing any fact, qualification or instruction. Work in this order: delete paragraphs that repeat an earlier point, then sentences that only announce what comes next, then filler phrases ("it is important to note that", "in order to", "the fact that"), stacked intensifiers and doubled words ("each and every"). Keep the author\'s voice and any hedge that carries real uncertainty. Give me the cut version, the before and after word counts, and a short list of anything you considered removing but kept because it changed the meaning.',
+    why:
+      '"Make it concise" is an instruction models agree with and then barely follow. A percentage target and a word count make it measurable, and the ordered list of cuts pushes the model to remove whole redundant paragraphs, not only trim words inside them.',
+    watchOut:
+      'A hard percentage can cut the transitions a reader needs. If the result reads choppy, restore connectives before restoring content.',
+    related: ['plain-language', 'bluf', 'reverse-outline', 'inverted-pyramid'],
+    tags: ['editing', 'concise', 'word count', 'brevity', 'revision'],
+  },
+
+  {
+    id: 'show-dont-tell',
+    name: 'Show, Don\'t Tell',
+    aka: ['show do not tell', 'dramatise', 'concrete detail', 'scene over summary'],
+    origin: 'Fiction craft teaching, often traced to Chekhov\'s letters',
+    domains: ['writing'],
+    intents: ['communicate', 'critique'],
+    oneLiner:
+      'Replace statements of emotion, character or quality with concrete actions, details and dialogue that let the reader reach the conclusion themselves.',
+    useWhen: [
+      'my story says the character is angry but I do not feel it',
+      'the writing is flat and full of adjectives',
+      'readers say my characters feel like descriptions',
+      'my case study just says the product is great',
+      'how do I make this scene come alive',
+    ],
+    prompt:
+      'Find every sentence in this draft that tells the reader what to conclude: named emotions ("she was furious"), character labels ("he was generous"), and verdicts ("it was a beautiful house", "the tool is powerful"). List them with their location. For the five that matter most to the piece, rewrite each as something the reader can see or hear: an action, a specific object, a line of dialogue, or a measurable result, and do not name the emotion or quality in the rewrite. Leave summary where it is doing its job of moving time along quickly, and tell me which telling sentences you kept on purpose and why.',
+    why:
+      'Listing the telling sentences first gives the model a target it can find mechanically. The rule against naming the emotion in the rewrite stops the common failure where it adds a gesture and then explains it anyway.',
+    watchOut:
+      'Showing everything makes a piece slow and long. Summary is the right tool for transitions and for facts the reader just needs to know.',
+    related: ['voice-profile', 'story-spine', 'concision-pass', 'continuity-pass'],
+    tags: ['fiction', 'creative writing', 'description', 'craft', 'storytelling'],
+  },
+
+  {
+    id: 'crucial-conversations',
+    name: 'Crucial Conversations',
+    aka: ['high stakes conversation', 'pool of shared meaning', 'STATE my path', 'silence or violence'],
+    origin: 'Patterson, Grenny, McMillan and Switzler, "Crucial Conversations" (2002)',
+    domains: ['career'],
+    intents: ['communicate', 'plan'],
+    oneLiner:
+      'When stakes are high, opinions differ and emotions run strong, keep the conversation safe enough that both sides put all their information on the table.',
+    useWhen: [
+      'I have to talk to my manager about something big and I keep avoiding it',
+      'every time we discuss this it turns into a fight or a sulk',
+      'a talk with my cofounder about equity that I am dreading',
+      'people go quiet in the meeting and complain afterwards',
+      'how do I raise a problem without the other person getting defensive',
+    ],
+    prompt:
+      'Help me prepare for this conversation using the Crucial Conversations approach. First, what do I really want for myself, for them and for the relationship, and what would I do if I wanted those things. Second, separate the facts from the story I am telling myself about them. Third, draft an opening that states the facts, then my tentative conclusion, then asks for their view (the STATE path). Fourth, list the signs that they are moving to silence or aggression and a line I can use to restore safety, such as a contrasting statement ("I do not mean X, I do mean Y"). End with the outcome we should leave with: who does what by when.',
+    why:
+      'The "what do I really want" step stops the model from drafting a script to win the argument. Splitting facts from story gives it a concrete edit to make on the user\'s own framing, which is where these conversations usually go wrong.',
+    watchOut:
+      'Preparation helps, but a memorised script sounds like one. Use the draft to clarify your facts and opening, then talk normally.',
+    related: ['nonviolent-communication', 'sbi-feedback', 'radical-candor', 'psychological-safety'],
+    tags: ['difficult conversation', 'conflict', 'communication', 'leadership', 'relationships'],
+  },
+
+  {
+    id: 'radical-candor',
+    name: 'Radical Candor',
+    aka: ['care personally challenge directly', 'ruinous empathy', 'obnoxious aggression', 'manipulative insincerity'],
+    origin: 'Kim Scott, "Radical Candor" (2017)',
+    domains: ['career'],
+    intents: ['communicate', 'critique'],
+    oneLiner:
+      'Give feedback that both shows you care about the person and challenges them directly, avoiding the two common failures of being too nice to be useful or too harsh to be heard.',
+    useWhen: [
+      'I keep softening feedback until it says nothing',
+      'my team never tells me what I am doing wrong',
+      'I was told I come across as harsh when giving notes',
+      'I let a performance problem go on too long because I liked them',
+      'how do I tell someone their work is not good enough',
+    ],
+    prompt:
+      'Rewrite this feedback using the Radical Candor framework. First, place my current draft on the two axes (care personally, challenge directly) and name which failure it is closest to: ruinous empathy, obnoxious aggression or manipulative insincerity, quoting the phrases that put it there. Then rewrite it so the problem is stated plainly in the first two sentences, the evidence is specific, and the care shows in what I offer to do next rather than in padding around the criticism. Keep it short enough to say in person. Finally, give me one question to ask them to invite feedback on me in return.',
+    why:
+      'Naming the four quadrants gives the model a vocabulary to diagnose the draft, not just rewrite it, so the user sees which habit to fix. "Care shows in what I offer to do" stops the rewrite from reaching for compliments to sandwich the criticism.',
+    watchOut:
+      'Often misread as permission to be blunt. Candor without a relationship already in place lands as aggression, whatever the framework says.',
+    related: ['sbi-feedback', 'crucial-conversations', 'nonviolent-communication', 'psychological-safety'],
+    tags: ['feedback', 'management', 'leadership', 'performance review', 'candor'],
+  },
+
+  {
+    id: 'scarf-model',
+    name: 'SCARF Model',
+    aka: ['SCARF', 'status certainty autonomy relatedness fairness', 'social threat model'],
+    origin: 'David Rock, NeuroLeadership Institute (2008)',
+    domains: ['career'],
+    intents: ['diagnose', 'communicate'],
+    oneLiner:
+      'People react to social threats to Status, Certainty, Autonomy, Relatedness and Fairness as strongly as to physical ones, so check a message against all five before sending it.',
+    useWhen: [
+      'my announcement caused a much bigger reaction than I expected',
+      'the team is upset about a reorg and I do not know why exactly',
+      'a reasonable change is getting fierce pushback',
+      'I need to tell people their project is being cancelled',
+      'why did that email land so badly',
+    ],
+    prompt:
+      'Check this message against the SCARF model. For each of the five domains (Status, Certainty, Autonomy, Relatedness, Fairness), say whether the message threatens or rewards it for each group of readers, and quote the wording responsible. Rank the threats by how strongly they are likely to be felt. Then revise the message to reduce the top three threats without hiding the actual decision: for example, give a date for the next update to address certainty, or real choices within the change to address autonomy. List anything that cannot be softened honestly so I can address it in person.',
+    why:
+      'Five named domains give the model a checklist to read the message from the recipient\'s side, where "make this more sensitive" produces generic warmth. Tying each threat to quoted wording keeps the revision specific.',
+    watchOut:
+      'The neuroscience behind it is looser than it is often presented. Treat it as a useful checklist for reactions, not as a model of the brain.',
+    related: ['nonviolent-communication', 'psychological-safety', 'crucial-conversations', 'stakeholder-mapping'],
+    tags: ['change management', 'leadership', 'communication', 'reorg', 'empathy'],
+  },
+
+  {
+    id: 'batna',
+    name: 'BATNA',
+    aka: ['best alternative to a negotiated agreement', 'principled negotiation', 'Getting to Yes', 'walk away point', 'interests not positions'],
+    origin: 'Roger Fisher and William Ury, "Getting to Yes" (1981), Harvard Negotiation Project',
+    domains: ['career', 'strategy'],
+    intents: ['plan', 'decide'],
+    oneLiner:
+      'Know what you will do if the negotiation fails, because that alternative, not the other side\'s opening number, sets how much leverage you have and when to walk away.',
+    useWhen: [
+      'I have a job offer and do not know how hard to push on salary',
+      'negotiating a contract and I feel like I have no leverage',
+      'how do I know when to walk away from a deal',
+      'the other side keeps anchoring on their number',
+      'we are arguing positions and getting nowhere',
+    ],
+    prompt:
+      'Help me prepare this negotiation using principled negotiation from Getting to Yes. First, list my realistic alternatives if no deal happens and pick the best one: that is my BATNA, and state it concretely with its value. Do the same for the other side, from what I know, and say what would make theirs weaker or stronger. Second, separate positions from interests: what each side is demanding and why they actually want it. Third, propose three options that serve both sides\' interests better than splitting the difference, and an objective standard (market data, precedent) to anchor on. End with my walk-away point and one way I could improve my BATNA before the talk.',
+    why:
+      'Starting with the alternatives turns "how do I negotiate" from a question about tactics into one about facts, which a model can reason about. Asking for the other side\'s BATNA too prevents the one-sided advice where the user overrates their own position.',
+    watchOut:
+      'A BATNA you are not actually willing to act on is a bluff. If the alternative is hypothetical, say so and plan around it.',
+    related: ['expected-value', 'opportunity-cost', 'steelmanning', 'stakeholder-mapping'],
+    tags: ['negotiation', 'salary', 'contracts', 'leverage', 'deal making'],
+  },
+
+  {
+    id: 'stakeholder-mapping',
+    name: 'Stakeholder Mapping',
+    aka: ['power interest grid', 'stakeholder analysis', 'Mendelow matrix', 'influence map'],
+    origin: 'Mendelow\'s power-interest matrix (1991) and project management practice',
+    domains: ['career', 'strategy'],
+    intents: ['plan', 'prioritize'],
+    oneLiner:
+      'Place everyone affected by a project on a grid of power over it and interest in it, then decide how to engage each quadrant instead of treating everyone the same.',
+    useWhen: [
+      'someone senior blocked my project late and I never saw it coming',
+      'I do not know who I need to get on board',
+      'too many people want updates and I cannot keep them all happy',
+      'a cross-team initiative where nobody reports to me',
+      'who should I talk to before I announce this',
+    ],
+    prompt:
+      'Build a stakeholder map for this initiative. List every person and group affected, including those who could block it quietly, like finance, legal, security or an adjacent team. For each, estimate power (can they stop or change it) and interest (how much it affects them) as high or low, with one line of evidence. Place them in the four quadrants: manage closely, keep satisfied, keep informed, monitor. For the manage-closely group, give each person\'s likely position, what they care about, and the conversation I should have with them and in what order. Flag anyone whose position I am guessing at, and anyone missing that usually matters for this kind of project.',
+    why:
+      'A named grid forces the model to rate each person on two dimensions instead of producing a flat list of names. The "who could block it quietly" prompt catches the low-visibility, high-power groups that surprise people late.',
+    watchOut:
+      'People move quadrants as a project progresses. A map made at kickoff is out of date by launch; revisit it at each milestone.',
+    related: ['decision-roles-daci', 'managing-up', 'scarf-model', 'blind-spot-audit'],
+    tags: ['stakeholders', 'influence', 'project management', 'alignment', 'politics'],
+  },
+
+  {
+    id: 'managing-up',
+    name: 'Managing Up',
+    aka: ['managing your manager', 'managing your boss', 'upward management'],
+    origin: 'Gabarro and Kotter, "Managing Your Boss", Harvard Business Review (1980)',
+    domains: ['career'],
+    intents: ['communicate', 'plan'],
+    oneLiner:
+      'Treat the relationship with your manager as something you actively shape: learn their goals, pressures and preferred style, and adapt how you report, ask and escalate to fit.',
+    useWhen: [
+      'my boss keeps asking for updates at the worst times',
+      'I do great work and my manager does not seem to notice',
+      'my manager and I have completely different working styles',
+      'I never know what my boss actually cares about',
+      'how do I tell my manager a project is going off the rails',
+    ],
+    prompt:
+      'Help me manage up with this manager. First, from what I have told you, describe their goals, the pressures on them from above, and their working style: do they want detail or summary, written or spoken, early warnings or finished answers. Mark what is guesswork and give me questions to confirm it. Second, identify where my current habits clash with their style. Third, draft a short recurring update in the format they would prefer, with decisions I need from them at the top. Fourth, write how I should raise the current problem: what to say first, what options to bring, and what I am asking them to do.',
+    why:
+      'Starting from the manager\'s pressures turns a vague relationship question into a model of another person the assistant can reason about. Marking guesswork and producing confirming questions stops the advice from being built on the user\'s assumptions.',
+    watchOut:
+      'Managing up is about making the working relationship effective, not about managing perceptions. If the advice starts to look like image control, the underlying problem is probably the work or the fit.',
+    related: ['bluf', 'brag-document', 'stakeholder-mapping', 'crucial-conversations'],
+    tags: ['manager', 'career', 'workplace', 'communication', 'status updates'],
+  },
 ]

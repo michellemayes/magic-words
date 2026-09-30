@@ -266,4 +266,56 @@ export const decisions: Concept[] = [
     related: ['decision-roles-daci', 'steelmanning', 'sbi-feedback', 'bluf'],
     tags: ['leadership', 'conflict', 'teamwork', 'communication', 'alignment'],
   },
+
+  {
+    id: 'regret-minimization',
+    name: 'Regret Minimization Framework',
+    aka: ['regret minimisation', 'age 80 test', 'Bezos regret framework', 'deathbed test'],
+    origin: 'Jeff Bezos, on leaving his job to start Amazon',
+    domains: ['career', 'strategy'],
+    intents: ['decide', 'reframe'],
+    oneLiner:
+      'For a big personal decision, project yourself to age 80 and ask which choice you would regret more, which weights long-term meaning over short-term fear.',
+    useWhen: [
+      'should I quit my job to start something',
+      'I keep going back and forth on a big life decision',
+      'the safe option looks better on paper but I cannot let the other go',
+      'I am scared of making the wrong career move',
+      'everyone says I am crazy to take this leap',
+    ],
+    prompt:
+      'Help me apply the regret minimization framework to this decision. First, describe each option concretely as it would play out over the next two years, including the realistic bad case. Then take the view from age 80: for each option, what would I regret about having chosen it, and what would I regret about not having chosen it? Separate regrets of action from regrets of inaction, and be honest about which fears are short-term discomfort (embarrassment, a pay cut, an awkward conversation) and which are lasting consequences. Check that the downside is survivable, and if an option risks something hard to recover, like health, family or all my savings, say so plainly. Finish with which choice I would regret less and the one fact that could change that.',
+    why:
+      'Asked for advice on a life decision, a model balances pros and cons into mush. The age-80 frame changes the time horizon, and splitting short-term discomfort from lasting consequences, plus a survivability check, stops the framework from simply endorsing the bold option.',
+    watchOut:
+      'It leans toward action, because regrets of inaction loom larger in hindsight. Use it for personal, identity-level choices, not business decisions that expected value handles better.',
+    related: ['type-1-type-2-decisions', 'expected-value', 'opportunity-cost', 'inversion'],
+    tags: ['career', 'life decisions', 'risk', 'mental model', 'personal'],
+  },
+
+  {
+    id: 'ooda-loop',
+    name: 'OODA Loop',
+    aka: ['observe orient decide act', 'Boyd cycle', 'OODA'],
+    origin: 'Colonel John Boyd, US Air Force',
+    domains: ['strategy', 'engineering', 'career'],
+    intents: ['decide', 'plan'],
+    oneLiner:
+      'Cycle through observe, orient, decide and act faster than the situation changes, treating orientation, how you interpret what you see, as the step that matters most.',
+    useWhen: [
+      'the situation keeps changing faster than we can plan',
+      'by the time we decide the facts have moved',
+      'a competitor keeps reacting to us before we finish',
+      'we are in the middle of a crisis and need to move now',
+      'we keep acting on an old picture of what is going on',
+    ],
+    prompt:
+      'Run this as an OODA loop and get me through one cycle quickly. Observe: list the facts we have right now, marked by how fresh and reliable each is, and what we cannot see. Orient: state the mental model we are using to interpret those facts, the assumptions inside it, and one alternative reading that fits the same facts. Decide: pick the action that is best under the most likely reading and still acceptable under the alternative. Act: define it small enough to do within hours or days. Then name what we will observe next to know whether it worked, and when to start the next loop. Keep it short; speed matters more than completeness here.',
+    why:
+      'Models treat OODA as a four-step checklist and rush past orientation. Asking for the assumptions and an alternative reading of the same facts forces the step Boyd cared about, and bounding the action in hours keeps the answer from becoming a long plan the situation will outrun.',
+    watchOut:
+      'It is built for fast, adversarial or fluid situations. For slow, irreversible decisions a quick loop is the wrong tempo; slow down and analyse.',
+    related: ['type-1-type-2-decisions', 'incident-command', 'hypothesis-driven-debugging', 'second-order-thinking'],
+    tags: ['speed', 'adaptation', 'crisis', 'competition', 'mental model'],
+  },
 ]

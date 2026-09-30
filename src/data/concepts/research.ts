@@ -148,4 +148,186 @@ export const research: Concept[] = [
     related: ['triangulation', 'competitive-teardown', 'analogical-mapping', 'blind-spot-audit'],
     tags: ['research', 'prior art', 'state of the art', 'literature', 'orientation'],
   },
+
+  {
+    id: 'the-mom-test',
+    name: 'The Mom Test',
+    aka: ['customer discovery interviews', 'non-leading interview questions', 'problem interviews'],
+    origin: 'Rob Fitzpatrick, The Mom Test (2013)',
+    domains: ['research', 'product'],
+    intents: ['critique', 'plan'],
+    oneLiner:
+      'Ask about the specifics of what people did in the past, never whether they like your idea, because even your mother will lie to be kind.',
+    useWhen: [
+      'everyone I pitched said they would use it and then nobody signed up',
+      'customer calls feel encouraging but I learn nothing',
+      'writing questions for validation interviews with potential users',
+      'people keep saying it sounds great and I do not trust it',
+      'how do I talk to customers without leading them',
+    ],
+    prompt:
+      'Rewrite my customer interview plan so it passes the Mom Test. First, list every question I drafted that mentions my idea, asks about the future ("would you", "will you"), or asks for an opinion, and explain what a polite person would answer. Then replace each with a question about a specific past event: the last time the problem happened, what they did about it, what it cost them, and what they have already tried or paid for. Add two questions that probe for commitment, such as time, money, or an introduction. Finish with a short list of signals that count as real evidence versus compliments, fluff, and hypothetical promises, so I can score each call afterwards.',
+    why:
+      'Models default to survey-style questions about preferences because that is what most question lists look like. Naming the three failure types (mentions the idea, asks about the future, asks for opinion) gives the model a filter it can apply line by line, and the evidence-versus-compliment list turns fuzzy calls into something you can score.',
+    watchOut:
+      'It tells you whether a problem is real and painful, not whether your particular solution is right. You still need a prototype or a pre-sale for that.',
+    related: ['jobs-to-be-done', 'mvp-riskiest-assumption', 'assumption-mapping', 'affinity-mapping'],
+    tags: ['customer interviews', 'user research', 'validation', 'discovery', 'startups'],
+  },
+
+  {
+    id: 'affinity-mapping',
+    name: 'Affinity Mapping',
+    aka: ['affinity diagram', 'KJ method', 'thematic clustering', 'sticky note synthesis'],
+    origin: 'Jiro Kawakita, KJ method (1960s)',
+    domains: ['research', 'product', 'design'],
+    intents: ['structure', 'diagnose'],
+    oneLiner:
+      'Break qualitative notes into single observations, then cluster them bottom-up by similarity and name each cluster only after it forms.',
+    useWhen: [
+      'I have forty pages of interview notes and no idea what they say',
+      'how do I turn a pile of user feedback into themes',
+      'the research readout is just a list of quotes',
+      'hundreds of support tickets and open-ended survey answers to make sense of',
+      'we did the interviews and now need to find patterns',
+    ],
+    prompt:
+      'Synthesise these notes with affinity mapping. Step one: split everything into atomic observations, one idea each, keeping a source tag (participant or ticket id) on every one, and quote rather than paraphrase where the wording matters. Step two: group observations by similarity without using any categories decided in advance; let the groups emerge from the notes. Step three: name each group with a sentence that states the insight, not a one-word topic. Step four: group the groups into a few higher themes. For every theme, report how many distinct sources support it, list the observations that did not fit anywhere, and flag any theme resting on a single loud source.',
+    why:
+      'Asked to "find themes", a model imposes familiar categories (usability, pricing, performance) and then fills them. Forcing atomic notes first and naming groups last keeps the structure coming from the data, and the source counts stop one vivid quote from becoming a headline finding.',
+    watchOut:
+      'Frequency is not importance. A theme mentioned by two people can matter more than one mentioned by twenty, so weigh severity separately.',
+    related: ['triangulation', 'jobs-to-be-done', 'user-journey-mapping', 'the-mom-test', 'diary-study'],
+    tags: ['synthesis', 'qualitative research', 'user research', 'themes', 'interview notes'],
+  },
+
+  {
+    id: 'survivorship-bias',
+    name: 'Survivorship Bias',
+    aka: ['missing bullet holes', 'silent evidence', 'survivor bias', 'Wald\'s bombers'],
+    origin: 'Abraham Wald\'s WWII aircraft armour analysis; Nassim Taleb\'s "silent evidence"',
+    domains: ['research', 'data', 'strategy'],
+    intents: ['critique', 'reframe'],
+    oneLiner:
+      'Drawing conclusions only from the cases that made it through a filter, while the failures that would contradict you are invisible.',
+    useWhen: [
+      'every successful founder I read about dropped out of college',
+      'we only surveyed current customers about why they chose us',
+      'the playbook comes from studying the companies that won',
+      'old buildings were built better than new ones',
+      'our long-time users love the feature so it must be good',
+    ],
+    prompt:
+      'Check this conclusion for survivorship bias. First, name the filter: what process decided which cases ended up in the data I am looking at, such as churn, failure, deletion, or not responding. Second, describe the missing population: who or what went through the same process and did not survive, and roughly how large that group is. Third, ask whether the trait I am crediting was also common among the failures; if it was, it cannot explain success. Fourth, tell me where I could actually find data on the non-survivors (exit surveys, archived records, cancelled accounts, failed competitors). End with a rewritten version of my claim that only says what the surviving data supports.',
+    why:
+      'Survivorship is hard to spot because the evidence against you is absent rather than wrong. Making the model name the filter and estimate the missing group forces it to reason about data that is not in front of it, which it will not do unprompted.',
+    watchOut:
+      'Sometimes the survivors are the right population, for example when you only care about serving the customers you keep. Decide which question you are asking first.',
+    related: ['confounders-check', 'regression-to-the-mean', 'reference-class-forecasting', 'triangulation'],
+    tags: ['bias', 'statistics', 'selection effects', 'critical thinking', 'data'],
+  },
+
+  {
+    id: 'regression-to-the-mean',
+    name: 'Regression to the Mean',
+    aka: ['reversion to the mean', 'regression toward mediocrity', 'sophomore slump'],
+    origin: 'Francis Galton (1886); popularised by Daniel Kahneman',
+    domains: ['data', 'research'],
+    intents: ['diagnose', 'critique'],
+    oneLiner:
+      'Extreme results partly reflect luck, so the next measurement tends to land closer to average whether or not anything changed.',
+    useWhen: [
+      'we intervened on the worst performing stores and they all improved',
+      'the rep with the best quarter had a terrible one after',
+      'praising people seems to make them worse and criticism makes them better',
+      'the fix worked on the teams with the worst scores',
+      'last month was a record and this month it dropped back',
+    ],
+    prompt:
+      'Before crediting the change, check whether this is regression to the mean. Tell me how the cases were selected and whether they were picked because their first measurement was extreme. Estimate how noisy the metric is from period to period, using the data I have or a range if I do not. Work out roughly how much movement toward the average we would expect with no intervention at all. Then tell me what comparison would separate the effect from the rebound: a similar extreme group that was not treated, a randomised holdout, or a longer baseline. State plainly how much of the observed improvement is left once expected rebound is subtracted.',
+    why:
+      'The intervention story is always more compelling than noise, and a model asked "did it work?" will usually find reasons it did. Asking for the expected rebound as a number makes the null explanation compete on equal terms instead of being mentioned and dismissed.',
+    watchOut:
+      'Regression does not mean nothing happened. It means the before-and-after on an extreme group cannot tell you; a control group can.',
+    related: ['confounders-check', 'survivorship-bias', 'pre-registration', 'falsification-test'],
+    tags: ['statistics', 'noise', 'experiments', 'performance reviews', 'bias'],
+  },
+
+  {
+    id: 'simpsons-paradox',
+    name: 'Simpson\'s Paradox',
+    aka: ['Yule-Simpson effect', 'aggregation reversal', 'the trend flips when you split it'],
+    origin: 'Edward Simpson (1951), earlier Udny Yule and Karl Pearson',
+    domains: ['data', 'research'],
+    intents: ['diagnose', 'explain'],
+    oneLiner:
+      'A relationship that holds in every subgroup can reverse when the groups are pooled, because the groups differ in size and base rate.',
+    useWhen: [
+      'variant B wins on mobile and on desktop but loses overall',
+      'each department admits women at a higher rate but the university admits fewer',
+      'the new treatment looks worse in total but better for every patient type',
+      'the numbers point opposite ways depending on how I slice them',
+      'which version of this breakdown should I believe',
+    ],
+    prompt:
+      'Check this comparison for Simpson\'s paradox. Build the table both ways: pooled, and split by the most plausible grouping variable, with counts and rates in each cell. Show whether the direction of the effect changes. If it does, explain the mechanism in one paragraph: which group is over-represented on which side, and why its base rate drags the total. Then answer the part people skip: given how the grouping variable relates to the treatment (does it cause the treatment, or is it caused by it?), tell me whether the pooled or the split answer is the right one to act on, and why.',
+    why:
+      'Most explanations stop at "it reverses", which leaves you with two contradictory numbers. Asking which level to trust, based on the causal role of the grouping variable, is what turns the paradox into a decision.',
+    watchOut:
+      'Splitting by every variable you can find will eventually produce a reversal by chance. Pick the grouping for a causal reason before you look.',
+    related: ['cohort-analysis', 'confounders-check', 'regression-to-the-mean', 'pre-registration'],
+    tags: ['statistics', 'ab testing', 'aggregation', 'analytics', 'paradox'],
+  },
+
+  {
+    id: 'pre-registration',
+    name: 'Pre-registration',
+    aka: ['analysis plan up front', 'pre-specified success criteria', 'registered report', 'decide the bar before you look'],
+    origin: 'Clinical trial registration; adopted in psychology after the replication crisis',
+    domains: ['research', 'data', 'product'],
+    intents: ['plan', 'critique'],
+    oneLiner:
+      'Write down the hypothesis, the metric, the analysis and what counts as success before seeing any results, so the data cannot quietly move the goalposts.',
+    useWhen: [
+      'every experiment we run somehow ends up counting as a win',
+      'we keep slicing the results until something looks significant',
+      'the success metric changed after the launch numbers came in',
+      'planning an A/B test and want it to be honest',
+      'the team argues about what the result means after every test',
+    ],
+    prompt:
+      'Help me pre-register this experiment before any data comes in. Produce a one-page plan with: the hypothesis in one sentence; the single primary metric and exactly how it is computed; any secondary metrics, labelled as exploratory; the sample size or run length and why; exclusions decided now (bots, internal users, outliers); the analysis method; and the decision rule, stated as "if the primary metric moves by at least X we ship, if it is below Y we stop, otherwise we do Z". List the subgroup cuts we are allowed to report as findings and say that any other cut is a lead for a new test, not a result. Then point out anything in my plan still vague enough to be decided after the fact.',
+    why:
+      'A model helping analyse results will happily find the angle that works, because that is what it is asked for. Having it write the decision rule first, with numbers, gives both of you something fixed to check the result against, and the "still vague" pass catches loopholes.',
+    watchOut:
+      'Pre-registration does not ban exploration; it labels it. Keep exploring, just do not present exploratory cuts as confirmed.',
+    related: ['falsification-test', 'goodharts-law', 'simpsons-paradox', 'regression-to-the-mean'],
+    tags: ['experiments', 'ab testing', 'p-hacking', 'research methods', 'success criteria'],
+  },
+
+  {
+    id: 'diary-study',
+    name: 'Diary Study',
+    aka: ['experience sampling', 'longitudinal user research', 'in-context logging'],
+    origin: 'HCI and social science field research; experience sampling method (Csikszentmihalyi)',
+    domains: ['research', 'product', 'design'],
+    intents: ['plan', 'diagnose'],
+    oneLiner:
+      'Participants log short entries in the moment over days or weeks, capturing behaviour and context that a single interview or session cannot recall.',
+    useWhen: [
+      'people cannot remember how they actually use the product day to day',
+      'the problem only shows up over weeks, not in one session',
+      'usability tests look fine but real usage tells a different story',
+      'I want to see habits forming or dropping off over time',
+      'the task happens at home or on the move, not in front of us',
+    ],
+    prompt:
+      'Design a diary study for this research question. Specify: the question in one sentence and what decision it feeds; who to recruit and how many, allowing for dropout; duration and why; the entry trigger (event-based, such as each time they do the task, or signal-based, such as a daily prompt); the entry format, kept under two minutes, with the exact prompts and whether photos or screenshots are wanted; how we keep people engaged mid-study; and the kickoff and exit interviews. Give me a draft of the first three prompts and flag any that ask people to interpret rather than report what happened. End with how we will analyse the entries.',
+    why:
+      'Left open, a model designs a survey spread over time, with long retrospective questions. Separating the trigger, the two-minute format and the report-not-interpret check keeps the study close to the moment, which is the point of doing one.',
+    watchOut:
+      'Diary studies are expensive in participant effort and dropout is high. Keep entries short and pay people to stay to the end, or the late data comes only from enthusiasts.',
+    related: ['affinity-mapping', 'user-journey-mapping', 'the-mom-test', 'triangulation', 'jobs-to-be-done'],
+    tags: ['user research', 'longitudinal', 'qualitative research', 'field study', 'behaviour'],
+  },
 ]
