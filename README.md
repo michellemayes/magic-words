@@ -91,7 +91,7 @@ happens.
 
 ## The index
 
-682 concepts across eleven domains: product, engineering, security & privacy, design, writing,
+684 concepts across eleven domains: product, engineering, security & privacy, design, writing,
 research, strategy, data, learning, people & career, and working with AI.
 
 Engineering is the deepest at roughly 500 entries, organised into sixteen families: architecture,
