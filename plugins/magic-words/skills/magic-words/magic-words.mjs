@@ -16938,6 +16938,97 @@ var concurrency = [
 			"distributed systems",
 			"verification"
 		]
+	},
+	{
+		id: "tla-spec-review",
+		name: "TLA+ Specification Review",
+		aka: [
+			"TLA+ code review",
+			"spec review",
+			"formal spec review",
+			"PlusCal review",
+			"pre-TLC review"
+		],
+		origin: "Leslie Lamport's TLA+ and the TLC model checker; industrial practice at AWS and elsewhere",
+		domains: ["engineering"],
+		intents: ["critique", "diagnose"],
+		oneLiner: "Review a TLA+ model for logical soundness, syntax and well-formed properties before spending hours of model-checker time on it.",
+		useWhen: [
+			"the model checker ran all night, found nothing, and I do not trust it",
+			"I wrote a formal spec of our protocol and want it checked before we run it",
+			"TLC keeps failing to parse my spec or the state space explodes",
+			"not sure my invariants and liveness properties say what I mean",
+			"the spec passes but I suspect it is vacuous"
+		],
+		prompt: "Review this TLA+ specification before we run TLC on it, in three passes. Syntax and well-formedness: parser errors, undeclared or unused constants and variables, primed variables outside actions, UNCHANGED clauses that miss a variable, and types the TypeOK invariant does not pin down. Logical soundness: does Init admit every state the real system can start in, does Next allow every step the real system can take, including crashes, message loss and duplication, and does it forbid anything the system cannot do? Flag any action whose enabling condition is too strong, since an over-constrained Next hides bugs. Properties: restate each invariant and temporal property in plain English and check the formula says that, keep safety and liveness separate, confirm liveness has the fairness it needs (WF or SF) and no more, and look for anything vacuously true. Finish with a TLC config sized to finish (constants, symmetry sets, state constraints) and one deliberate bug to inject so we know the checker would catch it.",
+		variants: [{
+			label: "The spec passes suspiciously",
+			prompt: "TLC passes this spec. Before we believe it, show it can fail: for each invariant, propose the smallest change to Next that should violate it, and read the action coverage for actions that were never enabled."
+		}],
+		why: "TLC only answers the question the spec asks. Making the model restate each property in English and hunt for over-constrained actions targets the failure that matters, a spec that passes because it cannot reach the bug, rather than syntax the parser would catch anyway.",
+		watchOut: "A clean review says nothing about whether the spec matches the code. A sound spec can still model a system you did not build, so tie it back to the implementation.",
+		related: [
+			"formal-model-checking",
+			"assertions-and-invariants",
+			"deterministic-simulation-testing",
+			"concurrency-testing"
+		],
+		tags: [
+			"formal methods",
+			"tla+",
+			"model checking",
+			"specification",
+			"verification",
+			"review"
+		]
+	},
+	{
+		id: "formal-model-checking",
+		name: "Formal Model Checking",
+		aka: [
+			"TLA+ and TLC",
+			"Lean 4 proof",
+			"model the code formally",
+			"formal verification",
+			"counterexample-driven testing"
+		],
+		origin: "Model checking (Clarke, Emerson and Sifakis); TLA+ and TLC (Lamport); the Lean 4 theorem prover",
+		domains: ["engineering"],
+		intents: ["diagnose", "critique"],
+		oneLiner: "Model the code's state machine in TLA+ (checked by TLC) or Lean 4, let the tool find violating traces, then confirm each claimed bug with a failing unit test against the real code.",
+		useWhen: [
+			"I think there is a race or ordering bug but cannot find it by reading",
+			"our retry and failover logic has too many interleavings to reason about",
+			"I want to prove this algorithm is correct, not just test it",
+			"the AI keeps claiming bugs in my code that turn out not to be real",
+			"how do I know this lock-free or consensus code is actually right"
+		],
+		prompt: "Model this code formally, use the model to find bugs, then prove each bug against the real code. First extract the state machine: the state variables, the atomic steps (be explicit about what is and is not atomic in the actual code), and the environment's moves such as crashes, retries, timeouts and reordering. Write it in TLA+ and check it with TLC for concurrency and protocol properties, or in Lean 4 when the claim is about a pure algorithm and a proof is worth more than a bounded search. State the invariants and liveness properties in plain English before writing them formally. For every violation, give the counterexample trace, then turn it into a unit test that drives the real code through the same steps, forcing the interleaving with barriers or an injected scheduler, and fails. Report only bugs whose test fails; list the rest as model-only, with the reason the model and code diverge. Finish with what the model abstracted away and therefore did not check.",
+		variants: [{
+			label: "Lean 4 proof of a pure function",
+			prompt: "Formalise this function in Lean 4 as a faithful translation, state the correctness theorem in plain English and then in Lean, and attempt the proof. Where the proof gets stuck, extract the concrete input that blocks it and turn it into a unit test against the original code."
+		}, {
+			label: "Confirm a reported bug",
+			prompt: "Before we fix this reported bug, confirm it: write the smallest TLA+ model of the steps involved, have TLC produce the trace, and replay that trace as a failing unit test. If the test passes, the bug is not real and we close it."
+		}],
+		why: "A model checker finds traces a reviewer would never think of, but a model alone produces false alarms whenever the model is wrong. Requiring a failing unit test for every claim forces the counterexample back through the real code, so the report holds confirmed bugs instead of plausible ones.",
+		watchOut: "The model is a second program and can be wrong in its own ways. Keep state spaces small with bounded constants and symmetry, and read \"TLC found nothing\" as true only for the bounds checked. A Lean proof covers the code only as far as the formalised function matches the implementation.",
+		related: [
+			"tla-spec-review",
+			"deterministic-simulation-testing",
+			"concurrency-testing",
+			"property-based-testing",
+			"minimal-reproducible-example"
+		],
+		tags: [
+			"formal methods",
+			"tla+",
+			"lean",
+			"model checking",
+			"verification",
+			"concurrency",
+			"testing"
+		]
 	}
 ];
 //#endregion
