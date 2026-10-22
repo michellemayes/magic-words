@@ -7,7 +7,7 @@
  * self-contained directory with no install step. Edit the corpus or the
  * ranking there and rebuild; edits made here are lost on the next build.
  */
-//#region src/data/concepts/architecture.ts
+// src/data/concepts/architecture.ts
 var architecture = [
 	{
 		id: "hexagonal-architecture",
@@ -595,8 +595,7 @@ var architecture = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/security.ts
+// src/data/concepts/security.ts
 var security = [
 	{
 		id: "least-privilege",
@@ -1085,8 +1084,7 @@ var security = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/framing.ts
+// src/data/concepts/framing.ts
 var framing = [
 	{
 		id: "abstraction-laddering",
@@ -1489,8 +1487,7 @@ var framing = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/decisions.ts
+// src/data/concepts/decisions.ts
 var decisions = [
 	{
 		id: "pre-mortem",
@@ -1965,8 +1962,7 @@ var decisions = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/prioritization.ts
+// src/data/concepts/prioritization.ts
 var prioritization = [
 	{
 		id: "rice-scoring",
@@ -2296,8 +2292,7 @@ var prioritization = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/critique.ts
+// src/data/concepts/critique.ts
 var critique = [
 	{
 		id: "red-teaming",
@@ -2657,8 +2652,7 @@ var critique = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/diagnosis.ts
+// src/data/concepts/diagnosis.ts
 var diagnosis = [
 	{
 		id: "rubber-duck-debugging",
@@ -2952,8 +2946,7 @@ var diagnosis = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/planning.ts
+// src/data/concepts/planning.ts
 var planning = [
 	{
 		id: "walking-skeleton",
@@ -3268,8 +3261,7 @@ var planning = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/communication.ts
+// src/data/concepts/communication.ts
 var communication = [
 	{
 		id: "pyramid-principle",
@@ -4241,8 +4233,7 @@ var communication = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/learning.ts
+// src/data/concepts/learning.ts
 var learning = [
 	{
 		id: "feynman-technique",
@@ -4684,8 +4675,7 @@ var learning = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/research.ts
+// src/data/concepts/research.ts
 var research = [
 	{
 		id: "fermi-estimation",
@@ -5190,8 +5180,7 @@ var research = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/strategy.ts
+// src/data/concepts/strategy.ts
 var strategy = [
 	{
 		id: "playing-to-win",
@@ -5614,8 +5603,7 @@ var strategy = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/design.ts
+// src/data/concepts/design.ts
 var design = [
 	{
 		id: "crazy-eights",
@@ -6093,8 +6081,7 @@ var design = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/steering.ts
+// src/data/concepts/steering.ts
 var steering = [
 	{
 		id: "interview-me-first",
@@ -6841,8 +6828,7 @@ var steering = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/testing.ts
+// src/data/concepts/testing.ts
 var testing = [
 	{
 		id: "test-pyramid",
@@ -8260,8 +8246,7 @@ var testing = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/patterns.ts
+// src/data/concepts/patterns.ts
 var patterns = [
 	{
 		id: "strategy-pattern",
@@ -9520,8 +9505,7 @@ var patterns = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/distributed.ts
+// src/data/concepts/distributed.ts
 var distributed = [
 	{
 		id: "fallacies-of-distributed-computing",
@@ -10881,8 +10865,7 @@ var distributed = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/reliability.ts
+// src/data/concepts/reliability.ts
 var reliability = [
 	{
 		id: "service-level-objectives",
@@ -12243,8 +12226,7 @@ var reliability = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/performance.ts
+// src/data/concepts/performance.ts
 var performance = [
 	{
 		id: "profiling-before-optimizing",
@@ -13444,8 +13426,7 @@ var performance = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/data.ts
+// src/data/concepts/data.ts
 var dataSystems = [
 	{
 		id: "schema-evolution",
@@ -14863,8 +14844,7 @@ var dataSystems = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/apis.ts
+// src/data/concepts/apis.ts
 var apis = [
 	{
 		id: "api-first-design",
@@ -16007,8 +15987,7 @@ var apis = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/concurrency.ts
+// src/data/concepts/concurrency.ts
 var concurrency = [
 	{
 		id: "parallelism-vs-concurrency",
@@ -17031,8 +17010,7 @@ var concurrency = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/delivery.ts
+// src/data/concepts/delivery.ts
 var delivery = [
 	{
 		id: "trunk-based-development",
@@ -18303,8 +18281,7 @@ var delivery = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/codecraft.ts
+// src/data/concepts/codecraft.ts
 var codecraft = [
 	{
 		id: "naming-as-design",
@@ -19728,8 +19705,7 @@ var codecraft = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/frontend.ts
+// src/data/concepts/frontend.ts
 var frontend = [
 	{
 		id: "core-web-vitals",
@@ -20923,8 +20899,7 @@ var frontend = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/practice.ts
+// src/data/concepts/practice.ts
 var practice = [
 	{
 		id: "pair-programming",
@@ -21999,8 +21974,7 @@ var practice = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/platform.ts
+// src/data/concepts/platform.ts
 var platform = [
 	{
 		id: "platform-as-product",
@@ -23057,8 +23031,7 @@ var platform = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/mlsystems.ts
+// src/data/concepts/mlsystems.ts
 var mlSystems = [
 	{
 		id: "training-serving-skew",
@@ -23669,8 +23642,7 @@ var mlSystems = [
 		]
 	}
 ];
-//#endregion
-//#region src/data/concepts/index.ts
+// src/data/concepts/index.ts
 var CONCEPTS = [
 	...framing,
 	...architecture,
@@ -23705,8 +23677,7 @@ var CONCEPTS_BY_ID = new Map(CONCEPTS.map((c) => [c.id, c]));
 function getConcept(id) {
 	return CONCEPTS_BY_ID.get(id);
 }
-//#endregion
-//#region src/data/types.ts
+// src/data/types.ts
 var DOMAIN_LABELS = {
 	product: "Product",
 	engineering: "Engineering",
@@ -23736,8 +23707,7 @@ var INTENT_LABELS = {
 };
 Object.keys(DOMAIN_LABELS);
 Object.keys(INTENT_LABELS);
-//#endregion
-//#region src/lib/compose.ts
+// src/lib/compose.ts
 /** The one line of scaffolding the composed prompt is allowed. */
 var INJECTION_HEADER = "Apply these named techniques as you do it:";
 /**
@@ -23751,8 +23721,7 @@ function composePrompt(input, picks) {
 	if (!picks.length) return original;
 	return `${original}\n\n${INJECTION_HEADER}\n\n${picks.map((p) => `**${p.concept.name}.** ${p.concept.prompt}`).join("\n\n")}`;
 }
-//#endregion
-//#region src/lib/embeddings.ts
+// src/lib/embeddings.ts
 /**
 * Dense semantic vectors for the corpus, learned from the corpus itself.
 *
@@ -24077,8 +24046,7 @@ function buildSemanticSpace(documents, maxDims = MAX_DIMS) {
 		}
 	};
 }
-//#endregion
-//#region src/lib/text.ts
+// src/lib/text.ts
 /**
 * Tokenisation, normalisation and query expansion.
 *
@@ -25320,8 +25288,7 @@ function expand(tokens) {
 	return [...out];
 }
 Object.keys(EXPANSIONS);
-//#endregion
-//#region src/lib/search.ts
+// src/lib/search.ts
 /**
 * Field weights for the latent space, which are deliberately not the BM25
 * weights below.
@@ -25653,8 +25620,7 @@ function search(query) {
 function allConcepts() {
 	return [...CONCEPTS].sort((a, b) => a.name.localeCompare(b.name));
 }
-//#endregion
-//#region src/lib/triage.ts
+// src/lib/triage.ts
 /**
 * Three, and the default is not arbitrary.
 *
@@ -25811,8 +25777,7 @@ function triage(input, options = {}) {
 		others: whole.filter((r) => !picked.has(r.concept.id))
 	};
 }
-//#endregion
-//#region src/skill/cli.ts
+// src/skill/cli.ts
 /**
 * The command line behind the Claude Code skill.
 *
@@ -25974,4 +25939,3 @@ var args = parseArgs(process.argv.slice(2));
 var wantsText = !args.help && !args.show && args.list === void 0;
 var text = args.text || (wantsText ? await readStdin() : "");
 process.stdout.write(main(text, args) + "\n");
-//#endregion
