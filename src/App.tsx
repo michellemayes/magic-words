@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { getConcept } from './data/concepts'
 import { warmSemanticSpace } from './lib/search'
 import { triage } from './lib/triage'
@@ -159,6 +160,7 @@ export default function App() {
           <a href="https://github.com/michellemayes/magic-words">Add it on GitHub.</a>
         </p>
       </footer>
+      <Analytics />
     </div>
   )
 }
